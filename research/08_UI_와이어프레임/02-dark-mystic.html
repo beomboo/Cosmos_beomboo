@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>사주랑 — 다크 프리미엄 목업</title>
+<style>
+  :root{
+    --bg:#FBF9FC; --bg-alt:#F3EFF7; --ink:#1F1B24; --ink-soft:#726B7B;
+    --card-bg:#FFFFFF; --border:rgba(31,27,36,0.10);
+    --accent:#7C3AED; --accent-ink:#ffffff;
+    --shadow:0 20px 45px -25px rgba(31,27,36,0.30);
+
+    /* fixed product palette — Dr.Saju 실측 컬러(globals.css) 기반 */
+    --app-bg:#0a0a0f; --app-bg-card:#13131a; --app-bg-raised:#1b1b25;
+    --app-ink:#e2e8f0; --app-ink-soft:#8b8fa3; --app-border:#2a2a3a;
+    --app-accent:#8b5cf6; --app-accent-dim:rgba(139,92,246,0.16);
+    --app-gold:#C5A44E; --app-gold-soft:rgba(197,164,78,0.16);
+    --app-accent-ink:#ffffff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#141018; --bg-alt:#1B1521; --ink:#F1ECF6; --ink-soft:#B0A6BE; --card-bg:#1E1826; --border:rgba(255,255,255,0.08); --accent:#A78BFA; --accent-ink:#1E1826; --shadow:0 20px 45px -20px rgba(0,0,0,0.6);}
+  }
+  :root[data-theme="dark"]{ --bg:#141018; --bg-alt:#1B1521; --ink:#F1ECF6; --ink-soft:#B0A6BE; --card-bg:#1E1826; --border:rgba(255,255,255,0.08); --accent:#A78BFA; --accent-ink:#1E1826; --shadow:0 20px 45px -20px rgba(0,0,0,0.6);}
+  :root[data-theme="light"]{ --bg:#FBF9FC; --bg-alt:#F3EFF7; --ink:#1F1B24; --ink-soft:#726B7B; --card-bg:#FFFFFF; --border:rgba(31,27,36,0.10); --accent:#7C3AED; --accent-ink:#ffffff; --shadow:0 20px 45px -25px rgba(31,27,36,0.30);}
+
+  *{box-sizing:border-box;}
+  body{margin:0; background:radial-gradient(60% 50% at 85% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent), var(--bg); color:var(--ink); font-family:-apple-system,"Apple SD Gothic Neo","Pretendard Variable","Malgun Gothic","Noto Sans KR",system-ui,sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased;}
+  a{color:inherit;} button{font:inherit;}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:56px 24px 96px;}
+  header.intro{max-width:640px; margin:0 0 52px;}
+  .eyebrow{font-size:0.72rem; font-weight:800; letter-spacing:0.16em; text-transform:uppercase; color:var(--accent); margin:0 0 14px;}
+  h1{font-size:clamp(1.7rem,3.6vw,2.5rem); font-weight:800; letter-spacing:-0.01em; margin:0 0 14px; text-wrap:balance;}
+  header.intro p{font-size:1rem; color:var(--ink-soft); margin:0; max-width:58ch;}
+  header.intro p + p{margin-top:8px;}
+
+  .journey{display:flex; align-items:flex-start; gap:0; overflow-x:auto; padding:8px 4px 28px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;}
+  .journey::-webkit-scrollbar{height:8px;} .journey::-webkit-scrollbar-thumb{background:var(--border); border-radius:8px;}
+  .step{flex:0 0 auto; scroll-snap-align:start; display:flex; flex-direction:column; align-items:center; width:302px;}
+  .step-label{align-self:flex-start; font-size:0.7rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 14px 6px;}
+  .step-label b{color:var(--accent); font-weight:800;}
+  .connector{flex:0 0 auto; width:64px; padding-top:170px; display:flex; flex-direction:column; align-items:center; gap:6px; color:var(--ink-soft);}
+  .connector svg{opacity:0.55;} .connector span{font-size:0.68rem; font-weight:700; white-space:nowrap; text-align:center;}
+
+  .phone{width:270px; height:582px; background:#050507; border-radius:46px; padding:12px; box-shadow:var(--shadow); position:relative;}
+  .phone::before{content:""; position:absolute; top:12px; left:50%; transform:translateX(-50%); width:96px; height:22px; background:#050507; border-radius:0 0 16px 16px; z-index:5;}
+  .screen{position:relative; width:100%; height:100%; background:var(--app-bg); color:var(--app-ink); border-radius:36px; overflow:hidden; display:flex; flex-direction:column; font-size:13px;}
+  .status-bar{display:flex; justify-content:space-between; align-items:center; padding:16px 22px 4px; font-size:11px; font-weight:700; font-variant-numeric:tabular-nums; flex:0 0 auto;}
+  .status-bar .dots{display:flex; gap:3px; align-items:center;} .status-bar .dots i{width:3px; height:3px; border-radius:50%; background:currentColor; display:inline-block;}
+  .screen-body{flex:1 1 auto; padding:14px 20px 18px; display:flex; flex-direction:column; min-height:0;}
+  .home-indicator{flex:0 0 auto; display:flex; justify-content:center; padding:8px 0 4px;}
+  .home-indicator i{width:100px; height:4px; border-radius:3px; background:rgba(255,255,255,0.18);}
+
+  /* ===== Screen 1: Onboarding — 별자리 원반 ===== */
+  .onboarding .screen-body{align-items:center; justify-content:center; text-align:center; gap:20px; padding-top:0;}
+  .orb-emblem{position:relative; width:118px; height:118px;}
+  .orb-emblem .ring{position:absolute; inset:0; border-radius:50%; border:1px solid var(--app-gold); opacity:.55;}
+  .orb-emblem .ring.r2{inset:14px; border-color:var(--app-accent); opacity:.4; animation:spin 14s linear infinite;}
+  .orb-emblem .ring.r2 i{position:absolute; width:4px; height:4px; border-radius:50%; background:var(--app-gold); top:-2px; left:50%;}
+  .orb-emblem .core{position:absolute; inset:34px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #efe6ff, var(--app-accent) 60%, #4c2f9e 130%); box-shadow:0 0 26px 4px rgba(139,92,246,0.55); animation:glow 2.6s ease-in-out infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes glow{0%,100%{box-shadow:0 0 18px 2px rgba(139,92,246,0.45);}50%{box-shadow:0 0 30px 8px rgba(139,92,246,0.7);}}
+  .wordmark{font-size:1rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:var(--app-gold);}
+  .onboarding h2{font-size:1.18rem; font-weight:800; line-height:1.45; margin:0; text-wrap:balance;}
+  .onboarding .sub{font-size:12.5px; color:var(--app-ink-soft); line-height:1.65; margin:0;}
+  .btn-primary{appearance:none; border:none; cursor:pointer; width:100%; background:linear-gradient(120deg, var(--app-accent), #5b3aa8); color:var(--app-accent-ink); font-weight:800; font-size:14px; padding:13px 18px; border-radius:14px; box-shadow:0 10px 26px -10px rgba(139,92,246,0.6); letter-spacing:0.01em;}
+  .btn-primary:focus-visible{outline:2px solid var(--app-gold); outline-offset:3px;}
+  .link-quiet{background:none; border:none; cursor:pointer; font-size:12px; font-weight:700; color:var(--app-ink-soft); text-decoration:underline; text-underline-offset:3px; padding:2px;}
+  .link-quiet:focus-visible{outline:2px solid var(--app-accent); outline-offset:2px; border-radius:4px;}
+
+  /* ===== Screen 2: Input ===== */
+  .input-head{display:flex; align-items:center; gap:10px; margin-bottom:14px;}
+  .chevron{width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--app-bg-card); border:1px solid var(--app-border); font-weight:800; font-size:14px; flex:0 0 auto;}
+  .input-head h2{font-size:15px; font-weight:800; margin:0;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--app-ink-soft); margin-bottom:7px;}
+  .pill-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .pill{appearance:none; cursor:pointer; border:1.5px solid var(--app-border); background:var(--app-bg-card); color:var(--app-ink); font-weight:700; font-size:12.5px; padding:9px 14px; border-radius:11px; font-variant-numeric:tabular-nums;}
+  .pill.is-active{border-color:var(--app-accent); background:var(--app-accent-dim); color:#c9b6ff;}
+  .pill:focus-visible{outline:2px solid var(--app-accent); outline-offset:2px;}
+  .date-row{display:flex; gap:7px;} .date-row .pill{flex:1; text-align:center;}
+  .check-row{display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; color:var(--app-ink-soft); font-weight:600;}
+  .check-row input{width:15px; height:15px; accent-color:var(--app-accent);}
+  .text-input{width:100%; border:1.5px solid var(--app-border); background:var(--app-bg-card); border-radius:11px; padding:10px 13px; font-size:12.5px; color:var(--app-ink); font-weight:600;}
+  .text-input:focus-visible{outline:2px solid var(--app-accent); outline-offset:1px;}
+  .skip{font-size:11px; color:var(--app-ink-soft); font-weight:700; margin-top:6px; display:inline-block;}
+  .input-spacer{flex:1 1 auto;}
+
+  /* ===== Screen 3: Loading — 룬 궤도 ===== */
+  .loading .screen-body{align-items:center; justify-content:center; text-align:center; gap:24px;}
+  .orbit{position:relative; width:120px; height:120px; display:flex; align-items:center; justify-content:center;}
+  .orbit .core{width:58px; height:58px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #efe6ff, var(--app-accent) 60%, #4c2f9e 130%); animation:glow 2.2s ease-in-out infinite;}
+  .orbit .ring{position:absolute; inset:0; animation:spin 4.5s linear infinite;}
+  .orbit .ring i{position:absolute; font-size:11px; color:var(--app-gold); top:50%; left:50%; transform-origin:0 0;}
+  .orbit .ring i:nth-child(1){transform:translate(-6px,-58px) rotate(0deg);}
+  .orbit .ring i:nth-child(2){transform:rotate(120deg) translate(-6px,-58px);}
+  .orbit .ring i:nth-child(3){transform:rotate(240deg) translate(-6px,-58px);}
+  .loading-msg{font-size:13px; font-weight:700; min-height:20px; letter-spacing:0.01em;}
+  .progress-track{width:180px; height:5px; border-radius:4px; background:var(--app-border); overflow:hidden;}
+  .progress-fill{height:100%; width:30%; border-radius:4px; background:linear-gradient(90deg, var(--app-accent), var(--app-gold)); animation:grow 2.6s ease-in-out infinite;}
+  @keyframes grow{0%{width:8%;}50%{width:78%;}100%{width:8%;}}
+  .loading-caption{font-size:11px; color:var(--app-ink-soft); font-weight:600;}
+
+  /* ===== Screen 4: Result ===== */
+  .result .screen-body{padding-top:12px; overflow-y:auto;}
+  .result-head h2{font-size:15.5px; font-weight:800; margin:0 0 3px;}
+  .result-head .meta{font-size:10.5px; color:var(--app-ink-soft); font-weight:600; font-variant-numeric:tabular-nums;}
+  .callout{background:linear-gradient(135deg, var(--app-accent-dim), var(--app-gold-soft)); border:1px solid var(--app-border); border-radius:14px; padding:13px 15px; margin:12px 0 14px;}
+  .callout p{margin:0; font-size:12.5px; font-weight:700; line-height:1.55; color:#d8cdfa;}
+
+  .pillars{display:flex; gap:7px; margin-bottom:14px;}
+  .pillar-card{flex:1; text-align:center; background:var(--app-bg-card); border:1px solid var(--app-border); border-radius:12px; padding:9px 4px;}
+  .pillar-card .hanja{font-size:15px; font-weight:800; line-height:1.25; color:var(--app-gold);}
+  .pillar-card .label{font-size:9.5px; color:var(--app-ink-soft); font-weight:700; margin-top:4px;}
+
+  .bars{margin-bottom:14px;}
+  .bars h3, .cards h3{font-size:10.5px; font-weight:800; color:var(--app-ink-soft); margin:0 0 8px; letter-spacing:.06em; text-transform:uppercase;}
+  .bar-row{display:flex; align-items:center; gap:8px; margin-bottom:5px;}
+  .bar-row .tag{width:14px; font-size:11px; font-weight:800; text-align:center; color:var(--app-gold);}
+  .bar-track{flex:1; height:7px; border-radius:5px; background:var(--app-border); overflow:hidden;}
+  .bar-fill{height:100%; border-radius:5px; background:linear-gradient(90deg, var(--app-accent), var(--app-gold));}
+  .bar-row .pct{width:26px; font-size:10px; font-weight:700; color:var(--app-ink-soft); text-align:right; font-variant-numeric:tabular-nums;}
+
+  .cat-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;}
+  .cat-card{background:var(--app-bg-card); border:1px solid var(--app-border); border-radius:12px; padding:10px 11px; border-top:2px solid var(--app-accent);}
+  .cat-card .t{font-size:11px; font-weight:800; margin:0 0 2px; color:#c9b6ff;}
+  .cat-card .d{font-size:10.5px; color:var(--app-ink-soft); font-weight:600; line-height:1.4;}
+
+  .share-btn{appearance:none; border:none; cursor:pointer; width:100%; background:linear-gradient(120deg, var(--app-accent), var(--app-gold)); color:#100a1e; font-weight:800; font-size:13px; padding:12px; border-radius:13px; margin-bottom:8px;}
+  .share-btn:focus-visible{outline:2px solid var(--app-gold); outline-offset:2px;}
+  .report-link{display:block; text-align:center; font-size:11px; font-weight:700; color:var(--app-ink-soft); text-decoration:underline; text-underline-offset:3px;}
+
+  .legend{margin-top:12px; background:var(--card-bg); border:1px solid var(--border); border-radius:22px; padding:32px clamp(20px,4vw,40px);}
+  .legend h2{font-size:1.15rem; font-weight:800; margin:0 0 6px;}
+  .legend > p{color:var(--ink-soft); margin:0 0 24px; max-width:64ch; font-size:0.92rem;}
+  .swatches{display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:14px;}
+  .swatch{border-radius:16px; padding:16px; background:var(--bg-alt); border:1px solid var(--border);}
+  .swatch .chip{width:36px; height:36px; border-radius:10px; margin-bottom:12px;}
+  .swatch .name{font-size:0.85rem; font-weight:800; margin-bottom:4px;}
+  .swatch .desc{font-size:0.78rem; color:var(--ink-soft); line-height:1.5;}
+  footer.notes{margin-top:28px; color:var(--ink-soft); font-size:0.85rem; max-width:70ch; line-height:1.7;}
+  footer.notes b{color:var(--ink);}
+
+  @media (max-width:640px){.wrap{padding:40px 16px 72px;} .phone{width:250px; height:540px;} .step{width:280px;}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="intro">
+    <p class="eyebrow">UI 컨셉 목업 2/4 · 다크 프리미엄 미스틱</p>
+    <h1>사주랑 — 다크 프리미엄 방향</h1>
+    <p>Dr.Saju 오픈소스의 실제 <code>globals.css</code>를 실측해서 얻은 컬러(배경 #0a0a0f · 보라 #8b5cf6 · 골드 #C5A44E)를 그대로 적용했습니다. "가볍고 귀여운" 대신 "믿을 만하고 신비로운" 인상을 노리는 20대 후반~30대 타겟 버전입니다.</p>
+    <p>화면 구성은 파스텔 버전과 동일하게 04·05 자료의 흐름을 따르되, 톤과 마이크로 인터랙션(글로우 펄스)만 다르게 입혔습니다.</p>
+  </header>
+
+  <div class="journey" role="list" aria-label="온보딩부터 결과까지 4단계 화면 흐름 - 다크 프리미엄">
+
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 1</b> · 온보딩</p>
+      <div class="phone"><div class="screen onboarding">
+        <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+        <div class="screen-body">
+          <div class="orb-emblem"><div class="ring"></div><div class="ring r2"><i></i></div><div class="core"></div></div>
+          <p class="wordmark">SAJU LANG</p>
+          <h2>당신을 만든 여덟 글자,<br>지금 열람하세요</h2>
+          <p class="sub">생년월일시 단 한 번의 입력으로<br>정통 명리학 기반 분석을 시작합니다</p>
+          <button class="btn-primary" type="button">시작하기 →</button>
+          <button class="link-quiet" type="button">계산 방식이 궁금하다면</button>
+        </div>
+        <div class="home-indicator"><i></i></div>
+      </div></div>
+    </section>
+
+    <div class="connector" aria-hidden="true"><svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="1.6"/></svg><span>탭 한 번</span></div>
+
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 2</b> · 정보 입력</p>
+      <div class="phone"><div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+        <div class="screen-body">
+          <div class="input-head"><span class="chevron" aria-hidden="true">‹</span><h2>생년월일시를 알려주세요</h2></div>
+          <div class="field"><label>태어난 날짜</label>
+            <div class="date-row"><button class="pill" type="button">1998</button><button class="pill" type="button">08</button><button class="pill" type="button">15</button></div>
+          </div>
+          <div class="field"><div class="pill-row" role="group" aria-label="양력 또는 음력">
+            <button class="pill is-active" type="button">양력</button><button class="pill" type="button">음력</button>
+          </div></div>
+          <div class="field"><label>태어난 시간</label>
+            <div class="pill-row"><button class="pill" type="button">오후 2시 30분</button></div>
+            <div class="check-row"><input type="checkbox" id="unknownTime2"><label for="unknownTime2" style="margin:0;font-weight:600;text-transform:none;letter-spacing:0;color:inherit;">태어난 시간을 몰라요</label></div>
+          </div>
+          <div class="field"><label>성별</label>
+            <div class="pill-row" role="group" aria-label="성별 선택"><button class="pill is-active" type="button">여성</button><button class="pill" type="button">남성</button></div>
+          </div>
+          <div class="field"><label>태어난 곳 (선택)</label>
+            <input class="text-input" type="text" placeholder="예: 서울특별시"><span class="skip">건너뛰어도 괜찮아요 →</span>
+          </div>
+          <div class="input-spacer"></div>
+          <button class="btn-primary" type="button">명식 확인하기</button>
+        </div>
+        <div class="home-indicator"><i></i></div>
+      </div></div>
+    </section>
+
+    <div class="connector" aria-hidden="true"><svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="1.6"/></svg><span>평균 3초</span></div>
+
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 3</b> · 계산 중</p>
+      <div class="phone"><div class="screen loading">
+        <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+        <div class="screen-body">
+          <div class="orbit"><div class="core"></div><div class="ring"><i>✦</i><i>✧</i><i>✦</i></div></div>
+          <p class="loading-msg" id="loadingMsg2">명식을 배열하고 있어요...</p>
+          <div class="progress-track"><div class="progress-fill"></div></div>
+          <p class="loading-caption">평균 3초 소요돼요</p>
+        </div>
+        <div class="home-indicator"><i></i></div>
+      </div></div>
+    </section>
+
+    <div class="connector" aria-hidden="true"><svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="1.6"/></svg><span>짜잔!</span></div>
+
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 4</b> · 결과</p>
+      <div class="phone"><div class="screen result">
+        <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+        <div class="screen-body">
+          <div class="result-head"><h2>민지 님의 명식</h2><p class="meta">1998.08.15 · 오후 2시 30분生 · 양력</p></div>
+          <div class="callout"><p>목(木) 기운이 강한 명식이에요<br>새로운 국면을 여는 힘이 있습니다</p></div>
+          <div class="pillars">
+            <div class="pillar-card"><div class="hanja">戊寅</div><div class="label">년주</div></div>
+            <div class="pillar-card"><div class="hanja">庚申</div><div class="label">월주</div></div>
+            <div class="pillar-card"><div class="hanja">乙卯</div><div class="label">일주</div></div>
+            <div class="pillar-card"><div class="hanja">癸未</div><div class="label">시주</div></div>
+          </div>
+          <div class="bars"><h3>오행 밸런스</h3>
+            <div class="bar-row"><span class="tag">木</span><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><span class="pct">40%</span></div>
+            <div class="bar-row"><span class="tag">火</span><div class="bar-track"><div class="bar-fill" style="width:22%"></div></div><span class="pct">22%</span></div>
+            <div class="bar-row"><span class="tag">土</span><div class="bar-track"><div class="bar-fill" style="width:15%"></div></div><span class="pct">15%</span></div>
+            <div class="bar-row"><span class="tag">金</span><div class="bar-track"><div class="bar-fill" style="width:13%"></div></div><span class="pct">13%</span></div>
+            <div class="bar-row"><span class="tag">水</span><div class="bar-track"><div class="bar-fill" style="width:10%"></div></div><span class="pct">10%</span></div>
+          </div>
+          <div class="cards"><h3>영역별 해석</h3>
+            <div class="cat-grid">
+              <div class="cat-card"><div class="t">애정운</div><div class="d">기준이 명확한 편, 이달 인연의 흐름이 옵니다</div></div>
+              <div class="cat-card"><div class="t">재물운</div><div class="d">유입 시점이 임박했습니다, 지출 관리 필요</div></div>
+              <div class="cat-card"><div class="t">건강운</div><div class="d">무리를 줄이면 컨디션이 안정됩니다</div></div>
+              <div class="cat-card"><div class="t">기질</div><div class="d">결단이 빠르고 시작하는 힘이 강합니다</div></div>
+            </div>
+          </div>
+          <button class="share-btn" type="button">공유용 카드 저장</button>
+          <a class="report-link" href="#" onclick="return false;">전체 해석 리포트 보기</a>
+        </div>
+        <div class="home-indicator"><i></i></div>
+      </div></div>
+    </section>
+
+  </div>
+
+  <section class="legend">
+    <h2>다크 프리미엄 컬러 시스템</h2>
+    <p>Dr.Saju 저장소의 <code>src/app/globals.css</code>를 그대로 가져온 값입니다 — 임의 배색이 아니라 실제 프로덕션에 쓰인 값을 검증 삼아 재사용했습니다.</p>
+    <div class="swatches">
+      <div class="swatch"><div class="chip" style="background:#0a0a0f; box-shadow:inset 0 0 0 1px #2a2a3a;"></div><div class="name">Background · #0a0a0f</div><div class="desc">거의 검정에 가까운 다크 베이스</div></div>
+      <div class="swatch"><div class="chip" style="background:#8b5cf6;"></div><div class="name">Primary · #8b5cf6</div><div class="desc">보라, 버튼·강조·글로우에 사용</div></div>
+      <div class="swatch"><div class="chip" style="background:#C5A44E;"></div><div class="name">Gold · #C5A44E</div><div class="desc">프리미엄/유료 배지, 포인트</div></div>
+      <div class="swatch"><div class="chip" style="background:#13131a; box-shadow:inset 0 0 0 1px #2a2a3a;"></div><div class="name">Card · #13131a</div><div class="desc">카드·표면 배경</div></div>
+    </div>
+  </section>
+
+  <footer class="notes">
+    <p><b>참고 근거</b> — 07_오픈소스_계산로직/Dr.Saju_상세분석.md에 정리한 실측 컬러·애니메이션(glowPulse)을 그대로 반영했습니다.</p>
+    <p><b>이 방향이 맞는 경우</b> — "재미"보다 "신뢰"와 "프리미엄" 인상이 필요한 경우, 유료 전환율을 중요하게 볼 경우.</p>
+  </footer>
+</div>
+
+<script>
+  document.querySelectorAll('.pill-row').forEach(function(group){
+    group.addEventListener('click', function(e){
+      var btn = e.target.closest('.pill'); if(!btn || !group.contains(btn)) return;
+      group.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+    });
+  });
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var msgs = ['명식을 배열하고 있어요...', '오행의 균형을 계산하는 중...', '당신의 서사를 정리하고 있어요...'];
+  var el = document.getElementById('loadingMsg2');
+  if(el && !reduce){ var i=0; setInterval(function(){ i=(i+1)%msgs.length; el.textContent = msgs[i]; }, 1800); }
+</script>
+</body>
+</html>

@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>사주랑 — 파스텔 UI 컨셉 목업</title>
+<style>
+  /* ---------- Studio chrome tokens (theme-aware) ---------- */
+  :root{
+    --bg:#FFFBF5;
+    --bg-alt:#FFF3E8;
+    --ink:#3A2E33;
+    --ink-soft:#8C7A82;
+    --card-bg:#FFFFFF;
+    --border:rgba(58,46,51,0.10);
+    --accent:#FF6B8A;
+    --accent-ink:#ffffff;
+    --shadow:0 20px 45px -25px rgba(58,46,51,0.35);
+
+    /* fixed product palette — the app's own light pastel screens, independent of viewer theme */
+    --app-bg:#FFFBF5;
+    --app-bg-card:#FFFFFF;
+    --app-ink:#3A2E33;
+    --app-ink-soft:#9A8790;
+    --app-border:#F1E4DC;
+    --app-accent:#FF6B8A;
+    --app-accent-soft:#FFE1E8;
+    --app-accent-ink:#ffffff;
+    --app-wood:#5FA47B;   --app-wood-soft:#D8F0E2;
+    --app-fire:#F0775F;   --app-fire-soft:#FFE1D8;
+    --app-earth:#C99A34;  --app-earth-soft:#FBEBCC;
+    --app-metal:#8F6FD1;  --app-metal-soft:#EAE0FA;
+    --app-water:#3F8FCB;  --app-water-soft:#D9ECFA;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#18121B;
+      --bg-alt:#211923;
+      --ink:#F3E9EE;
+      --ink-soft:#BDA7B2;
+      --card-bg:#241C27;
+      --border:rgba(255,255,255,0.09);
+      --accent:#FF8FA8;
+      --accent-ink:#241C27;
+      --shadow:0 20px 45px -20px rgba(0,0,0,0.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#18121B; --bg-alt:#211923; --ink:#F3E9EE; --ink-soft:#BDA7B2;
+    --card-bg:#241C27; --border:rgba(255,255,255,0.09);
+    --accent:#FF8FA8; --accent-ink:#241C27;
+    --shadow:0 20px 45px -20px rgba(0,0,0,0.55);
+  }
+  :root[data-theme="light"]{
+    --bg:#FFFBF5; --bg-alt:#FFF3E8; --ink:#3A2E33; --ink-soft:#8C7A82;
+    --card-bg:#FFFFFF; --border:rgba(58,46,51,0.10);
+    --accent:#FF6B8A; --accent-ink:#ffffff;
+    --shadow:0 20px 45px -25px rgba(58,46,51,0.35);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(60% 50% at 15% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent),
+      var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,"Apple SD Gothic Neo","Pretendard Variable","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  a{color:inherit;}
+  button{font:inherit;}
+
+  /* ---------- Page shell ---------- */
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:56px 24px 96px;
+  }
+  header.intro{
+    max-width:640px;
+    margin:0 0 52px;
+  }
+  .eyebrow{
+    font-size:0.72rem;
+    font-weight:800;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin:0 0 14px;
+  }
+  h1{
+    font-size:clamp(1.7rem, 3.6vw, 2.5rem);
+    font-weight:800;
+    letter-spacing:-0.01em;
+    margin:0 0 14px;
+    text-wrap:balance;
+  }
+  header.intro p{
+    font-size:1rem;
+    color:var(--ink-soft);
+    margin:0;
+    max-width:56ch;
+  }
+  header.intro p + p{margin-top:8px;}
+
+  /* ---------- Journey strip ---------- */
+  .journey{
+    display:flex;
+    align-items:flex-start;
+    gap:0;
+    overflow-x:auto;
+    padding:8px 4px 28px;
+    scroll-snap-type:x proximity;
+    -webkit-overflow-scrolling:touch;
+  }
+  .journey::-webkit-scrollbar{height:8px;}
+  .journey::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+
+  .step{
+    flex:0 0 auto;
+    scroll-snap-align:start;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    width:302px;
+  }
+  .step-label{
+    align-self:flex-start;
+    font-size:0.7rem;
+    font-weight:800;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 14px 6px;
+  }
+  .step-label b{color:var(--accent);font-weight:800;}
+
+  .connector{
+    flex:0 0 auto;
+    width:64px;
+    padding-top:170px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    color:var(--ink-soft);
+  }
+  .connector svg{opacity:0.55;}
+  .connector span{
+    font-size:0.68rem;
+    font-weight:700;
+    white-space:nowrap;
+    text-align:center;
+  }
+
+  /* ---------- Phone frame ---------- */
+  .phone{
+    width:270px;
+    height:582px;
+    background:#0d0a0f;
+    border-radius:46px;
+    padding:12px;
+    box-shadow:var(--shadow);
+    position:relative;
+  }
+  .phone::before{
+    content:"";
+    position:absolute;
+    top:12px; left:50%;
+    transform:translateX(-50%);
+    width:96px; height:22px;
+    background:#0d0a0f;
+    border-radius:0 0 16px 16px;
+    z-index:5;
+  }
+  .screen{
+    position:relative;
+    width:100%; height:100%;
+    background:var(--app-bg);
+    color:var(--app-ink);
+    border-radius:36px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    font-size:13px;
+  }
+  .status-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:16px 22px 4px;
+    font-size:11px;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+    color:var(--app-ink);
+    flex:0 0 auto;
+  }
+  .status-bar .dots{display:flex;gap:3px;align-items:center;}
+  .status-bar .dots i{width:3px;height:3px;border-radius:50%;background:currentColor;display:inline-block;}
+
+  .screen-body{
+    flex:1 1 auto;
+    padding:14px 20px 18px;
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+  .home-indicator{
+    flex:0 0 auto;
+    display:flex; justify-content:center; padding:8px 0 4px;
+  }
+  .home-indicator i{
+    width:100px; height:4px; border-radius:3px;
+    background:color-mix(in srgb, var(--app-ink) 25%, transparent);
+  }
+
+  /* ===== Screen 1: Onboarding ===== */
+  .onboarding .screen-body{
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    gap:18px;
+    padding-top:0;
+  }
+  .mascot{
+    position:relative;
+    width:104px; height:104px;
+    margin-bottom:4px;
+  }
+  .mascot .blob{
+    width:100%; height:100%;
+    border-radius:44% 56% 58% 42% / 48% 44% 56% 52%;
+    background:linear-gradient(155deg, var(--app-accent-soft), var(--app-wood-soft) 70%);
+    border:2px solid color-mix(in srgb, var(--app-accent) 30%, transparent);
+    display:flex; align-items:center; justify-content:center;
+    animation:float 3.6s ease-in-out infinite;
+  }
+  .mascot .face{display:flex; gap:14px; margin-top:6px;}
+  .mascot .face i{width:6px;height:8px;border-radius:50%;background:var(--app-ink);display:inline-block;}
+  .mascot .spark{
+    position:absolute; font-size:14px;
+    animation:twinkle 2.2s ease-in-out infinite;
+  }
+  .mascot .spark.s1{top:-6px; right:6px; animation-delay:.2s;}
+  .mascot .spark.s2{bottom:2px; left:-10px; animation-delay:.9s; font-size:10px;}
+  @keyframes float{0%,100%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-8px) rotate(2deg);}}
+  @keyframes twinkle{0%,100%{opacity:.25; transform:scale(.8);}50%{opacity:1; transform:scale(1.1);}}
+
+  .wordmark{
+    font-size:1.05rem; font-weight:800; letter-spacing:-0.01em;
+    color:var(--app-accent);
+  }
+  .onboarding h2{
+    font-size:1.2rem; font-weight:800; line-height:1.4; margin:0;
+    text-wrap:balance;
+  }
+  .onboarding .sub{
+    font-size:12.5px; color:var(--app-ink-soft); line-height:1.6; margin:0;
+  }
+  .btn-primary{
+    appearance:none; border:none; cursor:pointer;
+    width:100%;
+    background:var(--app-accent);
+    color:var(--app-accent-ink);
+    font-weight:800; font-size:14px;
+    padding:13px 18px;
+    border-radius:16px;
+    box-shadow:0 10px 22px -10px color-mix(in srgb, var(--app-accent) 70%, transparent);
+    transition:transform .15s ease;
+  }
+  .btn-primary:hover{transform:translateY(-1px);}
+  .btn-primary:focus-visible{outline:2px solid var(--app-accent); outline-offset:3px;}
+  .link-quiet{
+    background:none;border:none;cursor:pointer;
+    font-size:12px; font-weight:700; color:var(--app-ink-soft);
+    text-decoration:underline; text-underline-offset:3px;
+    padding:2px;
+  }
+  .link-quiet:focus-visible{outline:2px solid var(--app-accent); outline-offset:2px; border-radius:4px;}
+
+  /* ===== Screen 2: Input ===== */
+  .input-head{
+    display:flex; align-items:center; gap:10px; margin-bottom:14px;
+  }
+  .chevron{
+    width:28px;height:28px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--app-bg-card); border:1px solid var(--app-border);
+    font-weight:800; font-size:14px; flex:0 0 auto;
+  }
+  .input-head h2{font-size:15px; font-weight:800; margin:0;}
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block; font-size:11px; font-weight:800; letter-spacing:.02em;
+    color:var(--app-ink-soft); margin-bottom:7px;
+  }
+  .pill-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .pill{
+    appearance:none; cursor:pointer;
+    border:1.5px solid var(--app-border);
+    background:var(--app-bg-card);
+    color:var(--app-ink);
+    font-weight:700; font-size:12.5px;
+    padding:9px 14px; border-radius:12px;
+    font-variant-numeric:tabular-nums;
+  }
+  .pill.is-active{
+    border-color:var(--app-accent);
+    background:var(--app-accent-soft);
+    color:color-mix(in srgb, var(--app-accent) 75%, black 10%);
+  }
+  .pill:focus-visible{outline:2px solid var(--app-accent); outline-offset:2px;}
+  .date-row{display:flex; gap:7px;}
+  .date-row .pill{flex:1; text-align:center;}
+  .check-row{
+    display:flex; align-items:center; gap:8px;
+    margin-top:8px; font-size:12px; color:var(--app-ink-soft); font-weight:600;
+  }
+  .check-row input{width:15px;height:15px; accent-color:var(--app-accent);}
+  .text-input{
+    width:100%; border:1.5px solid var(--app-border); background:var(--app-bg-card);
+    border-radius:12px; padding:10px 13px; font-size:12.5px; color:var(--app-ink); font-weight:600;
+  }
+  .text-input:focus-visible{outline:2px solid var(--app-accent); outline-offset:1px;}
+  .skip{font-size:11px; color:var(--app-ink-soft); font-weight:700; margin-top:6px; display:inline-block;}
+  .input-spacer{flex:1 1 auto;}
+
+  /* ===== Screen 3: Loading ===== */
+  .loading .screen-body{
+    align-items:center; justify-content:center; text-align:center; gap:22px;
+  }
+  .orbit{
+    position:relative; width:120px; height:120px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .orbit .moon{
+    width:64px; height:64px; border-radius:50%;
+    background:radial-gradient(circle at 32% 30%, #fff, var(--app-earth-soft) 55%, var(--app-earth) 130%);
+    box-shadow:0 0 0 10px color-mix(in srgb, var(--app-accent-soft) 70%, transparent);
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
+  .orbit .ring{
+    position:absolute; inset:0;
+    animation:spin 5s linear infinite;
+  }
+  .orbit .ring i{
+    position:absolute; font-size:13px;
+    top:50%; left:50%;
+    transform-origin:0 0;
+  }
+  .orbit .ring i:nth-child(1){transform:translate(-6px,-58px) rotate(0deg);}
+  .orbit .ring i:nth-child(2){transform:rotate(120deg) translate(-6px,-58px);}
+  .orbit .ring i:nth-child(3){transform:rotate(240deg) translate(-6px,-58px);}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-msg{
+    font-size:13px; font-weight:700; min-height:20px;
+  }
+  .progress-track{
+    width:180px; height:6px; border-radius:4px;
+    background:var(--app-border); overflow:hidden;
+  }
+  .progress-fill{
+    height:100%; width:30%; border-radius:4px;
+    background:linear-gradient(90deg, var(--app-accent), var(--app-metal));
+    animation:grow 2.6s ease-in-out infinite;
+  }
+  @keyframes grow{0%{width:8%;}50%{width:78%;}100%{width:8%;}}
+  .loading-caption{font-size:11px; color:var(--app-ink-soft); font-weight:600;}
+
+  /* ===== Screen 4: Result ===== */
+  .result .screen-body{padding-top:12px; overflow-y:auto;}
+  .result-head{margin-bottom:12px;}
+  .result-head h2{font-size:15.5px; font-weight:800; margin:0 0 3px;}
+  .result-head .meta{font-size:10.5px; color:var(--app-ink-soft); font-weight:600; font-variant-numeric:tabular-nums;}
+  .callout{
+    background:var(--app-wood-soft);
+    border-radius:16px;
+    padding:13px 15px;
+    margin-bottom:14px;
+  }
+  .callout p{margin:0; font-size:12.5px; font-weight:700; line-height:1.55; color:color-mix(in srgb, var(--app-wood) 70%, black 15%);}
+
+  .pillars{display:flex; gap:7px; margin-bottom:14px;}
+  .pillar-card{
+    flex:1; text-align:center;
+    background:var(--app-bg-card); border:1px solid var(--app-border);
+    border-radius:13px; padding:9px 4px;
+  }
+  .pillar-card .hanja{
+    font-size:15px; font-weight:800; line-height:1.25;
+  }
+  .pillar-card .label{font-size:9.5px; color:var(--app-ink-soft); font-weight:700; margin-top:4px;}
+  .pillar-card.wood .hanja{color:var(--app-wood);}
+  .pillar-card.fire .hanja{color:var(--app-fire);}
+  .pillar-card.earth .hanja{color:var(--app-earth);}
+  .pillar-card.metal .hanja{color:var(--app-metal);}
+
+  .bars{margin-bottom:14px;}
+  .bars h3, .cards h3{font-size:11px; font-weight:800; color:var(--app-ink-soft); margin:0 0 8px; letter-spacing:.02em;}
+  .bar-row{display:flex; align-items:center; gap:8px; margin-bottom:5px;}
+  .bar-row .tag{width:14px; font-size:11px; font-weight:800; text-align:center;}
+  .bar-track{flex:1; height:8px; border-radius:5px; background:var(--app-border); overflow:hidden;}
+  .bar-fill{height:100%; border-radius:5px;}
+  .bar-row .pct{width:26px; font-size:10px; font-weight:700; color:var(--app-ink-soft); text-align:right; font-variant-numeric:tabular-nums;}
+
+  .cat-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;}
+  .cat-card{
+    background:var(--app-bg-card); border:1px solid var(--app-border);
+    border-radius:13px; padding:10px 11px;
+  }
+  .cat-card .ico{font-size:15px;}
+  .cat-card .t{font-size:11px; font-weight:800; margin:5px 0 2px;}
+  .cat-card .d{font-size:10.5px; color:var(--app-ink-soft); font-weight:600; line-height:1.4;}
+
+  .share-btn{
+    appearance:none; border:none; cursor:pointer; width:100%;
+    background:linear-gradient(120deg, var(--app-accent), var(--app-metal));
+    color:#fff; font-weight:800; font-size:13px;
+    padding:12px; border-radius:15px; margin-bottom:8px;
+  }
+  .share-btn:focus-visible{outline:2px solid var(--app-ink); outline-offset:2px;}
+  .report-link{display:block; text-align:center; font-size:11px; font-weight:700; color:var(--app-ink-soft); text-decoration:underline; text-underline-offset:3px;}
+
+  /* ---------- Palette legend ---------- */
+  .legend{
+    margin-top:12px;
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-radius:22px;
+    padding:32px clamp(20px,4vw,40px);
+  }
+  .legend h2{font-size:1.15rem; font-weight:800; margin:0 0 6px;}
+  .legend > p{color:var(--ink-soft); margin:0 0 24px; max-width:64ch; font-size:0.92rem;}
+  .swatches{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(160px,1fr));
+    gap:14px;
+  }
+  .swatch{
+    border-radius:16px;
+    padding:16px;
+    background:var(--bg-alt);
+    border:1px solid var(--border);
+  }
+  .swatch .chip{
+    width:36px; height:36px; border-radius:10px; margin-bottom:12px;
+  }
+  .swatch .han{font-size:1.3rem; font-weight:800; margin-bottom:2px;}
+  .swatch .name{font-size:0.85rem; font-weight:800; margin-bottom:4px;}
+  .swatch .desc{font-size:0.78rem; color:var(--ink-soft); line-height:1.5;}
+
+  footer.notes{
+    margin-top:28px;
+    color:var(--ink-soft);
+    font-size:0.85rem;
+    max-width:70ch;
+    line-height:1.7;
+  }
+  footer.notes b{color:var(--ink);}
+
+  @media (max-width:640px){
+    .wrap{padding:40px 16px 72px;}
+    .phone{width:250px; height:540px;}
+    .step{width:280px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="intro">
+    <p class="eyebrow">UI 컨셉 목업 · 파스텔 큐트 방향</p>
+    <h1>사주랑 — 온보딩부터 결과까지</h1>
+    <p>research/03·04·05 자료에서 정리한 흐름(입력 → 로딩 → 결과)에, 앞서 고른 <b style="color:var(--accent)">파스텔 큐트형</b> 톤을 입힌 스타일 목업입니다. 회색 박스 와이어프레임 대신 실제 색·카피를 채워 넣어 바로 감을 잡을 수 있게 했습니다.</p>
+    <p>색상은 임의의 파스텔이 아니라 <b style="color:var(--ink)">사주의 오행(목·화·토·금·수)</b>을 그대로 팔레트로 옮긴 것입니다 — 하단 범례 참고.</p>
+  </header>
+
+  <div class="journey" role="list" aria-label="온보딩부터 결과까지 4단계 화면 흐름">
+
+    <!-- STEP 1 : ONBOARDING -->
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 1</b> · 온보딩</p>
+      <div class="phone">
+        <div class="screen onboarding">
+          <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+          <div class="screen-body">
+            <div class="mascot">
+              <div class="blob"><div class="face"><i></i><i></i></div></div>
+              <span class="spark s1">✨</span>
+              <span class="spark s2">⋆</span>
+            </div>
+            <p class="wordmark">사주랑</p>
+            <h2>내 안의 오행,<br>3분이면 알 수 있어요</h2>
+            <p class="sub">생년월일시만 입력하면 끝!<br>어려운 명리학 용어 없이 쉽게 풀어드려요</p>
+            <button class="btn-primary" type="button">시작하기 →</button>
+            <button class="link-quiet" type="button">어떻게 계산되나요?</button>
+          </div>
+          <div class="home-indicator"><i></i></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector" aria-hidden="true">
+      <svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="1.6"/></svg>
+      <span>탭 한 번</span>
+    </div>
+
+    <!-- STEP 2 : INPUT -->
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 2</b> · 정보 입력</p>
+      <div class="phone">
+        <div class="screen input-screen">
+          <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+          <div class="screen-body">
+            <div class="input-head">
+              <span class="chevron" aria-hidden="true">‹</span>
+              <h2>생년월일시를 알려주세요</h2>
+            </div>
+
+            <div class="field">
+              <label>태어난 날짜</label>
+              <div class="date-row">
+                <button class="pill" type="button">1998</button>
+                <button class="pill" type="button">08</button>
+                <button class="pill" type="button">15</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="pill-row" role="group" aria-label="양력 또는 음력">
+                <button class="pill is-active" type="button">양력</button>
+                <button class="pill" type="button">음력</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>태어난 시간</label>
+              <div class="pill-row">
+                <button class="pill" type="button">오후 2시 30분</button>
+              </div>
+              <div class="check-row">
+                <input type="checkbox" id="unknownTime">
+                <label for="unknownTime" style="margin:0;font-weight:600;text-transform:none;letter-spacing:0;color:inherit;">태어난 시간을 몰라요</label>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>성별</label>
+              <div class="pill-row" role="group" aria-label="성별 선택">
+                <button class="pill is-active" type="button">여성</button>
+                <button class="pill" type="button">남성</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>태어난 곳 (선택)</label>
+              <input class="text-input" type="text" placeholder="예: 서울특별시">
+              <span class="skip">건너뛰어도 괜찮아요 →</span>
+            </div>
+
+            <div class="input-spacer"></div>
+            <button class="btn-primary" type="button">사주 보러가기 🔮</button>
+          </div>
+          <div class="home-indicator"><i></i></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector" aria-hidden="true">
+      <svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="1.6"/></svg>
+      <span>평균 3초</span>
+    </div>
+
+    <!-- STEP 3 : LOADING -->
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 3</b> · 계산 중</p>
+      <div class="phone">
+        <div class="screen loading">
+          <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+          <div class="screen-body">
+            <div class="orbit">
+              <div class="moon"></div>
+              <div class="ring"><i>🌿</i><i>⭐</i><i>💫</i></div>
+            </div>
+            <p class="loading-msg" id="loadingMsg">사주팔자를 계산하고 있어요...</p>
+            <div class="progress-track"><div class="progress-fill"></div></div>
+            <p class="loading-caption">평균 3초 소요돼요</p>
+          </div>
+          <div class="home-indicator"><i></i></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector" aria-hidden="true">
+      <svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="1.6"/></svg>
+      <span>짜잔!</span>
+    </div>
+
+    <!-- STEP 4 : RESULT -->
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 4</b> · 결과</p>
+      <div class="phone">
+        <div class="screen result">
+          <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+          <div class="screen-body">
+            <div class="result-head">
+              <h2>민지님의 사주팔자 ✨</h2>
+              <p class="meta">1998.08.15 · 오후 2시 30분生 · 양력</p>
+            </div>
+
+            <div class="callout">
+              <p>목(木) 기운이 강한 타입이에요 🌿<br>새로운 걸 벌이는 힘이 넘쳐요</p>
+            </div>
+
+            <div class="pillars">
+              <div class="pillar-card wood"><div class="hanja">戊寅</div><div class="label">년주</div></div>
+              <div class="pillar-card fire"><div class="hanja">庚申</div><div class="label">월주</div></div>
+              <div class="pillar-card earth"><div class="hanja">乙卯</div><div class="label">일주</div></div>
+              <div class="pillar-card metal"><div class="hanja">癸未</div><div class="label">시주</div></div>
+            </div>
+
+            <div class="bars">
+              <h3>오행 밸런스</h3>
+              <div class="bar-row"><span class="tag" style="color:var(--app-wood)">木</span><div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--app-wood)"></div></div><span class="pct">40%</span></div>
+              <div class="bar-row"><span class="tag" style="color:var(--app-fire)">火</span><div class="bar-track"><div class="bar-fill" style="width:22%;background:var(--app-fire)"></div></div><span class="pct">22%</span></div>
+              <div class="bar-row"><span class="tag" style="color:var(--app-earth)">土</span><div class="bar-track"><div class="bar-fill" style="width:15%;background:var(--app-earth)"></div></div><span class="pct">15%</span></div>
+              <div class="bar-row"><span class="tag" style="color:var(--app-metal)">金</span><div class="bar-track"><div class="bar-fill" style="width:13%;background:var(--app-metal)"></div></div><span class="pct">13%</span></div>
+              <div class="bar-row"><span class="tag" style="color:var(--app-water)">水</span><div class="bar-track"><div class="bar-fill" style="width:10%;background:var(--app-water)"></div></div><span class="pct">10%</span></div>
+            </div>
+
+            <div class="cards">
+              <h3>오늘 궁금한 것부터</h3>
+              <div class="cat-grid">
+                <div class="cat-card"><div class="ico">💘</div><div class="t">연애운</div><div class="d">눈높이가 살짝 높은 편, 이번 달 인연 타이밍이에요</div></div>
+                <div class="cat-card"><div class="ico">💰</div><div class="t">재물운</div><div class="d">돈 들어오는 타이밍, 이번 달이 딱이에요</div></div>
+                <div class="cat-card"><div class="ico">🌱</div><div class="t">건강운</div><div class="d">무리하지만 않으면 컨디션 최상이에요</div></div>
+                <div class="cat-card"><div class="ico">🎭</div><div class="t">성격</div><div class="d">추진력 갑, 시작은 빠르고 화끈해요</div></div>
+              </div>
+            </div>
+
+            <button class="share-btn" type="button">📸 인스타 스토리로 공유하기</button>
+            <a class="report-link" href="#" onclick="return false;">상세 리포트 보기 (무료)</a>
+          </div>
+          <div class="home-indicator"><i></i></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <section class="legend">
+    <h2>오행 컬러 시스템</h2>
+    <p>결과 화면의 사주 명식·그래프에 쓰인 색은 각 오행이 상징하는 이미지에서 그대로 가져왔습니다. 자의적인 파스텔 조합이 아니라, 앱을 쓰는 동안 "이 색 = 이 기운"이라는 감각이 자연스럽게 쌓이도록 하는 것이 목적입니다.</p>
+    <div class="swatches">
+      <div class="swatch">
+        <div class="chip" style="background:var(--app-wood-soft); box-shadow:inset 0 0 0 2px var(--app-wood);"></div>
+        <div class="han" style="color:var(--app-wood);">木</div>
+        <div class="name">목 · 세이지 그린</div>
+        <div class="desc">성장, 시작, 추진력. 새싹이 자라는 이미지</div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--app-fire-soft); box-shadow:inset 0 0 0 2px var(--app-fire);"></div>
+        <div class="han" style="color:var(--app-fire);">火</div>
+        <div class="name">화 · 코랄 피치</div>
+        <div class="desc">열정, 표현력, 인기운. 따뜻한 온기의 이미지</div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--app-earth-soft); box-shadow:inset 0 0 0 2px var(--app-earth);"></div>
+        <div class="han" style="color:var(--app-earth);">土</div>
+        <div class="name">토 · 웜 샌드</div>
+        <div class="desc">안정, 신뢰, 중재. 땅에 발붙인 이미지</div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--app-metal-soft); box-shadow:inset 0 0 0 2px var(--app-metal);"></div>
+        <div class="han" style="color:var(--app-metal);">金</div>
+        <div class="name">금 · 라벤더</div>
+        <div class="desc">원칙, 결단력, 완성도. 정제된 금속의 이미지</div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--app-water-soft); box-shadow:inset 0 0 0 2px var(--app-water);"></div>
+        <div class="han" style="color:var(--app-water);">水</div>
+        <div class="name">수 · 페리윙클 블루</div>
+        <div class="desc">지혜, 유연함, 통찰. 흐르는 물의 이미지</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="notes">
+    <p><b>참고 근거</b> — 브랜드 CTA는 별도의 코랄 핑크(#FF6B8A) 하나로 고정하고, 오행 5색은 데이터를 나타내는 의미색으로 분리했습니다. 배경은 순백 대신 아이보리(#FFFBF5)를 써서 "만세력 종이"처럼 은은한 톤을 냈습니다 — 02·03 자료의 "부드러운 색조가 낫다"는 사용자 후기 반영.</p>
+    <p><b>다음으로 다듬을 지점</b> — ① 시간 모름 체크 시 시주 카드가 어떻게 바뀌는지(04 자료), ② 로딩 문구 3종 순환 타이밍, ③ 공유 이미지(9:16) 실제 레이아웃, ④ 무료/유료 경계선(상세 리포트) 구체화.</p>
+  </footer>
+
+</div>
+
+<script>
+  // pill toggle groups (visual only)
+  document.querySelectorAll('.pill-row').forEach(function(group){
+    group.addEventListener('click', function(e){
+      var btn = e.target.closest('.pill');
+      if(!btn || !group.contains(btn)) return;
+      group.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+    });
+  });
+
+  // loading screen rotating captions
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var msgs = ['사주팔자를 계산하고 있어요...', '오행 기운을 분석하는 중...', '당신만의 이야기를 준비하고 있어요...'];
+  var el = document.getElementById('loadingMsg');
+  if(el && !reduce){
+    var i = 0;
+    setInterval(function(){
+      i = (i + 1) % msgs.length;
+      el.textContent = msgs[i];
+    }, 1800);
+  }
+</script>
+</body>
+</html>

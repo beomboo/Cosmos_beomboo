@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>사주랑 — 에디토리얼 만세력 목업</title>
+<style>
+  :root{
+    --bg:#FBF7EF; --bg-alt:#F3ECDD; --ink:#2B2420; --ink-soft:#8A7C6C;
+    --card-bg:#FFFFFF; --border:rgba(43,36,32,0.12);
+    --accent:#B5432E; --accent-ink:#ffffff;
+    --shadow:0 20px 45px -25px rgba(43,36,32,0.30);
+    --serif:Georgia,"Iowan Old Style","Apple SD Gothic Neo","Noto Serif KR",serif;
+
+    /* fixed product palette — 종이(한지)와 낙관(도장) 모티프 */
+    --app-bg:#F7F1E4; --app-bg-card:#FFFFFF; --app-ink:#2B2420; --app-ink-soft:#8A7C6C;
+    --app-border:#E2D6C1; --app-red:#B5432E; --app-red-soft:#F2DCD2;
+    --app-ink-blue:#3C5170; --app-ink-blue-soft:#DCE3EC;
+    --app-accent-ink:#ffffff;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1B1815; --bg-alt:#221E19; --ink:#EFE7DA; --ink-soft:#B7A995; --card-bg:#221E19; --border:rgba(239,231,218,0.10); --accent:#D46A50; --accent-ink:#1B1815; --shadow:0 20px 45px -20px rgba(0,0,0,0.6);}
+  }
+  :root[data-theme="dark"]{ --bg:#1B1815; --bg-alt:#221E19; --ink:#EFE7DA; --ink-soft:#B7A995; --card-bg:#221E19; --border:rgba(239,231,218,0.10); --accent:#D46A50; --accent-ink:#1B1815; --shadow:0 20px 45px -20px rgba(0,0,0,0.6);}
+  :root[data-theme="light"]{ --bg:#FBF7EF; --bg-alt:#F3ECDD; --ink:#2B2420; --ink-soft:#8A7C6C; --card-bg:#FFFFFF; --border:rgba(43,36,32,0.12); --accent:#B5432E; --accent-ink:#ffffff; --shadow:0 20px 45px -25px rgba(43,36,32,0.30);}
+
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,"Apple SD Gothic Neo","Pretendard Variable","Malgun Gothic","Noto Sans KR",system-ui,sans-serif; line-height:1.55; -webkit-font-smoothing:antialiased;}
+  a{color:inherit;} button{font:inherit;}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:56px 24px 96px;}
+  header.intro{max-width:640px; margin:0 0 52px;}
+  .eyebrow{font-family:var(--serif); font-style:italic; font-size:0.78rem; font-weight:600; letter-spacing:0.06em; color:var(--accent); margin:0 0 14px;}
+  h1{font-family:var(--serif); font-size:clamp(1.7rem,3.6vw,2.5rem); font-weight:700; letter-spacing:0; margin:0 0 14px; text-wrap:balance;}
+  header.intro p{font-size:0.98rem; color:var(--ink-soft); margin:0; max-width:60ch;}
+  header.intro p + p{margin-top:8px;}
+  hr.rule{border:none; border-top:1px solid var(--border); margin:18px 0;}
+
+  .journey{display:flex; align-items:flex-start; gap:0; overflow-x:auto; padding:8px 4px 28px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;}
+  .journey::-webkit-scrollbar{height:8px;} .journey::-webkit-scrollbar-thumb{background:var(--border); border-radius:8px;}
+  .step{flex:0 0 auto; scroll-snap-align:start; display:flex; flex-direction:column; align-items:center; width:302px;}
+  .step-label{align-self:flex-start; font-family:var(--serif); font-style:italic; font-size:0.78rem; color:var(--ink-soft); margin:0 0 14px 6px;}
+  .step-label b{color:var(--accent); font-style:normal; font-weight:700;}
+  .connector{flex:0 0 auto; width:64px; padding-top:170px; display:flex; flex-direction:column; align-items:center; gap:6px; color:var(--ink-soft);}
+  .connector svg{opacity:0.5;} .connector span{font-size:0.66rem; font-weight:600; white-space:nowrap; text-align:center;}
+
+  .phone{width:270px; height:582px; background:#161310; border-radius:38px; padding:12px; box-shadow:var(--shadow); position:relative;}
+  .phone::before{content:""; position:absolute; top:12px; left:50%; transform:translateX(-50%); width:96px; height:22px; background:#161310; border-radius:0 0 16px 16px; z-index:5;}
+  .screen{position:relative; width:100%; height:100%; background:var(--app-bg); color:var(--app-ink); border-radius:28px; overflow:hidden; display:flex; flex-direction:column; font-size:13px;}
+  .status-bar{display:flex; justify-content:space-between; align-items:center; padding:16px 22px 4px; font-size:11px; font-weight:600; font-variant-numeric:tabular-nums; flex:0 0 auto;}
+  .status-bar .dots{display:flex; gap:3px; align-items:center;} .status-bar .dots i{width:3px; height:3px; border-radius:50%; background:currentColor; display:inline-block;}
+  .screen-body{flex:1 1 auto; padding:16px 22px 18px; display:flex; flex-direction:column; min-height:0;}
+  .home-indicator{flex:0 0 auto; display:flex; justify-content:center; padding:8px 0 4px;}
+  .home-indicator i{width:100px; height:4px; border-radius:3px; background:rgba(43,36,32,0.2);}
+
+  /* ===== Screen 1: Onboarding ===== */
+  .onboarding .screen-body{align-items:center; justify-content:center; text-align:center; gap:18px; padding-top:0;}
+  .seal{width:64px; height:64px; border:2px solid var(--app-red); border-radius:10px; display:flex; align-items:center; justify-content:center; transform:rotate(-2deg); color:var(--app-red); font-family:var(--serif); font-size:26px; font-weight:700;}
+  .wordmark{font-family:var(--serif); font-size:1.05rem; font-weight:700; letter-spacing:0.02em; color:var(--app-ink);}
+  .onboarding h2{font-family:var(--serif); font-size:1.28rem; font-weight:700; line-height:1.5; margin:0; text-wrap:balance;}
+  .onboarding .sub{font-size:12.5px; color:var(--app-ink-soft); line-height:1.7; margin:0;}
+  .btn-primary{appearance:none; border:1.5px solid var(--app-ink); cursor:pointer; width:100%; background:var(--app-ink); color:var(--app-bg); font-weight:700; font-size:13.5px; padding:13px 18px; border-radius:4px; letter-spacing:0.03em;}
+  .btn-primary:focus-visible{outline:2px solid var(--app-red); outline-offset:3px;}
+  .link-quiet{background:none; border:none; cursor:pointer; font-size:11.5px; font-weight:600; color:var(--app-ink-soft); text-decoration:underline; text-underline-offset:3px; padding:2px;}
+  .link-quiet:focus-visible{outline:2px solid var(--app-red); outline-offset:2px;}
+
+  /* ===== Screen 2: Input ===== */
+  .input-head{display:flex; align-items:center; gap:10px; margin-bottom:16px;}
+  .chevron{width:26px; height:26px; display:flex; align-items:center; justify-content:center; border:1px solid var(--app-border); font-weight:700; font-size:13px; flex:0 0 auto;}
+  .input-head h2{font-family:var(--serif); font-size:15px; font-weight:700; margin:0;}
+  .field{margin-bottom:15px;}
+  .field label{display:block; font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--app-ink-soft); margin-bottom:7px;}
+  .pill-row{display:flex; gap:0;}
+  .pill{appearance:none; cursor:pointer; border:1px solid var(--app-border); border-left:none; background:var(--app-bg-card); color:var(--app-ink); font-weight:600; font-size:12.5px; padding:8px 13px; font-variant-numeric:tabular-nums;}
+  .pill:first-child{border-left:1px solid var(--app-border);}
+  .pill.is-active{background:var(--app-ink); color:var(--app-bg); border-color:var(--app-ink);}
+  .pill:focus-visible{outline:2px solid var(--app-red); outline-offset:2px;}
+  .date-row{display:flex;} .date-row .pill{flex:1; text-align:center;}
+  .check-row{display:flex; align-items:center; gap:8px; margin-top:9px; font-size:11.5px; color:var(--app-ink-soft); font-weight:500;}
+  .check-row input{width:14px; height:14px; accent-color:var(--app-red);}
+  .text-input{width:100%; border:none; border-bottom:1px solid var(--app-border); background:transparent; border-radius:0; padding:8px 2px; font-size:12.5px; color:var(--app-ink); font-weight:600;}
+  .text-input:focus-visible{outline:none; border-bottom-color:var(--app-red);}
+  .skip{font-size:10.5px; color:var(--app-ink-soft); font-weight:600; margin-top:6px; display:inline-block;}
+  .input-spacer{flex:1 1 auto;}
+
+  /* ===== Screen 3: Loading — 붓 획 ===== */
+  .loading .screen-body{align-items:center; justify-content:center; text-align:center; gap:22px;}
+  .brush{width:120px; height:120px;}
+  .brush path{fill:none; stroke:var(--app-red); stroke-width:3; stroke-linecap:round; stroke-dasharray:220; stroke-dashoffset:220; animation:draw 2.4s ease-in-out infinite;}
+  @keyframes draw{0%{stroke-dashoffset:220;} 55%{stroke-dashoffset:0;} 100%{stroke-dashoffset:-220;}}
+  .loading-msg{font-family:var(--serif); font-size:13.5px; font-weight:600; min-height:20px;}
+  .progress-track{width:180px; height:1px; background:var(--app-border);}
+  .progress-fill{height:100%; width:30%; background:var(--app-red); animation:grow 2.6s ease-in-out infinite;}
+  @keyframes grow{0%{width:6%;}50%{width:80%;}100%{width:6%;}}
+  .loading-caption{font-size:10.5px; color:var(--app-ink-soft); font-weight:500; letter-spacing:0.02em;}
+
+  /* ===== Screen 4: Result — 지면형 리스트 ===== */
+  .result .screen-body{padding-top:14px; overflow-y:auto;}
+  .result-head h2{font-family:var(--serif); font-size:16px; font-weight:700; margin:0 0 3px;}
+  .result-head .meta{font-size:10px; color:var(--app-ink-soft); font-weight:500; font-variant-numeric:tabular-nums; letter-spacing:0.02em;}
+  .callout{border-top:1px solid var(--app-ink); border-bottom:1px solid var(--app-ink); padding:11px 2px; margin:14px 0;}
+  .callout p{margin:0; font-family:var(--serif); font-size:13px; font-weight:700; line-height:1.55;}
+
+  .pillars{display:flex; margin-bottom:16px; border:1px solid var(--app-border); border-radius:2px;}
+  .pillar-card{flex:1; text-align:center; padding:9px 2px; position:relative; border-right:1px solid var(--app-border);}
+  .pillar-card:last-child{border-right:none;}
+  .pillar-card .hanja{font-family:var(--serif); font-size:16px; font-weight:700; line-height:1.2;}
+  .pillar-card .label{font-size:9px; color:var(--app-ink-soft); font-weight:600; margin-top:4px; letter-spacing:0.03em;}
+  .pillar-card.day-pillar::after{content:"印"; position:absolute; top:2px; right:4px; font-size:9px; color:var(--app-red); border:1px solid var(--app-red); border-radius:2px; padding:0 2px; opacity:.85;}
+
+  .bars{margin-bottom:16px;}
+  .bars h3, .cards h3{font-size:10px; font-weight:700; color:var(--app-ink-soft); margin:0 0 9px; text-transform:uppercase; letter-spacing:.08em;}
+  .bar-row{display:flex; align-items:center; gap:9px; margin-bottom:7px; font-family:var(--serif);}
+  .bar-row .tag{width:14px; font-size:12px; font-weight:700; text-align:center;}
+  .bar-track{flex:1; height:1px; background:var(--app-border); position:relative;}
+  .bar-fill{position:absolute; top:-2px; left:0; height:5px; background:var(--app-ink);}
+  .bar-row .pct{width:24px; font-size:10px; font-weight:600; color:var(--app-ink-soft); text-align:right; font-variant-numeric:tabular-nums;}
+
+  .cat-list{display:flex; flex-direction:column;}
+  .cat-row{display:flex; justify-content:space-between; gap:10px; padding:9px 0; border-bottom:1px solid var(--app-border);}
+  .cat-row:last-child{border-bottom:none;}
+  .cat-row .t{font-size:11.5px; font-weight:700; flex:0 0 52px;}
+  .cat-row .d{font-size:10.5px; color:var(--app-ink-soft); font-weight:500; line-height:1.5; text-align:right;}
+
+  .share-btn{appearance:none; cursor:pointer; width:100%; background:var(--app-bg); color:var(--app-ink); border:1px solid var(--app-ink); font-weight:700; font-size:12.5px; padding:11px; border-radius:4px; margin:16px 0 8px; letter-spacing:0.02em;}
+  .share-btn:focus-visible{outline:2px solid var(--app-red); outline-offset:2px;}
+  .report-link{display:block; text-align:center; font-size:10.5px; font-weight:600; color:var(--app-ink-soft); text-decoration:underline; text-underline-offset:3px;}
+
+  .legend{margin-top:12px; background:var(--card-bg); border:1px solid var(--border); border-radius:4px; padding:32px clamp(20px,4vw,40px);}
+  .legend h2{font-family:var(--serif); font-size:1.2rem; font-weight:700; margin:0 0 6px;}
+  .legend > p{color:var(--ink-soft); margin:0 0 24px; max-width:64ch; font-size:0.92rem;}
+  .swatches{display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border);}
+  .swatch{padding:16px; background:var(--card-bg);}
+  .swatch .chip{width:32px; height:32px; margin-bottom:12px; border-radius:2px;}
+  .swatch .name{font-family:var(--serif); font-size:0.88rem; font-weight:700; margin-bottom:4px;}
+  .swatch .desc{font-size:0.78rem; color:var(--ink-soft); line-height:1.5;}
+  footer.notes{margin-top:28px; color:var(--ink-soft); font-size:0.85rem; max-width:70ch; line-height:1.7;}
+  footer.notes b{color:var(--ink);}
+
+  @media (max-width:640px){.wrap{padding:40px 16px 72px;} .phone{width:250px; height:540px;} .step{width:280px;}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="intro">
+    <p class="eyebrow">UI 컨셉 목업 4/4 · 에디토리얼 모던 만세력</p>
+    <h1>사주랑 — 에디토리얼 방향</h1>
+    <p>전통 만세력 책자를 현대적인 편집 디자인으로 옮긴 버전입니다. 이모지나 캐릭터 없이 세리프 숫자·헤어라인 룰·낙관(도장) 모티프로 "가볍지만 신뢰할 수 있는" 인상을 노립니다.</p>
+    <p>일주(태어난 날의 기둥)에는 실제 도장 문화에서 따온 붉은 인장 마크를 찍어, 사주에서 가장 중요한 글자라는 걸 시각적으로 알려줍니다.</p>
+  </header>
+
+  <div class="journey" role="list" aria-label="온보딩부터 결과까지 4단계 화면 흐름 - 에디토리얼">
+
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 1</b> · 온보딩</p>
+      <div class="phone"><div class="screen onboarding">
+        <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+        <div class="screen-body">
+          <div class="seal">四</div>
+          <p class="wordmark">사주랑</p>
+          <h2>당신의 여덟 글자를<br>가지런히 풀어드립니다</h2>
+          <p class="sub">생년월일시 한 번의 입력으로<br>정통 명리 해석을 시작합니다</p>
+          <button class="btn-primary" type="button">시작하기</button>
+          <button class="link-quiet" type="button">계산 방식 살펴보기</button>
+        </div>
+        <div class="home-indicator"><i></i></div>
+      </div></div>
+    </section>
+
+    <div class="connector" aria-hidden="true"><svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="1.2"/></svg><span>탭 한 번</span></div>
+
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 2</b> · 정보 입력</p>
+      <div class="phone"><div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+        <div class="screen-body">
+          <div class="input-head"><span class="chevron" aria-hidden="true">‹</span><h2>생년월일시를 알려주세요</h2></div>
+          <div class="field"><label>태어난 날짜</label>
+            <div class="date-row"><button class="pill" type="button">1998</button><button class="pill" type="button">08</button><button class="pill" type="button">15</button></div>
+          </div>
+          <div class="field"><div class="pill-row" role="group" aria-label="양력 또는 음력">
+            <button class="pill is-active" type="button">양력</button><button class="pill" type="button">음력</button>
+          </div></div>
+          <div class="field"><label>태어난 시간</label>
+            <div class="pill-row"><button class="pill is-active" type="button" style="flex:1;text-align:center;">오후 2시 30분</button></div>
+            <div class="check-row"><input type="checkbox" id="unknownTime4"><label for="unknownTime4" style="margin:0;">태어난 시간을 몰라요</label></div>
+          </div>
+          <div class="field"><label>성별</label>
+            <div class="pill-row" role="group" aria-label="성별 선택"><button class="pill is-active" type="button">여성</button><button class="pill" type="button">남성</button></div>
+          </div>
+          <div class="field"><label>태어난 곳 (선택)</label>
+            <input class="text-input" type="text" placeholder="예: 서울특별시"><span class="skip">건너뛰어도 괜찮아요 →</span>
+          </div>
+          <div class="input-spacer"></div>
+          <button class="btn-primary" type="button">명식 풀이 보기</button>
+        </div>
+        <div class="home-indicator"><i></i></div>
+      </div></div>
+    </section>
+
+    <div class="connector" aria-hidden="true"><svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="1.2"/></svg><span>평균 3초</span></div>
+
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 3</b> · 계산 중</p>
+      <div class="phone"><div class="screen loading">
+        <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+        <div class="screen-body">
+          <svg class="brush" viewBox="0 0 120 120"><path d="M22 78 C 40 30, 70 25, 88 55 S 100 95, 60 92 S 30 60, 55 45"/></svg>
+          <p class="loading-msg" id="loadingMsg4">명식을 정서하고 있습니다</p>
+          <div class="progress-track"><div class="progress-fill"></div></div>
+          <p class="loading-caption">평균 3초 소요돼요</p>
+        </div>
+        <div class="home-indicator"><i></i></div>
+      </div></div>
+    </section>
+
+    <div class="connector" aria-hidden="true"><svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="1.2"/></svg><span>짜잔!</span></div>
+
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 4</b> · 결과</p>
+      <div class="phone"><div class="screen result">
+        <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+        <div class="screen-body">
+          <div class="result-head"><h2>민지 님의 명식</h2><p class="meta">1998. 8. 15. 오후 2시 30분生 · 양력</p></div>
+          <div class="callout"><p>목(木) 기운이 강한 명식 — 새 국면을 여는 힘이 두드러집니다</p></div>
+          <div class="pillars">
+            <div class="pillar-card"><div class="hanja">戊寅</div><div class="label">년주</div></div>
+            <div class="pillar-card"><div class="hanja">庚申</div><div class="label">월주</div></div>
+            <div class="pillar-card day-pillar"><div class="hanja">乙卯</div><div class="label">일주</div></div>
+            <div class="pillar-card"><div class="hanja">癸未</div><div class="label">시주</div></div>
+          </div>
+          <div class="bars"><h3>오행 밸런스</h3>
+            <div class="bar-row"><span class="tag">木</span><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><span class="pct">40%</span></div>
+            <div class="bar-row"><span class="tag">火</span><div class="bar-track"><div class="bar-fill" style="width:22%"></div></div><span class="pct">22%</span></div>
+            <div class="bar-row"><span class="tag">土</span><div class="bar-track"><div class="bar-fill" style="width:15%"></div></div><span class="pct">15%</span></div>
+            <div class="bar-row"><span class="tag">金</span><div class="bar-track"><div class="bar-fill" style="width:13%"></div></div><span class="pct">13%</span></div>
+            <div class="bar-row"><span class="tag">水</span><div class="bar-track"><div class="bar-fill" style="width:10%"></div></div><span class="pct">10%</span></div>
+          </div>
+          <div class="cards"><h3>영역별 풀이</h3>
+            <div class="cat-list">
+              <div class="cat-row"><span class="t">애정운</span><span class="d">기준이 뚜렷한 편, 이달 인연의 흐름</span></div>
+              <div class="cat-row"><span class="t">재물운</span><span class="d">유입 시점 임박, 지출 관리 필요</span></div>
+              <div class="cat-row"><span class="t">건강운</span><span class="d">무리를 줄이면 컨디션 안정</span></div>
+              <div class="cat-row"><span class="t">기질</span><span class="d">결단이 빠르고 추진력이 강함</span></div>
+            </div>
+          </div>
+          <button class="share-btn" type="button">결과지 저장하기</button>
+          <a class="report-link" href="#" onclick="return false;">전체 해석 리포트 보기</a>
+        </div>
+        <div class="home-indicator"><i></i></div>
+      </div></div>
+    </section>
+
+  </div>
+
+  <section class="legend">
+    <h2>지필묵 컬러 시스템</h2>
+    <p>배경은 순백 대신 한지에 가까운 아이보리(#F7F1E4)를, 포인트는 전통 도장에 쓰이는 붉은 인주색(#B5432E)을 그대로 가져왔습니다. 오행 색은 채도를 낮춘 잉크 톤 하나로 통일해 "여러 색이 튀는" 대신 흑백 인쇄물 같은 정갈함을 유지합니다.</p>
+    <div class="swatches">
+      <div class="swatch"><div class="chip" style="background:#F7F1E4; box-shadow:inset 0 0 0 1px #E2D6C1;"></div><div class="name">Paper · #F7F1E4</div><div class="desc">한지 느낌의 아이보리 배경</div></div>
+      <div class="swatch"><div class="chip" style="background:#2B2420;"></div><div class="name">Ink · #2B2420</div><div class="desc">먹빛에 가까운 본문 색</div></div>
+      <div class="swatch"><div class="chip" style="background:#B5432E;"></div><div class="name">Seal · #B5432E</div><div class="desc">낙관·강조 전용, 딱 한 곳에만</div></div>
+      <div class="swatch"><div class="chip" style="background:#3C5170;"></div><div class="name">Ink Blue · #3C5170</div><div class="desc">보조 텍스트, 링크류</div></div>
+    </div>
+  </section>
+
+  <footer class="notes">
+    <p><b>참고 근거</b> — 01 자료의 만세력 개념과 실제 사자사주·인터넷만세력류 사이트의 지면형 정보 밀도를, 여백을 넉넉히 준 모던 타이포그래피로 재해석했습니다.</p>
+    <p><b>이 방향이 맞는 경우</b> — "귀엽다"보다 "정확하고 품격 있다"는 인상이 필요한 경우, 유료 상세 리포트를 인쇄물처럼 소장하고 싶게 만들고 싶은 경우.</p>
+  </footer>
+</div>
+
+<script>
+  document.querySelectorAll('.pill-row').forEach(function(group){
+    group.addEventListener('click', function(e){
+      var btn = e.target.closest('.pill'); if(!btn || !group.contains(btn)) return;
+      group.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+    });
+  });
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce){ document.querySelectorAll('.brush path').forEach(function(p){ p.style.animation='none'; p.style.strokeDashoffset='0'; }); }
+  var msgs = ['명식을 정서하고 있습니다', '오행의 균형을 살피는 중입니다', '풀이를 정리하고 있습니다'];
+  var el = document.getElementById('loadingMsg4');
+  if(el && !reduce){ var i=0; setInterval(function(){ i=(i+1)%msgs.length; el.textContent = msgs[i]; }, 1800); }
+</script>
+</body>
+</html>

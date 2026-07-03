@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>사주랑 — 레트로 아케이드 목업</title>
+<style>
+  :root{
+    --bg:#FFF8E7; --bg-alt:#FFF0C9; --ink:#241C13; --ink-soft:#7A6A50;
+    --card-bg:#FFFFFF; --border:rgba(36,28,19,0.14);
+    --accent:#FF3B81; --accent-ink:#ffffff;
+    --shadow:0 20px 45px -25px rgba(36,28,19,0.35);
+
+    /* fixed product palette — Y2K 아케이드 / 스크래치 카드 컨셉 */
+    --app-bg:#FFE566; --app-bg-card:#FFFDF6; --app-ink:#241C13; --app-ink-soft:#7A6A50;
+    --app-border:#241C13; --app-pink:#FF3B81; --app-pink-soft:#FFD3E4;
+    --app-blue:#2F6FED; --app-blue-soft:#D6E3FE;
+    --app-green:#28B463; --app-green-soft:#D3F3E0;
+    --app-purple:#8E4FE0; --app-purple-soft:#EBDCFB;
+    --app-accent-ink:#241C13;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1C1710; --bg-alt:#241C13; --ink:#FBF3DE; --ink-soft:#C9B98E; --card-bg:#26200A; --border:rgba(255,246,214,0.14); --accent:#FF5C93; --accent-ink:#1C1710; --shadow:0 20px 45px -20px rgba(0,0,0,0.6);}
+  }
+  :root[data-theme="dark"]{ --bg:#1C1710; --bg-alt:#241C13; --ink:#FBF3DE; --ink-soft:#C9B98E; --card-bg:#26200A; --border:rgba(255,246,214,0.14); --accent:#FF5C93; --accent-ink:#1C1710; --shadow:0 20px 45px -20px rgba(0,0,0,0.6);}
+  :root[data-theme="light"]{ --bg:#FFF8E7; --bg-alt:#FFF0C9; --ink:#241C13; --ink-soft:#7A6A50; --card-bg:#FFFFFF; --border:rgba(36,28,19,0.14); --accent:#FF3B81; --accent-ink:#ffffff; --shadow:0 20px 45px -25px rgba(36,28,19,0.35);}
+
+  *{box-sizing:border-box;}
+  body{margin:0; background:
+      radial-gradient(3px 3px at 20px 20px, rgba(36,28,19,0.05) 2px, transparent 0) 0 0/26px 26px,
+      var(--bg);
+    color:var(--ink); font-family:-apple-system,"Apple SD Gothic Neo","Pretendard Variable","Malgun Gothic","Noto Sans KR",system-ui,sans-serif; line-height:1.5; -webkit-font-smoothing:antialiased;}
+  a{color:inherit;} button{font:inherit;}
+
+  .wrap{max-width:1180px; margin:0 auto; padding:56px 24px 96px;}
+  header.intro{max-width:640px; margin:0 0 52px;}
+  .eyebrow{font-size:0.72rem; font-weight:900; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); margin:0 0 14px;}
+  h1{font-size:clamp(1.7rem,3.6vw,2.5rem); font-weight:900; letter-spacing:-0.01em; margin:0 0 14px; text-wrap:balance;}
+  header.intro p{font-size:1rem; color:var(--ink-soft); margin:0; max-width:58ch; font-weight:500;}
+  header.intro p + p{margin-top:8px;}
+
+  .journey{display:flex; align-items:flex-start; gap:0; overflow-x:auto; padding:8px 4px 28px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;}
+  .journey::-webkit-scrollbar{height:8px;} .journey::-webkit-scrollbar-thumb{background:var(--border); border-radius:8px;}
+  .step{flex:0 0 auto; scroll-snap-align:start; display:flex; flex-direction:column; align-items:center; width:302px;}
+  .step-label{align-self:flex-start; font-size:0.72rem; font-weight:900; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 14px 6px;}
+  .step-label b{color:var(--accent); font-weight:900;}
+  .connector{flex:0 0 auto; width:64px; padding-top:170px; display:flex; flex-direction:column; align-items:center; gap:6px; color:var(--ink-soft);}
+  .connector svg{opacity:0.6;} .connector span{font-size:0.68rem; font-weight:800; white-space:nowrap; text-align:center;}
+
+  .phone{width:270px; height:582px; background:#1A140C; border-radius:40px; padding:12px; box-shadow:var(--shadow); position:relative;}
+  .phone::before{content:""; position:absolute; top:12px; left:50%; transform:translateX(-50%); width:96px; height:22px; background:#1A140C; border-radius:0 0 16px 16px; z-index:5;}
+  .screen{position:relative; width:100%; height:100%; background:var(--app-bg); color:var(--app-ink); border-radius:30px; overflow:hidden; display:flex; flex-direction:column; font-size:13px; border:3px solid var(--app-border);}
+  .status-bar{display:flex; justify-content:space-between; align-items:center; padding:16px 22px 4px; font-size:11px; font-weight:900; font-variant-numeric:tabular-nums; flex:0 0 auto;}
+  .status-bar .dots{display:flex; gap:3px; align-items:center;} .status-bar .dots i{width:3px; height:3px; border-radius:50%; background:currentColor; display:inline-block;}
+  .screen-body{flex:1 1 auto; padding:14px 18px 18px; display:flex; flex-direction:column; min-height:0;}
+  .home-indicator{flex:0 0 auto; display:flex; justify-content:center; padding:8px 0 4px;}
+  .home-indicator i{width:100px; height:4px; border-radius:3px; background:rgba(36,28,19,0.3);}
+
+  .sticker{border:2.5px solid var(--app-border); box-shadow:3px 3px 0 var(--app-border); border-radius:16px; background:var(--app-bg-card);}
+
+  /* ===== Screen 1: Onboarding — 뽑기 게임 ===== */
+  .onboarding .screen-body{align-items:center; justify-content:center; text-align:center; gap:16px; padding-top:0;}
+  .mascot{width:104px; height:104px; position:relative;}
+  .mascot .face{width:100%; height:100%; border-radius:50%; background:var(--app-pink-soft); border:3px solid var(--app-border); box-shadow:4px 4px 0 var(--app-border); display:flex; align-items:center; justify-content:center; animation:bounce 1.8s ease-in-out infinite;}
+  .mascot .eyes{display:flex; gap:16px;}
+  .mascot .eyes i{font-size:16px;}
+  @keyframes bounce{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-7px) rotate(3deg);}}
+  .badge{display:inline-block; background:var(--app-purple); color:#fff; font-weight:900; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; padding:4px 10px; border-radius:8px; border:2px solid var(--app-border); transform:rotate(-3deg); box-shadow:2px 2px 0 var(--app-border);}
+  .onboarding h2{font-size:1.22rem; font-weight:900; line-height:1.4; margin:0; text-wrap:balance;}
+  .onboarding .sub{font-size:12.5px; color:var(--app-ink-soft); line-height:1.6; margin:0; font-weight:600;}
+  .btn-primary{appearance:none; cursor:pointer; width:100%; background:var(--app-pink); color:#fff; font-weight:900; font-size:14px; padding:13px 18px; border-radius:14px; border:3px solid var(--app-border); box-shadow:4px 4px 0 var(--app-border); letter-spacing:0.01em; transition:transform .1s, box-shadow .1s;}
+  .btn-primary:active{transform:translate(2px,2px); box-shadow:2px 2px 0 var(--app-border);}
+  .btn-primary:focus-visible{outline:3px solid var(--app-blue); outline-offset:3px;}
+  .link-quiet{background:none; border:none; cursor:pointer; font-size:12px; font-weight:800; color:var(--app-ink-soft); text-decoration:underline; text-underline-offset:3px; padding:2px;}
+  .link-quiet:focus-visible{outline:2px solid var(--app-blue); outline-offset:2px; border-radius:4px;}
+
+  /* ===== Screen 2: Input ===== */
+  .input-head{display:flex; align-items:center; gap:10px; margin-bottom:14px;}
+  .chevron{width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--app-bg-card); border:2.5px solid var(--app-border); font-weight:900; font-size:14px; flex:0 0 auto;}
+  .input-head h2{font-size:15px; font-weight:900; margin:0;}
+  .field{margin-bottom:13px;}
+  .field label{display:block; font-size:11px; font-weight:900; letter-spacing:.02em; color:var(--app-ink-soft); text-transform:uppercase; margin-bottom:7px;}
+  .pill-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .pill{appearance:none; cursor:pointer; border:2.5px solid var(--app-border); background:var(--app-bg-card); color:var(--app-ink); font-weight:800; font-size:12.5px; padding:8px 13px; border-radius:10px; font-variant-numeric:tabular-nums;}
+  .pill.is-active{background:var(--app-blue); color:#fff; box-shadow:2px 2px 0 var(--app-border);}
+  .pill:focus-visible{outline:2px solid var(--app-blue); outline-offset:2px;}
+  .date-row{display:flex; gap:7px;} .date-row .pill{flex:1; text-align:center;}
+  .check-row{display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; color:var(--app-ink-soft); font-weight:700;}
+  .check-row input{width:15px; height:15px; accent-color:var(--app-pink);}
+  .text-input{width:100%; border:2.5px solid var(--app-border); background:var(--app-bg-card); border-radius:10px; padding:9px 12px; font-size:12.5px; color:var(--app-ink); font-weight:700;}
+  .text-input:focus-visible{outline:2px solid var(--app-blue); outline-offset:1px;}
+  .skip{font-size:11px; color:var(--app-ink-soft); font-weight:800; margin-top:6px; display:inline-block;}
+  .input-spacer{flex:1 1 auto;}
+
+  /* ===== Screen 3: Loading — 슬롯 릴 ===== */
+  .loading .screen-body{align-items:center; justify-content:center; text-align:center; gap:20px;}
+  .reels{display:flex; gap:8px;}
+  .reel{width:44px; height:56px; border:3px solid var(--app-border); border-radius:10px; background:var(--app-bg-card); overflow:hidden; box-shadow:3px 3px 0 var(--app-border);}
+  .reel .strip{display:flex; flex-direction:column; animation:reel 0.5s linear infinite;}
+  .reel .strip div{height:56px; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:900;}
+  @keyframes reel{from{transform:translateY(0);} to{transform:translateY(-112px);}}
+  .reel:nth-child(2) .strip{animation-duration:.65s;}
+  .reel:nth-child(3) .strip{animation-duration:.8s;}
+  .loading-msg{font-size:13px; font-weight:800; min-height:20px;}
+  .progress-track{width:180px; height:10px; border-radius:6px; background:var(--app-bg-card); border:2.5px solid var(--app-border); overflow:hidden;}
+  .progress-fill{height:100%; width:30%; background:repeating-linear-gradient(45deg, var(--app-pink), var(--app-pink) 8px, var(--app-blue) 8px, var(--app-blue) 16px); animation:grow 2.6s ease-in-out infinite;}
+  @keyframes grow{0%{width:8%;}50%{width:82%;}100%{width:8%;}}
+  .loading-caption{font-size:11px; color:var(--app-ink-soft); font-weight:700;}
+
+  /* ===== Screen 4: Result — 트레이딩 카드 ===== */
+  .result .screen-body{padding-top:12px; overflow-y:auto;}
+  .result-head h2{font-size:15.5px; font-weight:900; margin:0 0 3px;}
+  .result-head .meta{font-size:10.5px; color:var(--app-ink-soft); font-weight:700; font-variant-numeric:tabular-nums;}
+  .callout{background:var(--app-green-soft); border:2.5px solid var(--app-border); border-radius:14px; padding:12px 14px; margin:12px 0 14px; box-shadow:3px 3px 0 var(--app-border);}
+  .callout p{margin:0; font-size:12.5px; font-weight:800; line-height:1.5;}
+
+  .pillars{display:flex; gap:6px; margin-bottom:14px;}
+  .pillar-card{flex:1; text-align:center; background:var(--app-bg-card); border:2.5px solid var(--app-border); border-radius:11px; padding:8px 3px; transform:rotate(-1.5deg);}
+  .pillar-card:nth-child(2){transform:rotate(1.5deg);}
+  .pillar-card:nth-child(3){transform:rotate(-1.5deg);}
+  .pillar-card:nth-child(4){transform:rotate(1.5deg);}
+  .pillar-card .hanja{font-size:15px; font-weight:900; line-height:1.2;}
+  .pillar-card .label{font-size:9px; color:var(--app-ink-soft); font-weight:800; margin-top:3px; text-transform:uppercase;}
+
+  .bars{margin-bottom:14px;}
+  .bars h3, .cards h3{font-size:11px; font-weight:900; color:var(--app-ink-soft); margin:0 0 8px; text-transform:uppercase; letter-spacing:.03em;}
+  .bar-row{display:flex; align-items:center; gap:8px; margin-bottom:6px;}
+  .bar-row .tag{width:16px; font-size:12px; font-weight:900; text-align:center;}
+  .bar-track{flex:1; height:9px; border-radius:5px; background:var(--app-bg-card); border:2px solid var(--app-border); overflow:hidden;}
+  .bar-fill{height:100%;}
+  .bar-row .pct{width:26px; font-size:10px; font-weight:800; color:var(--app-ink-soft); text-align:right; font-variant-numeric:tabular-nums;}
+
+  .cat-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;}
+  .cat-card{background:var(--app-bg-card); border:2.5px solid var(--app-border); border-radius:12px; padding:9px 10px; box-shadow:2px 2px 0 var(--app-border);}
+  .cat-card .badge2{display:inline-block; font-size:9px; font-weight:900; background:var(--app-purple); color:#fff; padding:2px 6px; border-radius:6px; margin-bottom:5px; text-transform:uppercase;}
+  .cat-card .t{font-size:11px; font-weight:900; margin:0 0 2px;}
+  .cat-card .d{font-size:10px; color:var(--app-ink-soft); font-weight:700; line-height:1.4;}
+
+  .share-btn{appearance:none; cursor:pointer; width:100%; background:var(--app-blue); color:#fff; font-weight:900; font-size:13px; padding:12px; border-radius:13px; border:3px solid var(--app-border); box-shadow:4px 4px 0 var(--app-border); margin-bottom:8px;}
+  .share-btn:active{transform:translate(2px,2px); box-shadow:2px 2px 0 var(--app-border);}
+  .share-btn:focus-visible{outline:3px solid var(--app-pink); outline-offset:2px;}
+  .report-link{display:block; text-align:center; font-size:11px; font-weight:800; color:var(--app-ink-soft); text-decoration:underline; text-underline-offset:3px;}
+
+  .legend{margin-top:12px; background:var(--card-bg); border:1px solid var(--border); border-radius:22px; padding:32px clamp(20px,4vw,40px);}
+  .legend h2{font-size:1.15rem; font-weight:900; margin:0 0 6px;}
+  .legend > p{color:var(--ink-soft); margin:0 0 24px; max-width:64ch; font-size:0.92rem;}
+  .swatches{display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:14px;}
+  .swatch{border-radius:16px; padding:16px; background:var(--bg-alt); border:2px solid var(--border);}
+  .swatch .chip{width:36px; height:36px; border-radius:10px; margin-bottom:12px; border:2px solid var(--ink);}
+  .swatch .name{font-size:0.85rem; font-weight:800; margin-bottom:4px;}
+  .swatch .desc{font-size:0.78rem; color:var(--ink-soft); line-height:1.5;}
+  footer.notes{margin-top:28px; color:var(--ink-soft); font-size:0.85rem; max-width:70ch; line-height:1.7;}
+  footer.notes b{color:var(--ink);}
+
+  @media (max-width:640px){.wrap{padding:40px 16px 72px;} .phone{width:250px; height:540px;} .step{width:280px;}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="intro">
+    <p class="eyebrow">UI 컨셉 목업 3/4 · 레트로 아케이드 게임화</p>
+    <h1>사주랑 — 레트로 아케이드 방향</h1>
+    <p>03 자료에서 확인한 "최고심 스크래치 복권형 부적", "MBTI식 라벨링 게임" 트렌드를 그대로 밀어붙인 버전입니다. 사주를 진지한 콘텐츠가 아니라 슬롯머신·트레이딩카드처럼 "뽑고 모으는" 게임으로 프레이밍했습니다.</p>
+    <p>두꺼운 잉크 테두리 + 오프셋 그림자로 스티커/굿즈 느낌을 냈고, 10대~20대 초반의 밈 문화에 가장 가깝습니다.</p>
+  </header>
+
+  <div class="journey" role="list" aria-label="온보딩부터 결과까지 4단계 화면 흐름 - 레트로 아케이드">
+
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 1</b> · 온보딩</p>
+      <div class="phone"><div class="screen onboarding">
+        <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+        <div class="screen-body">
+          <span class="badge">NEW GAME</span>
+          <div class="mascot"><div class="face"><div class="eyes"><i>⭐</i><i>⭐</i></div></div></div>
+          <h2>내 운명 뽑기,<br>지금 시작!</h2>
+          <p class="sub">생년월일시만 넣으면 끝!<br>슬롯 돌리듯 가볍게 확인해봐</p>
+          <button class="btn-primary" type="button">뽑으러 가기 🎰</button>
+          <button class="link-quiet" type="button">어떻게 계산되나요?</button>
+        </div>
+        <div class="home-indicator"><i></i></div>
+      </div></div>
+    </section>
+
+    <div class="connector" aria-hidden="true"><svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="2"/></svg><span>탭 한 번</span></div>
+
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 2</b> · 정보 입력</p>
+      <div class="phone"><div class="screen">
+        <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+        <div class="screen-body">
+          <div class="input-head"><span class="chevron" aria-hidden="true">‹</span><h2>생년월일시를 알려주세요</h2></div>
+          <div class="field"><label>태어난 날짜</label>
+            <div class="date-row"><button class="pill" type="button">1998</button><button class="pill" type="button">08</button><button class="pill" type="button">15</button></div>
+          </div>
+          <div class="field"><div class="pill-row" role="group" aria-label="양력 또는 음력">
+            <button class="pill is-active" type="button">양력</button><button class="pill" type="button">음력</button>
+          </div></div>
+          <div class="field"><label>태어난 시간</label>
+            <div class="pill-row"><button class="pill" type="button">오후 2시 30분</button></div>
+            <div class="check-row"><input type="checkbox" id="unknownTime3"><label for="unknownTime3" style="margin:0;font-weight:700;text-transform:none;letter-spacing:0;color:inherit;">태어난 시간을 몰라요</label></div>
+          </div>
+          <div class="field"><label>성별</label>
+            <div class="pill-row" role="group" aria-label="성별 선택"><button class="pill is-active" type="button">여성</button><button class="pill" type="button">남성</button></div>
+          </div>
+          <div class="field"><label>태어난 곳 (선택)</label>
+            <input class="text-input" type="text" placeholder="예: 서울특별시"><span class="skip">건너뛰어도 괜찮아요 →</span>
+          </div>
+          <div class="input-spacer"></div>
+          <button class="btn-primary" type="button">뽑기 시작! 🎲</button>
+        </div>
+        <div class="home-indicator"><i></i></div>
+      </div></div>
+    </section>
+
+    <div class="connector" aria-hidden="true"><svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="2"/></svg><span>평균 3초</span></div>
+
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 3</b> · 계산 중</p>
+      <div class="phone"><div class="screen loading">
+        <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+        <div class="screen-body">
+          <div class="reels">
+            <div class="reel"><div class="strip"><div>年</div><div>月</div><div>日</div><div>年</div></div></div>
+            <div class="reel"><div class="strip"><div>木</div><div>火</div><div>土</div><div>木</div></div></div>
+            <div class="reel"><div class="strip"><div>✨</div><div>🍀</div><div>💫</div><div>✨</div></div></div>
+          </div>
+          <p class="loading-msg" id="loadingMsg3">릴을 돌리는 중...</p>
+          <div class="progress-track"><div class="progress-fill"></div></div>
+          <p class="loading-caption">평균 3초 소요돼요</p>
+        </div>
+        <div class="home-indicator"><i></i></div>
+      </div></div>
+    </section>
+
+    <div class="connector" aria-hidden="true"><svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="2"/></svg><span>짜잔!</span></div>
+
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 4</b> · 결과</p>
+      <div class="phone"><div class="screen result">
+        <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+        <div class="screen-body">
+          <div class="result-head"><h2>민지의 운명 카드 🃏</h2><p class="meta">1998.08.15 · 오후 2시 30분生 · 양력</p></div>
+          <div class="callout"><p>목(木) 속성 강함! 🌿<br>새 판을 까는 힘이 넘쳐요</p></div>
+          <div class="pillars">
+            <div class="pillar-card"><div class="hanja">戊寅</div><div class="label">년주</div></div>
+            <div class="pillar-card"><div class="hanja">庚申</div><div class="label">월주</div></div>
+            <div class="pillar-card"><div class="hanja">乙卯</div><div class="label">일주</div></div>
+            <div class="pillar-card"><div class="hanja">癸未</div><div class="label">시주</div></div>
+          </div>
+          <div class="bars"><h3>속성 게이지</h3>
+            <div class="bar-row"><span class="tag" style="color:var(--app-green)">木</span><div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--app-green)"></div></div><span class="pct">40%</span></div>
+            <div class="bar-row"><span class="tag" style="color:var(--app-pink)">火</span><div class="bar-track"><div class="bar-fill" style="width:22%;background:var(--app-pink)"></div></div><span class="pct">22%</span></div>
+            <div class="bar-row"><span class="tag" style="color:#D9A62E">土</span><div class="bar-track"><div class="bar-fill" style="width:15%;background:#F2C230"></div></div><span class="pct">15%</span></div>
+            <div class="bar-row"><span class="tag" style="color:var(--app-purple)">金</span><div class="bar-track"><div class="bar-fill" style="width:13%;background:var(--app-purple)"></div></div><span class="pct">13%</span></div>
+            <div class="bar-row"><span class="tag" style="color:var(--app-blue)">水</span><div class="bar-track"><div class="bar-fill" style="width:10%;background:var(--app-blue)"></div></div><span class="pct">10%</span></div>
+          </div>
+          <div class="cards"><h3>스탯 카드</h3>
+            <div class="cat-grid">
+              <div class="cat-card"><span class="badge2">LOVE</span><div class="t">연애운 ★★★★☆</div><div class="d">눈높이 최상급, 이번 달 인연 등장</div></div>
+              <div class="cat-card"><span class="badge2">MONEY</span><div class="t">재물운 ★★★☆☆</div><div class="d">돈 들어오는 타이밍, 놓치지 마</div></div>
+              <div class="cat-card"><span class="badge2">HEALTH</span><div class="t">건강운 ★★★★☆</div><div class="d">무리만 안 하면 컨디션 최상</div></div>
+              <div class="cat-card"><span class="badge2">TYPE</span><div class="t">기질 ★★★★★</div><div class="d">추진력 갑, 시작은 늘 화끈해</div></div>
+            </div>
+          </div>
+          <button class="share-btn" type="button">카드 자랑하기 📤</button>
+          <a class="report-link" href="#" onclick="return false;">풀버전 리포트 보기</a>
+        </div>
+        <div class="home-indicator"><i></i></div>
+      </div></div>
+    </section>
+
+  </div>
+
+  <section class="legend">
+    <h2>아케이드 컬러 시스템</h2>
+    <p>03 자료의 "게임화·캐릭터화" 트렌드를 색으로 옮겼습니다. 파스텔이 아니라 채도 높은 원색 4가지를 오행에 배정해 슬롯머신·트레이딩카드 같은 즉흥적 재미를 강조했습니다.</p>
+    <div class="swatches">
+      <div class="swatch"><div class="chip" style="background:#FFE566;"></div><div class="name">Base · 선명한 옐로</div><div class="desc">게임쇼 배경, 시선을 끄는 베이스</div></div>
+      <div class="swatch"><div class="chip" style="background:#FF3B81;"></div><div class="name">Pink · 핫핑크</div><div class="desc">화(火), 주요 CTA</div></div>
+      <div class="swatch"><div class="chip" style="background:#2F6FED;"></div><div class="name">Blue · 코발트</div><div class="desc">수(水), 보조 액션</div></div>
+      <div class="swatch"><div class="chip" style="background:#8E4FE0;"></div><div class="name">Purple · 아케이드 보라</div><div class="desc">금(金), 뱃지/라벨</div></div>
+    </div>
+  </section>
+
+  <footer class="notes">
+    <p><b>참고 근거</b> — 03_UI_UX_레퍼런스의 "최고심 스크래치 부적", "MBTI 라벨링 게임" 사례를 슬롯머신·트레이딩카드 메타포로 구체화했습니다.</p>
+    <p><b>이 방향이 맞는 경우</b> — SNS 바이럴·재구매(재방문) 빈도를 최우선으로 볼 경우, 10대~20대 초반이 핵심 타겟인 경우.</p>
+  </footer>
+</div>
+
+<script>
+  document.querySelectorAll('.pill-row').forEach(function(group){
+    group.addEventListener('click', function(e){
+      var btn = e.target.closest('.pill'); if(!btn || !group.contains(btn)) return;
+      group.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('is-active'); });
+      btn.classList.add('is-active');
+    });
+  });
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce){ document.querySelectorAll('.reel .strip').forEach(function(s){ s.style.animation='none'; }); }
+  var msgs = ['릴을 돌리는 중...', '속성을 조합하는 중...', '카드를 인쇄하는 중...'];
+  var el = document.getElementById('loadingMsg3');
+  if(el && !reduce){ var i=0; setInterval(function(){ i=(i+1)%msgs.length; el.textContent = msgs[i]; }, 1800); }
+</script>
+</body>
+</html>
