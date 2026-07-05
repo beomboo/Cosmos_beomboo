@@ -130,4 +130,59 @@ void main() {
     expect(find.text('RESULT_STUB'), findsOneWidget);
     expect(capturedAtResult, same(birthInfo));
   });
+
+  testWidgets('3초가 되기 전에 화면을 벗어나면(뒤로 가기) 타이머가 지나도 안전하게 무시된다',
+      (tester) async {
+    // initState()의 Future.delayed(3초) 콜백은 `if (!mounted) return;`으로 방어돼 있는데,
+    // 지금까지는 이 방어 코드가 실제로 필요한 상황(타이머가 끝나기 전에 화면이 이미
+    // dispose된 경우)을 재현해본 적이 없었다 — 사용자가 계산 중 화면에서 시스템
+    // 뒤로 가기를 누르는 건 실제로 충분히 일어날 수 있는 흐름이다. 이 가드가 없었다면
+    // dispose된 State에서 Navigator.of(context)를 호출하려다 예외가 났을 것이다.
+    final birthInfo = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const CalculatingScreen(),
+                    settings: RouteSettings(arguments: birthInfo),
+                  ),
+                ),
+                child: const Text('홈'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('홈'));
+    await tester.pump();
+    // 페이지 전환 애니메이션(기본 300ms)을 흘려보낸다 — CalculatingScreen 자체의
+    // 궤도 애니메이션은 무한 반복이라 pumpAndSettle()을 쓸 수 없으므로 pump()로 진행.
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(CalculatingScreen), findsOneWidget);
+
+    // 3초가 되기 전(1초 시점)에 시스템 뒤로 가기를 흉내내 화면을 pop한다.
+    await tester.pump(const Duration(seconds: 1));
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
+    navigator.pop();
+    // pop 전환 애니메이션도 흘려보낸다 — CalculatingScreen의 궤도 애니메이션이
+    // dispose되기 전까지는 여전히 무한 반복 중이라 pumpAndSettle()을 쓸 수 없다.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(CalculatingScreen), findsNothing);
+    expect(find.text('홈'), findsOneWidget);
+
+    // 남은 시간(2초+)을 흘려보내도 예외 없이 그대로 "홈" 화면에 남아있어야 한다
+    // (mounted 가드 덕분에 Navigator.pushReplacementNamed가 호출되지 않음).
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump();
+    expect(find.text('홈'), findsOneWidget);
+  });
 }
