@@ -1,6 +1,7 @@
 import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -215,5 +216,33 @@ void main() {
     expect(saved, isNotNull);
     expect(saved!.interests, {Interest.wealth});
     expect(saved.mbti, isNull);
+  });
+
+  testWidgets('스크린 리더의 탭 액션(SemanticsAction.tap)을 직접 실행해도 관심사 칩 선택이 토글된다',
+      (tester) async {
+    // 위의 "관심사 칩을 탭하면 선택이 해제된다" 테스트를 포함해 이 화면의 모든 테스트는
+    // tester.tap()(실제 히트테스트, InkWell을 직접 타서 통과)만 썼을 뿐, 스크린 리더가
+    // 실제로 보내는 SemanticsAction.tap이 _toggleInterest까지 이어지는지는 검증한 적이
+    // 없었다. _InterestChip은 PastelToggleRow와 똑같이 Semantics(excludeSemantics: true)로
+    // InkWell의 자동 탭 액션을 대체하는 구조라(pastel_toggle_row_test.dart에서 실제로
+    // 재현해 확인한 것과 같은 종류의 회귀), onTap:을 다시 선언하는 걸 빠뜨려도
+    // tester.tap()은 여전히 통과해버려 이 회귀를 못 잡는다.
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+    await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+
+    final node = tester.getSemantics(find.text('💼 직장운'));
+    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+
+    // ignore: deprecated_member_use
+    tester.binding.pipelineOwner.semanticsOwner!.performAction(node.id, SemanticsAction.tap);
+    await tester.pump();
+
+    expect(
+      tester.getSemantics(find.text('💼 직장운')).flagsCollection.isSelected,
+      Tristate.isFalse,
+    );
+
+    semantics.dispose();
   });
 }
