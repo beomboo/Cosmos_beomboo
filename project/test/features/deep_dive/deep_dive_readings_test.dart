@@ -1,0 +1,80 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:cosmos_saju/features/deep_dive/deep_dive_info.dart';
+import 'package:cosmos_saju/features/deep_dive/deep_dive_readings.dart';
+import 'package:cosmos_saju/features/result/ohaeng_readings.dart';
+
+void main() {
+  group('readingFor', () {
+    test('연애·재물·건강 관심사는 ohaeng_readings.dart의 카테고리 풀이를 그대로 재사용한다', () {
+      for (final ohaeng in const ['목', '화', '토', '금', '수']) {
+        final categories = categoryReadingsByOhaeng[ohaeng]!;
+        expect(
+          readingFor(Interest.love, ohaeng),
+          categories.firstWhere((c) => c.$2 == '연애운').$3,
+        );
+        expect(
+          readingFor(Interest.wealth, ohaeng),
+          categories.firstWhere((c) => c.$2 == '재물운').$3,
+        );
+        expect(
+          readingFor(Interest.health, ohaeng),
+          categories.firstWhere((c) => c.$2 == '건강운').$3,
+        );
+      }
+    });
+
+    test('직장운(career)은 오행별로 5가지 모두 채워진 별도 콘텐츠를 반환한다', () {
+      // 기존 카테고리 풀이(연애·재물·건강·성격)에는 없던 항목이라, 5개 오행 전부
+      // 빈 문자열 없이 실제 문구가 채워져 있는지 직접 확인한다.
+      final seen = <String>{};
+      for (final ohaeng in const ['목', '화', '토', '금', '수']) {
+        final reading = readingFor(Interest.career, ohaeng);
+        expect(reading, isNotEmpty);
+        seen.add(reading);
+      }
+      // 오행마다 서로 다른 문구여야 한다(복붙 실수로 같은 문구가 여러 번 들어가는 걸 방지).
+      expect(seen.length, 5);
+    });
+
+    test('알 수 없는 오행이 들어오면 토(土) 문구로 폴백한다', () {
+      expect(readingFor(Interest.career, '알수없음'), readingFor(Interest.career, '토'));
+    });
+  });
+
+  group('mbtiCommentFor', () {
+    test('16개 유형 전부 서로 다른 코멘트를 갖는다', () {
+      const eiValues = MbtiEi.values;
+      const snValues = MbtiSn.values;
+      const tfValues = MbtiTf.values;
+      const jpValues = MbtiJp.values;
+
+      final codes = <String>{};
+      for (final ei in eiValues) {
+        for (final sn in snValues) {
+          for (final tf in tfValues) {
+            for (final jp in jpValues) {
+              codes.add(Mbti(ei: ei, sn: sn, tf: tf, jp: jp).code);
+            }
+          }
+        }
+      }
+
+      expect(codes.length, 16);
+      final comments = codes.map((code) => mbtiCommentFor(code)).toSet();
+      expect(comments.length, 16, reason: '16개 코드 전부 코멘트가 있어야 하고, 서로 달라야 한다');
+      expect(comments.contains(null), isFalse);
+    });
+
+    test('mbtiCode가 null이면 코멘트도 null이다(MBTI를 모르는 경우)', () {
+      expect(mbtiCommentFor(null), isNull);
+    });
+
+    test('INTJ는 실제로 정의된 코멘트를 반환한다', () {
+      const mbti = Mbti(ei: MbtiEi.i, sn: MbtiSn.n, tf: MbtiTf.t, jp: MbtiJp.j);
+      expect(mbti.code, 'INTJ');
+      expect(mbtiCommentFor(mbti.code), mbtiComments['INTJ']);
+      expect(mbtiCommentFor(mbti.code), isNotNull);
+    });
+  });
+}

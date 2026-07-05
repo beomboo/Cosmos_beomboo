@@ -62,6 +62,16 @@ void main() {
       );
     });
 
+    test('dominantOhaeng은 result_screen.dart에 있던 것과 동일한 동률 처리로 우세 오행을 고른다', () {
+      // dominantOhaeng은 원래 result_screen.dart 안에 있던
+      // `ohaengCount.entries.reduce((a,b) => a.value >= b.value ? a : b).key`를
+      // 여러 화면(결과/심층 분석)이 공유해서 쓰도록 FourPillars로 옮긴 것이다 —
+      // 옮기면서 동작이 바뀌지 않았는지, 이미 검증해둔 분포({목:2,화:0,토:2,금:3,수:1},
+      // 금이 유일한 최댓값이고 목·토가 동률 2인 케이스)로 다시 한번 값 자체를 확인한다.
+      final result = calculateFourPillars(birthDate: DateTime(1998, 8, 15), birthHour: 14);
+      expect(result.dominantOhaeng, '금');
+    });
+
     group('시주(時柱) 경계값 — 전통 시진 경계가 정확히 반영되는지', () {
       // 시진 경계: 자시 23~01시, 축시 01~03시, 인시 03~05시 ... 해시 21~23시.
       // 시주 지지 계산(((hour+1)~/2)%12)이 실제 이 경계와 맞는지 지금까지 직접

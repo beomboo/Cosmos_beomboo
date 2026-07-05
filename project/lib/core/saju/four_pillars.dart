@@ -26,6 +26,13 @@ class FourPillars {
     }
     return counts;
   }
+
+  /// [ohaengCount]에서 가장 개수가 많은 오행 하나(동률이면 먼저 나오는 쪽 — 목화토금수 순).
+  /// 결과 화면의 우세 오행 콜아웃·카테고리 풀이, 상세 리포트, 심층 분석 화면이 모두
+  /// 이 값을 공유해서 쓴다(전에는 result_screen.dart 안에 이 reduce 로직이 따로 있었는데,
+  /// 동률 처리 방식까지 포함해 이미 검증된 로직을 다른 화면에서 중복 구현하지 않도록 이쪽으로 옮김).
+  String get dominantOhaeng =>
+      ohaengCount.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
 }
 
 /// 생년월일시(양력 기준)로 사주팔자 네 기둥을 계산한다.

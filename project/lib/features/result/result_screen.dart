@@ -56,8 +56,7 @@ class _ResultScreenState extends State<ResultScreen> {
     );
     final ohaengCount = pillars.ohaengCount;
     final total = ohaengCount.values.fold<int>(0, (a, b) => a + b);
-    final dominant =
-        ohaengCount.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+    final dominant = pillars.dominantOhaeng;
     final callout = _ohaengCallout[dominant]!;
     final displayName =
         birthInfo.name?.trim().isNotEmpty == true ? birthInfo.name!.trim() : '회원님';
@@ -183,6 +182,18 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                     child: const Text(
                       '상세 리포트 보기 (무료)',
+                      style: TextStyle(color: AppColors.inkSoft, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pushNamed(
+                      AppRoutes.deepDiveInput,
+                      arguments: birthInfo,
+                    ),
+                    child: const Text(
+                      'MBTI·관심사로 심층 분석 받기 →',
                       style: TextStyle(color: AppColors.inkSoft, fontWeight: FontWeight.w600),
                     ),
                   ),

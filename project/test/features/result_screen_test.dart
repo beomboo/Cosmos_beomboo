@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:cosmos_saju/app/router.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
+import 'package:cosmos_saju/features/deep_dive/deep_dive_input_screen.dart';
 import 'package:cosmos_saju/features/result/result_screen.dart';
 
 void main() {
@@ -208,6 +210,46 @@ void main() {
       find.text('공유하는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('"MBTI·관심사로 심층 분석 받기"를 누르면 심층 분석 입력 화면으로 이동한다',
+      (WidgetTester tester) async {
+    // 새로 추가한 버튼이 "상세 리포트 보기" 버튼보다도 더 아래에 있어 기본
+    // 테스트 뷰포트(800x600)에서는 지연 빌드되어 탭할 수 없다 — 세로로 키운다.
+    final originalSize = tester.view.physicalSize;
+    final originalRatio = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(400, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalRatio;
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) {
+          if (settings.name == AppRoutes.deepDiveInput) {
+            return MaterialPageRoute(
+              builder: (_) => DeepDiveInputScreen(
+                birthInfo: settings.arguments as BirthInfo?,
+              ),
+            );
+          }
+          return MaterialPageRoute(
+            builder: (_) => const ResultScreen(),
+            settings: RouteSettings(
+              arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+            ),
+          );
+        },
+        initialRoute: '/',
+      ),
+    );
+
+    await tester.tap(find.text('MBTI·관심사로 심층 분석 받기 →'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DeepDiveInputScreen), findsOneWidget);
   });
 
   testWidgets('시간을 모르면 시주 카드가 "모름"으로 표시된다', (WidgetTester tester) async {

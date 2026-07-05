@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
+import 'package:cosmos_saju/features/deep_dive/deep_dive_info.dart';
+import 'package:cosmos_saju/features/deep_dive/deep_dive_readings.dart';
 import 'package:cosmos_saju/main.dart';
 
 void main() {
@@ -151,6 +153,52 @@ void main() {
 
       expect(findInResult('1998.08.15 · 오후 2시 30분生 · 양력 · 여성'), findsOneWidget);
       expect(findInResult('1990.03.01 · 오전 9시生 · 양력'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    '결과 화면부터 심층 분석 결과까지 실제 라우트로 이어서 진행하면 우세 오행 기준 풀이가 반영된다',
+    (WidgetTester tester) async {
+      // 지금까지 심층 분석 관련 테스트는 전부 개별 화면을 스텁 라우트나 직접 생성으로만
+      // 검증했을 뿐, CosmosSajuApp의 실제 AppRoutes.routes 배선을 그대로 타고
+      // 결과 화면 → 심층 분석 입력 → 심층 분석 결과까지 이어서 통과한 적은 없었다 —
+      // 각 구간이 개별로는 통과해도 실제 라우트 배선이나 인자 전달이 깨지는 회귀는
+      // 이런 전체 여정 테스트가 아니면 못 잡는다(온보딩→상세 리포트 여정 테스트와 같은 이유).
+      final originalSize = tester.view.physicalSize;
+      final originalRatio = tester.view.devicePixelRatio;
+      tester.view.physicalSize = const Size(400, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.physicalSize = originalSize;
+        tester.view.devicePixelRatio = originalRatio;
+      });
+
+      // 1998-08-15/14시는 이미 four_pillars_test.dart에서 우세 오행이 '금'으로
+      // 검증돼 있는 조합이라(목:2,화:0,토:2,금:3,수:1) 그대로 재사용한다.
+      await tester.pumpWidget(
+        CosmosSajuApp(
+          initialBirthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+        ),
+      );
+
+      await tester.tap(find.text('MBTI·관심사로 심층 분석 받기 →'));
+      await tester.pumpAndSettle();
+      expect(find.text('조금 더 깊이 볼까요?'), findsOneWidget);
+
+      // 관심사는 기본 전체 선택, MBTI는 입력하지 않고 그대로 제출한다.
+      await tester.tap(find.text('심층 분석 보기'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('회원님의 심층 분석 ✨'), findsOneWidget);
+      // 관심사 4개(연애·재물·직장·건강) 전부 우세 오행(금) 기준 풀이가 실제로 보인다.
+      for (final interest in Interest.values) {
+        expect(find.text(interest.categoryTitle), findsOneWidget);
+        expect(find.text(readingFor(interest, '금')), findsOneWidget);
+      }
+      // MBTI를 입력하지 않았으니 코멘트 영역은 없다.
+      for (final comment in mbtiComments.values) {
+        expect(find.textContaining(comment), findsNothing);
+      }
     },
   );
 }

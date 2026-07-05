@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cosmos_saju/app/router.dart';
 import 'package:cosmos_saju/features/birth_input/birth_input_screen.dart';
 import 'package:cosmos_saju/features/calculating/calculating_screen.dart';
+import 'package:cosmos_saju/features/deep_dive/deep_dive_input_screen.dart';
 import 'package:cosmos_saju/features/report/report_screen.dart';
 import 'package:cosmos_saju/features/result/result_screen.dart';
 
@@ -48,6 +49,14 @@ void main() {
       );
 
       expect(find.byType(ReportScreen), findsOneWidget);
+    });
+
+    testWidgets('deepDiveInput 경로는 DeepDiveInputScreen을 보여준다', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(routes: AppRoutes.routes, initialRoute: AppRoutes.deepDiveInput),
+      );
+
+      expect(find.byType(DeepDiveInputScreen), findsOneWidget);
     });
   });
 }

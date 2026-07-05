@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../features/birth_input/birth_input_screen.dart';
 import '../features/calculating/calculating_screen.dart';
+import '../features/deep_dive/deep_dive_input_screen.dart';
 import '../features/report/report_screen.dart';
 import '../features/result/result_screen.dart';
 
@@ -15,11 +16,13 @@ abstract final class AppRoutes {
   static const calculating = '/calculating';
   static const result = '/result';
   static const report = '/report';
+  static const deepDiveInput = '/deep-dive-input';
 
   static Map<String, WidgetBuilder> get routes => {
         birthInput: (_) => const BirthInputScreen(),
         calculating: (_) => const CalculatingScreen(),
         result: (_) => const ResultScreen(),
         report: (_) => const ReportScreen(),
+        deepDiveInput: (_) => const DeepDiveInputScreen(),
       };
 }
