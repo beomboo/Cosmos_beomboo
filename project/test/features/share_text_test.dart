@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cosmos_saju/core/saju/four_pillars.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
+import 'package:cosmos_saju/features/result/meta_line.dart';
 import 'package:cosmos_saju/features/result/share_text.dart';
 
 void main() {
@@ -31,6 +32,34 @@ void main() {
       expect(text, contains('時柱 ${pillars.hour!.label}'));
       expect(text, contains('木(목) 기운이 강한 타입이에요'));
       expect(text, contains('#사주랑 #사주팔자 #오행'));
+    });
+
+    test('태어난 시간(과 분)이 결과/리포트 화면과 동일한 형식으로 포함된다', () {
+      // buildShareText는 지금까지 날짜·양음력·성별·출생지만 자체적으로 조립하고
+      // meta_line.dart의 buildMetaLine과는 별개로 구현돼 있어서, 실제로는 태어난
+      // 시간(hour)이 공유 텍스트에 전혀 안 들어가고 있었다 — 화면(result/report/
+      // 심층 분석)은 전부 buildMetaLine을 재사용해 시간을 보여주는데, 유일하게 공유
+      // 텍스트만 시간이 빠진 채 나가고 있던 것. 특히 이미지 캡처가 실패해 텍스트만
+      // 단독으로 공유되는 폴백 상황에서는 사용자가 입력한 시간 정보가 아예 누락된
+      // 채 나가는 실제 결함이었다. buildMetaLine을 그대로 재사용하도록 고쳐 시간(및
+      // 분)이 화면과 똑같이 포함되는지 확인한다.
+      final birthInfo = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, minute: 30, isLunar: false);
+      final pillars = calculateFourPillars(birthDate: birthInfo.date, birthHour: birthInfo.hour);
+      final ohaengCount = pillars.ohaengCount;
+      final total = ohaengCount.values.fold<int>(0, (a, b) => a + b);
+
+      final text = buildShareText(
+        birthInfo: birthInfo,
+        pillars: pillars,
+        dominant: '목',
+        callout: ('木', '설명'),
+        ohaengCount: ohaengCount,
+        total: total,
+        displayName: '회원님',
+      );
+
+      expect(text, contains('오후 2시 30분生'));
+      expect(text, contains(buildMetaLine(birthInfo)));
     });
 
     test('태어난 곳을 입력했으면 텍스트에 포함된다', () {

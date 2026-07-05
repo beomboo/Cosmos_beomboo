@@ -1,5 +1,6 @@
 import '../../core/saju/four_pillars.dart';
 import '../birth_input/birth_info.dart';
+import 'meta_line.dart';
 
 /// 결과를 텍스트로 요약한다 (OS 공유 시트에 전달할 본문).
 /// `result_screen.dart`의 `_handleShare`에서 사용하며, `ShareCard`(이미지)와 함께
@@ -13,25 +14,16 @@ String buildShareText({
   required int total,
   required String displayName,
 }) {
-  final date =
-      '${birthInfo.date.year}.${birthInfo.date.month.toString().padLeft(2, '0')}.${birthInfo.date.day.toString().padLeft(2, '0')}';
   final pillarLine =
       '年柱 ${pillars.year.label} · 月柱 ${pillars.month.label} · 日柱 ${pillars.day.label}'
       '${pillars.hour != null ? ' · 時柱 ${pillars.hour!.label}' : ''}';
   final balanceLine = const ['목', '화', '토', '금', '수']
       .map((o) => '$o ${total == 0 ? 0 : (ohaengCount[o]! / total * 100).round()}%')
       .join(' · ');
-  final genderSuffix = switch (birthInfo.gender) {
-    Gender.female => ' · 여성',
-    Gender.male => ' · 남성',
-    null => '',
-  };
-  final placeSuffix =
-      birthInfo.birthPlace?.trim().isNotEmpty == true ? ' · ${birthInfo.birthPlace!.trim()}' : '';
 
   return '''
 ✨ $displayName의 사주팔자 ✨
-$date · ${birthInfo.isLunar ? '음력' : '양력'}$genderSuffix$placeSuffix
+${buildMetaLine(birthInfo)}
 
 $pillarLine
 
