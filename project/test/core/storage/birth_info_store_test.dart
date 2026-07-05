@@ -65,6 +65,25 @@ void main() {
       expect(await BirthInfoStore.load(), isNull);
     });
 
+    test('분(minute)도 함께 저장/복원된다', () async {
+      final info = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, minute: 37, isLunar: false);
+
+      await BirthInfoStore.save(info);
+      final loaded = await BirthInfoStore.load();
+
+      expect(loaded!.minute, 37);
+    });
+
+    test('minute을 넘기지 않으면(hour만 있음) null로 저장/복원된다', () async {
+      final info = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false);
+
+      await BirthInfoStore.save(info);
+      final loaded = await BirthInfoStore.load();
+
+      expect(loaded!.hour, 14);
+      expect(loaded.minute, isNull);
+    });
+
     test('다시 저장하면 이전 값을 덮어쓴다 (시간 있음 → 없음)', () async {
       await BirthInfoStore.save(BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false));
       await BirthInfoStore.save(BirthInfo(date: DateTime(2000, 1, 1), hour: null, isLunar: true));

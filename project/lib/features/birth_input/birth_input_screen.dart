@@ -72,6 +72,7 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
     final birthInfo = BirthInfo(
       date: _birthDate,
       hour: _timeUnknown ? null : _birthTime.hour,
+      minute: _timeUnknown ? null : _birthTime.minute,
       isLunar: _calendar == _Calendar.lunar,
       name: trimmedName.isEmpty ? null : trimmedName,
       birthPlace: trimmedBirthPlace.isEmpty ? null : trimmedBirthPlace,

@@ -8,6 +8,7 @@ class BirthInfo {
     required this.date,
     required this.hour,
     required this.isLunar,
+    this.minute,
     this.name,
     this.birthPlace,
     this.gender,
@@ -17,6 +18,11 @@ class BirthInfo {
 
   /// 0~23시. 태어난 시간을 모르면 null.
   final int? hour;
+
+  /// 0~59분. `hour`가 null(시간 모름)이면 이 값도 항상 null이다. `hour`는 알지만
+  /// `minute`이 null인 경우(예: 예전에 저장된 값, 직접 만든 테스트용 BirthInfo)도
+  /// 있을 수 있다 — 이럴 땐 분 없이 시(時) 단위까지만 표시한다.
+  final int? minute;
 
   final bool isLunar;
 

@@ -88,8 +88,9 @@ void main() {
             matching: find.text(text),
           );
       expect(findInResult('회원님의 사주팔자 ✨'), findsOneWidget);
-      // birth_input의 성별 기본값은 여성이라(이미 실제로 제출되는 값), 메타 라인에도 반영된다.
-      expect(findInResult('1998.08.15 · 오후 2시生 · 양력 · 여성'), findsOneWidget);
+      // birth_input의 성별 기본값은 여성이고 timePicker 기본값은 오후 2시 30분이라
+      // (둘 다 실제로 제출되는 값), 메타 라인에도 분까지 그대로 반영된다.
+      expect(findInResult('1998.08.15 · 오후 2시 30분生 · 양력 · 여성'), findsOneWidget);
       expect(findInResult('년주'), findsOneWidget);
       expect(findInResult('시주'), findsOneWidget);
 
@@ -99,7 +100,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('회원님의 상세 리포트'), findsOneWidget);
-      expect(find.text('1998.08.15 · 오후 2시生 · 양력 · 여성'), findsOneWidget);
+      expect(find.text('1998.08.15 · 오후 2시 30분生 · 양력 · 여성'), findsOneWidget);
       expect(find.text('명식 한 글자씩 뜯어보기'), findsOneWidget);
     },
   );
@@ -148,7 +149,7 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(findInResult('1998.08.15 · 오후 2시生 · 양력 · 여성'), findsOneWidget);
+      expect(findInResult('1998.08.15 · 오후 2시 30분生 · 양력 · 여성'), findsOneWidget);
       expect(findInResult('1990.03.01 · 오전 9시生 · 양력'), findsNothing);
     },
   );

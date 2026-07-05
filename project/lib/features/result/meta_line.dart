@@ -19,5 +19,9 @@ String buildMetaLine(BirthInfo info) {
   }
   final period = info.hour! < 12 ? '오전' : '오후';
   final hour12 = info.hour! % 12 == 0 ? 12 : info.hour! % 12;
-  return '$date · $period $hour12시生 · $calendarLabel$genderSuffix$placeSuffix';
+  // 분은 birth_input에서 실제로 고른 값이 있을 때만 붙인다 — minute이 null인
+  // 경우(예: 기존 방식으로 만든 BirthInfo)는 지금까지처럼 시(時) 단위까지만 표시한다.
+  final minuteSuffix =
+      info.minute != null ? ' ${info.minute!.toString().padLeft(2, '0')}분' : '';
+  return '$date · $period $hour12시$minuteSuffix生 · $calendarLabel$genderSuffix$placeSuffix';
 }

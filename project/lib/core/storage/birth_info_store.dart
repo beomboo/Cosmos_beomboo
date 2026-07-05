@@ -7,6 +7,7 @@ import '../../features/birth_input/birth_info.dart';
 abstract final class BirthInfoStore {
   static const _keyDate = 'birth_info.date_millis';
   static const _keyHour = 'birth_info.hour';
+  static const _keyMinute = 'birth_info.minute';
   static const _keyIsLunar = 'birth_info.is_lunar';
   static const _keyName = 'birth_info.name';
   static const _keyBirthPlace = 'birth_info.birth_place';
@@ -20,6 +21,11 @@ abstract final class BirthInfoStore {
       await prefs.setInt(_keyHour, info.hour!);
     } else {
       await prefs.remove(_keyHour);
+    }
+    if (info.minute != null) {
+      await prefs.setInt(_keyMinute, info.minute!);
+    } else {
+      await prefs.remove(_keyMinute);
     }
     if (info.name != null) {
       await prefs.setString(_keyName, info.name!);
@@ -49,6 +55,7 @@ abstract final class BirthInfoStore {
     return BirthInfo(
       date: DateTime.fromMillisecondsSinceEpoch(dateMillis),
       hour: prefs.getInt(_keyHour),
+      minute: prefs.getInt(_keyMinute),
       isLunar: prefs.getBool(_keyIsLunar) ?? false,
       name: prefs.getString(_keyName),
       birthPlace: prefs.getString(_keyBirthPlace),
@@ -62,6 +69,7 @@ abstract final class BirthInfoStore {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyDate);
     await prefs.remove(_keyHour);
+    await prefs.remove(_keyMinute);
     await prefs.remove(_keyIsLunar);
     await prefs.remove(_keyName);
     await prefs.remove(_keyBirthPlace);

@@ -102,8 +102,28 @@ void main() {
     expect(captured, isNotNull);
     expect(captured!.date, DateTime(1998, 8, 15));
     expect(captured!.hour, 14);
+    // timePicker 기본값(오후 2시 30분)의 "분"이 지금까지는 BirthInfo에 필드 자체가
+    // 없어서 제출 시 통째로 버려지고 있었다 — 목업 STEP 4 결과 화면이 "오후 2시
+    // 30분生"처럼 분까지 보여주는 것과 어긋나던 부분이라 minute 필드를 추가해 맞췄다.
+    expect(captured!.minute, 30);
     expect(captured!.isLunar, isFalse);
     expect(captured!.name, isNull);
+  });
+
+  testWidgets('"태어난 시간을 몰라요"를 체크하고 제출하면 hour·minute 모두 null로 전달된다', (tester) async {
+    await useTallViewport(tester);
+    BirthInfo? captured;
+    await tester.pumpWidget(buildApp(
+      onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
+    ));
+
+    await tester.tap(find.text('태어난 시간을 몰라요'));
+    await tester.pump();
+    await tester.tap(find.text('사주 보러가기 🔮'));
+    await tester.pumpAndSettle();
+
+    expect(captured!.hour, isNull);
+    expect(captured!.minute, isNull);
   });
 
   testWidgets('음력으로 바꾸고 제출하면 isLunar가 true로 전달된다', (tester) async {

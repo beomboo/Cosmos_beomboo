@@ -39,5 +39,33 @@ void main() {
 
       expect(buildMetaLine(info), '2000.01.01 · 오후 12시生 · 양력');
     });
+
+    test('minute이 있으면 목업(STEP 4 "오후 2시 30분生")과 동일하게 분까지 표시된다', () {
+      // birth_input의 timePicker는 분까지 고를 수 있고 입력 화면 pill에도
+      // "오후 2시 30분"처럼 분이 보이는데, 지금까지 BirthInfo에는 hour만 있고
+      // minute은 아예 없어서 제출 후에는 분 정보가 통째로 사라지고 있었다 — 목업
+      // STEP 4 결과 화면도 "오후 2시 30분生"처럼 분을 표시하도록 돼 있어 실제
+      // 목업과 다른 부분이었다. minute 필드 추가 후 정확히 반영되는지 확인한다.
+      final info = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, minute: 30, isLunar: false);
+
+      expect(buildMetaLine(info), '1998.08.15 · 오후 2시 30분生 · 양력');
+    });
+
+    test('minute이 한 자리 수(예: 5분)여도 두 자리로 0을 채워 표시한다', () {
+      final info = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, minute: 5, isLunar: false);
+
+      expect(buildMetaLine(info), '1998.08.15 · 오후 2시 05분生 · 양력');
+    });
+
+    test('hour는 있지만 minute이 없으면(예: 예전 저장값) 기존처럼 분 없이 표시된다', () {
+      // BirthInfo에 minute을 추가하면서 기존 호출부(테스트 fixture, 예전에 저장된
+      // 값 등)가 minute을 안 넘기는 경우와 호환이 깨지지 않는지 확인 — 위 "시간·성별·
+      // 출생지가 모두 있으면..." 테스트가 이미 암묵적으로 검증하고 있지만, 의도를
+      // 명시적으로 남겨둔다.
+      final info = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false);
+
+      expect(info.minute, isNull);
+      expect(buildMetaLine(info), '1998.08.15 · 오후 2시生 · 양력');
+    });
   });
 }
