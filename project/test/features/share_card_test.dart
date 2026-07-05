@@ -62,4 +62,41 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('공유하는 사람의 시스템 글자 크기를 키워도(2배) 카드 배율은 1.0으로 고정돼 넘치지 않는다',
+      (tester) async {
+    // 이 카드는 인스타 스토리 규격(360x640) 고정 픽셀 이미지로 캡처되는 용도라
+    // 공유자의 접근성 글자 크기 설정을 그대로 물려받으면 안 되는데, 실제로 앰비언트
+    // MediaQuery의 textScaler를 2배로 주고 캡처해보니 RenderFlex overflow(551px)가
+    // 재현되는 것을 확인했다 — 받는 사람은 어차피 보내는 사람의 접근성 설정과 무관하게
+    // 이미지를 보므로, 카드 내부에서 배율을 1.0으로 고정(`MediaQuery.withClampedTextScaling`)
+    // 해 항상 디자인대로 렌더링되도록 고쳤다. 이 테스트는 그 고정이 실제로 동작하는지,
+    // 즉 앰비언트 배율이 커져도 오류 없이 렌더링되는지 확인한다.
+    final pillars = calculateFourPillars(birthDate: DateTime(1998, 8, 15), birthHour: 14);
+    final ohaengCount = pillars.ohaengCount;
+    final total = ohaengCount.values.fold<int>(0, (a, b) => a + b);
+
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+        child: MaterialApp(
+          home: Scaffold(
+            body: ShareCard(
+              displayName: '민지',
+              metaLine: '1998.08.15 · 오후 2시生 · 양력',
+              pillars: pillars,
+              dominant: '목',
+              calloutHanja: '木',
+              calloutText: '새로운 걸 벌이는 힘이 넘치는 타입이에요 🌿',
+              ohaengCount: ohaengCount,
+              total: total,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
 }

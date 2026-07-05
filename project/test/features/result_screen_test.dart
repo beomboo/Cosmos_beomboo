@@ -402,4 +402,41 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getInt('birth_info.date_millis'), isNotNull);
   });
+
+  testWidgets('시스템 글자 크기를 크게(2배) 키워도 카테고리 카드에서 RenderFlex overflow가 나지 않는다',
+      (WidgetTester tester) async {
+    // "오늘 궁금한 것부터" 2x2 카드가 원래 GridView.count(childAspectRatio: 1.3)로
+    // 셀 높이가 고정돼 있었는데, 시스템 글자 크기를 키우면(접근성 큰 텍스트 — 일부
+    // 기기는 기본 제공 "큼" 설정만으로도 1.3배) 카드 안 텍스트가 그 고정 높이를
+    // 넘겨 RenderFlex overflow가 실제로 재현되는 것을 확인했다 — 지금까지는 어떤
+    // 테스트도 기본 배율(1.0) 외의 글자 크기로 이 화면을 렌더링해본 적이 없어서
+    // 이 회귀를 못 잡고 있었다. Row-of-Expanded(_PillarCard와 같은 패턴)로 고친
+    // 뒤 2배 배율에서도 예외 없이 렌더링되는지 확인한다.
+    final originalSize = tester.view.physicalSize;
+    final originalRatio = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(400, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalRatio;
+    });
+
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+        child: MaterialApp(
+          onGenerateRoute: (settings) => MaterialPageRoute(
+            builder: (_) => const ResultScreen(),
+            settings: RouteSettings(
+              arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+            ),
+          ),
+          initialRoute: '/',
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
 }

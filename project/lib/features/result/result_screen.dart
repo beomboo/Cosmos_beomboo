@@ -58,6 +58,7 @@ class _ResultScreenState extends State<ResultScreen> {
     final total = ohaengCount.values.fold<int>(0, (a, b) => a + b);
     final dominant = pillars.dominantOhaeng;
     final callout = _ohaengCallout[dominant]!;
+    final categories = categoryReadingsFor(dominant);
     final displayName =
         birthInfo.name?.trim().isNotEmpty == true ? birthInfo.name!.trim() : '회원님';
     final metaLine = buildMetaLine(birthInfo);
@@ -144,16 +145,39 @@ class _ResultScreenState extends State<ResultScreen> {
                   style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 15),
                 ),
                 const SizedBox(height: 12),
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 1.3,
+                // 이전엔 GridView.count(childAspectRatio: 1.3)로 셀 높이를 고정했는데,
+                // 시스템 글자 크기를 키우면(접근성 큰 텍스트, 일부 기기는 기본 "큼"
+                // 설정만으로도 1.3배) 카드 안 텍스트가 고정 높이를 넘겨 RenderFlex
+                // overflow가 실제로 재현됐다 — _PillarCard와 같은 Row-of-Expanded
+                // 패턴(높이가 내용에 맞춰 늘어남)으로 바꿔 어떤 글자 크기에서도 안 잘리게 한다.
+                Column(
                   children: [
-                    for (final category in categoryReadingsFor(dominant))
-                      _CategoryCard(category: category),
+                    // IntrinsicHeight로 Row 자체에 유한한 높이를 부여해야
+                    // crossAxisAlignment.stretch로 두 카드 높이를 맞출 수 있다
+                    // (Row가 ListView 안에서처럼 세로로 무한한 공간에 있으면
+                    // stretch만 단독으로 쓸 때 "BoxConstraints forces an infinite
+                    // height" 예외가 실제로 발생함).
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(child: _CategoryCard(category: categories[0])),
+                          const SizedBox(width: 12),
+                          Expanded(child: _CategoryCard(category: categories[1])),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(child: _CategoryCard(category: categories[2])),
+                          const SizedBox(width: 12),
+                          Expanded(child: _CategoryCard(category: categories[3])),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 28),
