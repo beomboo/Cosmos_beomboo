@@ -73,5 +73,17 @@ void main() {
         );
       },
     );
+
+    test(
+      'accent 배경 + accentInk(흰) 텍스트는 여전히 WCAG AA 미달이다 — 알려진 이슈, 사람 결정 대기 '
+      '(PROJECT_ROUTER.md/CLAUDE.md 참고). 브랜드 버튼뿐 아니라 PastelToggleRow의 선택된 '
+      '토글(성별·양력/음력)과 심층 분석 화면의 선택된 관심사 칩도 같은 조합을 쓴다 — 이 값이 '
+      '바뀌면(예: 팔레트 조정으로 우연히 통과) 이 테스트가 실패하면서 문서를 갱신할 시점을 알려준다.',
+      () {
+        final ratio = _contrastRatio(AppColors.accent, AppColors.accentInk);
+        expect(ratio, closeTo(2.72, 0.05));
+        expect(ratio, lessThan(4.5));
+      },
+    );
   });
 }

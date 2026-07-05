@@ -126,6 +126,10 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
               value: _calendar,
               options: const {_Calendar.solar: '양력', _Calendar.lunar: '음력'},
               onChanged: (v) => setState(() => _calendar = v),
+              // 이 토글은 위의 "태어난 날짜" _FieldLabel과 달리 전용 라벨이 따로
+              // 없어(목업도 같은 구조), 스크린 리더가 순서대로 안 읽고 곧장 이
+              // 버튼으로 이동하면 "양력/음력"이 뭘 고르는 건지 맥락이 없었다.
+              semanticLabel: '양력 또는 음력',
             ),
             const SizedBox(height: 20),
             _FieldLabel('태어난 시간'),
@@ -156,6 +160,7 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
               value: _gender,
               options: const {Gender.female: '여성', Gender.male: '남성'},
               onChanged: (v) => setState(() => _gender = v),
+              semanticLabel: '성별 선택',
             ),
             const SizedBox(height: 20),
             _FieldLabel('태어난 곳 (선택)'),
