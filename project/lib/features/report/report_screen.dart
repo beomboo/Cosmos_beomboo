@@ -1,0 +1,263 @@
+import 'package:flutter/material.dart';
+
+import '../../app/theme/app_colors.dart';
+import '../../core/saju/four_pillars.dart';
+import '../../core/saju/ganzhi.dart';
+import '../../shared/widgets/pastel_card.dart';
+import '../birth_input/birth_info.dart';
+import '../result/meta_line.dart';
+import '../result/ohaeng_readings.dart';
+
+/// 오행별 의미. 참고: docs/mockups/01-pastel-cute.html "오행 컬러 시스템" 섹션.
+const _ohaengMeaning = {
+  '목': ('木', '성장 · 시작 · 추진력', '새싹이 자라나는 이미지'),
+  '화': ('火', '열정 · 표현력 · 인기운', '따뜻한 온기의 이미지'),
+  '토': ('土', '안정 · 신뢰 · 중재', '땅에 발붙인 이미지'),
+  '금': ('金', '원칙 · 결단력 · 완성도', '정제된 금속의 이미지'),
+  '수': ('水', '지혜 · 유연함 · 통찰', '흐르는 물의 이미지'),
+};
+
+/// 상세 리포트 화면 — 결과 화면보다 한 단계 더 깊은 정보:
+/// 8자(또는 시주를 모르면 6자) 개별 오행 breakdown + 오행 5종 전체 의미 + 영역별 풀이 전체.
+/// 참고: docs/mockups/01-pastel-cute.html의 "상세 리포트 보기 (무료)" 링크.
+///
+/// **범위 한계**: docs/research의 "무료/유료 경계선" 설계를 실제 결제/구독 로직으로
+/// 구현한 것은 아니다. 지금은 전체를 무료로 보여주는 MVP 버전이며, 화면 하단에 그 사실을
+/// 명시한다.
+class ReportScreen extends StatelessWidget {
+  const ReportScreen({super.key, this.birthInfo});
+
+  final BirthInfo? birthInfo;
+
+  @override
+  Widget build(BuildContext context) {
+    final info = birthInfo ??
+        (ModalRoute.of(context)?.settings.arguments as BirthInfo?) ??
+        BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false);
+
+    final pillars = calculateFourPillars(birthDate: info.date, birthHour: info.hour);
+    final displayName =
+        info.name?.trim().isNotEmpty == true ? info.name!.trim() : '회원님';
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('상세 리포트')),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+          children: [
+            // 결과 화면에서 넘어왔을 때, 지금 보고 있는 리포트가 누구 걸 얼마나 자세히
+            // 보는 건지 문맥이 끊기지 않도록 결과 화면과 같은 헤더를 재사용한다.
+            Text(
+              '$displayName의 상세 리포트',
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                color: AppColors.ink,
+                fontSize: 20,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              buildMetaLine(info),
+              style: const TextStyle(color: AppColors.inkSoft, fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              '명식 한 글자씩 뜯어보기',
+              style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 16),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              '사주는 총 4개의 기둥, 각 기둥은 천간(위)과 지지(아래) 두 글자로 이루어져요.',
+              style: TextStyle(color: AppColors.inkSoft, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            _PillarBreakdownTable(pillars: pillars),
+            const SizedBox(height: 10),
+            const Text(
+              '※ 계산 정확도 안내: 년주는 입춘을 2월 4일로 고정해 근사하고, 월주는 정확한 절기 대신 '
+              '달력상의 월을 기준으로 계산해요. 일주는 날짜 차이만으로 계산돼 절기와 무관하게 정확하지만, '
+              '절기 경계에 걸친 생일은 정통 만세력과 며칠 차이가 날 수 있어요.',
+              style: TextStyle(color: AppColors.inkSoft, fontSize: 11, height: 1.5),
+            ),
+            const SizedBox(height: 32),
+            const Text(
+              '오행 五行 완전 정복',
+              style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            for (final ohaeng in const ['목', '화', '토', '금', '수'])
+              _OhaengMeaningCard(ohaeng: ohaeng),
+            const SizedBox(height: 32),
+            const Text(
+              '오행별 오늘의 풀이 모음',
+              style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 16),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              '결과 화면에서는 가장 우세한 오행 풀이만 보여드렸어요. 여기서는 5가지 오행의 풀이를 모두 볼 수 있어요.',
+              style: TextStyle(color: AppColors.inkSoft, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            for (final ohaeng in const ['목', '화', '토', '금', '수'])
+              _AllReadingsSection(ohaeng: ohaeng),
+            const SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.border.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Text(
+                '지금은 모든 내용을 무료로 볼 수 있어요. 더 깊은 개인 맞춤 해석은 추후 추가될 예정이에요.',
+                style: TextStyle(color: AppColors.inkSoft, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PillarBreakdownTable extends StatelessWidget {
+  const _PillarBreakdownTable({required this.pillars});
+
+  final FourPillars pillars;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = [
+      ('년주', pillars.year),
+      ('월주', pillars.month),
+      ('일주', pillars.day),
+      ('시주', pillars.hour),
+    ];
+
+    return PastelCard(
+      child: Column(
+        children: [
+          for (var i = 0; i < rows.length; i++) ...[
+            if (i > 0) const Divider(height: 24, color: AppColors.border),
+            _pillarRow(rows[i].$1, rows[i].$2),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _pillarRow(String label, GanzhiPillar? pillar) {
+    if (pillar == null) {
+      return Row(
+        children: [
+          SizedBox(width: 44, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.inkSoft))),
+          const Expanded(
+            child: Text('태어난 시간을 몰라 시주는 계산하지 않았어요', style: TextStyle(color: AppColors.inkSoft, fontSize: 12)),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        SizedBox(width: 44, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink))),
+        Expanded(child: _charCell('천간', pillar.stem, stemOhaeng(pillar.stemIndex))),
+        const SizedBox(width: 8),
+        Expanded(child: _charCell('지지', pillar.branch, branchOhaeng(pillar.branchIndex))),
+      ],
+    );
+  }
+
+  Widget _charCell(String kind, String hanja, String ohaeng) {
+    final color = AppColors.ohaengTextColors[ohaeng] ?? AppColors.ink;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.ohaengSoftColors[ohaeng],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          Text(hanja, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 15)),
+          const SizedBox(height: 2),
+          Text('$kind · $ohaeng', style: const TextStyle(fontSize: 10, color: AppColors.inkSoft)),
+        ],
+      ),
+    );
+  }
+}
+
+class _OhaengMeaningCard extends StatelessWidget {
+  const _OhaengMeaningCard({required this.ohaeng});
+
+  final String ohaeng;
+
+  @override
+  Widget build(BuildContext context) {
+    final meaning = _ohaengMeaning[ohaeng]!;
+    final color = AppColors.ohaengTextColors[ohaeng] ?? AppColors.ink;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: PastelCard(
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.ohaengSoftColors[ohaeng],
+                shape: BoxShape.circle,
+              ),
+              child: Text(meaning.$1, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 16)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('$ohaeng · ${meaning.$2}', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, fontSize: 13)),
+                  const SizedBox(height: 2),
+                  Text(meaning.$3, style: const TextStyle(fontSize: 12, color: AppColors.inkSoft)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AllReadingsSection extends StatelessWidget {
+  const _AllReadingsSection({required this.ohaeng});
+
+  final String ohaeng;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = AppColors.ohaengTextColors[ohaeng] ?? AppColors.ink;
+    final readings = categoryReadingsFor(ohaeng);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$ohaeng(${_ohaengMeaning[ohaeng]!.$1}) 기운이 강할 때',
+            style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 13),
+          ),
+          const SizedBox(height: 6),
+          for (final reading in readings)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Text(
+                '${reading.$1} ${reading.$2}: ${reading.$3}',
+                style: const TextStyle(fontSize: 12, color: AppColors.inkSoft),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
