@@ -1,6 +1,7 @@
 import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cosmos_saju/shared/widgets/pastel_toggle_row.dart';
@@ -88,6 +89,41 @@ void main() {
     );
 
     expect(find.bySemanticsLabel('양력 또는 음력'), findsNothing);
+
+    semantics.dispose();
+  });
+
+  testWidgets('스크린 리더의 탭 액션(SemanticsAction.tap)을 직접 실행해도 onChanged가 호출된다', (tester) async {
+    // 위의 다른 테스트들은 tester.tap()(실제 히트테스트)이나 flagsCollection(선택 상태)만
+    // 확인했을 뿐, "화면 훑기 후 두 번 탭"처럼 스크린 리더가 실제로 보내는
+    // SemanticsAction.tap 자체를 실행해서 onChanged까지 이어지는지는 검증한 적이
+    // 없었다. 이 위젯은 Semantics(excludeSemantics: true)로 InkWell의 자동 탭 액션을
+    // 대체하는 구조라(CLAUDE.md에도 남겨둔 실제 회귀 사례), onTap:을 다시 선언하는 걸
+    // 빠뜨려도 tester.tap()은 InkWell을 직접 히트테스트해 여전히 통과해버려 이
+    // 회귀를 못 잡는다 — 시맨틱 액션 경로를 별도로 검증해야 한다.
+    final semantics = tester.ensureSemantics();
+    _Option? tapped;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PastelToggleRow<_Option>(
+            value: _Option.a,
+            options: const {_Option.a: '양력', _Option.b: '음력'},
+            onChanged: (v) => tapped = v,
+          ),
+        ),
+      ),
+    );
+
+    final node = tester.getSemantics(find.text('음력'));
+    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+
+    // ignore: deprecated_member_use
+    tester.binding.pipelineOwner.semanticsOwner!.performAction(node.id, SemanticsAction.tap);
+    await tester.pump();
+
+    expect(tapped, _Option.b);
 
     semantics.dispose();
   });
