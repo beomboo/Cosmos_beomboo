@@ -148,23 +148,41 @@ class _PillarBreakdownTable extends StatelessWidget {
 
   Widget _pillarRow(String label, GanzhiPillar? pillar) {
     if (pillar == null) {
-      return Row(
-        children: [
-          SizedBox(width: 44, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.inkSoft))),
-          const Expanded(
-            child: Text('태어난 시간을 몰라 시주는 계산하지 않았어요', style: TextStyle(color: AppColors.inkSoft, fontSize: 12)),
-          ),
-        ],
+      return Semantics(
+        label: '$label. 태어난 시간을 몰라 계산하지 않았어요.',
+        excludeSemantics: true,
+        // 이 표는 년/월/일/시 4개 행이 한 Column 안에 나란히 있어, container 없이는
+        // 이웃 행의 시맨틱스와 하나로 합쳐진다 — 행마다 독립된 노드가 되도록 한다.
+        container: true,
+        child: Row(
+          children: [
+            SizedBox(width: 44, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.inkSoft))),
+            const Expanded(
+              child: Text('태어난 시간을 몰라 시주는 계산하지 않았어요', style: TextStyle(color: AppColors.inkSoft, fontSize: 12)),
+            ),
+          ],
+        ),
       );
     }
 
-    return Row(
-      children: [
-        SizedBox(width: 44, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink))),
-        Expanded(child: _charCell('천간', pillar.stem, stemOhaeng(pillar.stemIndex))),
-        const SizedBox(width: 8),
-        Expanded(child: _charCell('지지', pillar.branch, branchOhaeng(pillar.branchIndex))),
-      ],
+    // 시각적으로는 "년주" 옆에 천간/지지 두 칸(글자+오행 라벨)이 나란히 있지만,
+    // 스크린 리더가 그대로 4개 노드를 따로 읽으면 어느 기둥의 어느 글자인지
+    // 맥락 없이 흩어져 들린다 — 한 문장으로 병합해 순서·소속을 분명히 한다.
+    final semanticLabel = '$label. 천간 ${pillar.stem}, 오행 ${stemOhaeng(pillar.stemIndex)}. '
+        '지지 ${pillar.branch}, 오행 ${branchOhaeng(pillar.branchIndex)}.';
+
+    return Semantics(
+      label: semanticLabel,
+      excludeSemantics: true,
+      container: true,
+      child: Row(
+        children: [
+          SizedBox(width: 44, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink))),
+          Expanded(child: _charCell('천간', pillar.stem, stemOhaeng(pillar.stemIndex))),
+          const SizedBox(width: 8),
+          Expanded(child: _charCell('지지', pillar.branch, branchOhaeng(pillar.branchIndex))),
+        ],
+      ),
     );
   }
 

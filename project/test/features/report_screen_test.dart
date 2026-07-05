@@ -78,6 +78,50 @@ void main() {
     expect(find.text('지지 · 토'), findsOneWidget); // 시주 미
   });
 
+  testWidgets('명식 breakdown 행이 스크린 리더에 "기둥 · 천간/지지 · 오행"이 하나로 병합된 문장으로 들린다',
+      (tester) async {
+    // _pillarRow가 년주 라벨 + 천간 칸(글자+오행) + 지지 칸(글자+오행)을 시각적으로는
+    // 나란히 보여주지만, Semantics로 묶지 않으면 스크린 리더가 4개 텍스트 노드를
+    // 따로따로 읽어 어느 기둥의 어느 글자인지 맥락이 끊긴다 — 지금까지 이 표의 실제
+    // 계산값(한자·오행 라벨)은 검증했지만 스크린 리더 접근성은 검증한 적이 없었다.
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportScreen(
+          birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+        ),
+      ),
+    );
+
+    // 년주 무인(戊寅) — 천간 무(토), 지지 인(목)
+    expect(
+      tester.getSemantics(find.text('무')),
+      matchesSemantics(label: '년주. 천간 무, 오행 토. 지지 인, 오행 목.'),
+    );
+
+    semantics.dispose();
+  });
+
+  testWidgets('시간을 모르면 시주 breakdown 행도 하나의 안내 문장으로 병합된다', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportScreen(
+          birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: null, isLunar: false),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getSemantics(find.text('시주')),
+      matchesSemantics(label: '시주. 태어난 시간을 몰라 계산하지 않았어요.'),
+    );
+
+    semantics.dispose();
+  });
+
   testWidgets('이름과 메타 라인이 결과 화면과 같은 형식으로 헤더에 표시된다', (tester) async {
     await useTallViewport(tester);
     await tester.pumpWidget(

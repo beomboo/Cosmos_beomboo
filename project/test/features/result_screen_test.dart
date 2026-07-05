@@ -103,6 +103,61 @@ void main() {
     expect(findInBody('원칙적이고 맺고 끊음이 확실한 타입이에요'), findsOneWidget); // 금 성격
   });
 
+  testWidgets('4기둥 카드는 스크린 리더에 "기둥이름 + 값" 순서로 병합된 시맨틱스를 제공한다',
+      (WidgetTester tester) async {
+    // _PillarCard는 시각적으로 값("갑자")이 위, 기둥 이름("년주")이 아래로 보이는데,
+    // Semantics로 감싸지 않으면 스크린 리더가 그 화면 순서 그대로 "갑자" → "년주"를
+    // 따로 읽어 값을 먼저 들려주는 맥락 없는 안내가 된다 — 이 점이 지금까지 한 번도
+    // 검증된 적이 없었다. "년주 무인"처럼 이름이 먼저 오는 순서로 병합됐는지 확인한다.
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    expect(
+      tester.getSemantics(findInBody('무인')),
+      matchesSemantics(label: '년주 무인'),
+    );
+    expect(
+      tester.getSemantics(findInBody('신미')),
+      matchesSemantics(label: '시주 신미'),
+    );
+
+    semantics.dispose();
+  });
+
+  testWidgets('시주를 모르면 4기둥 카드 시맨틱스도 "시주 모름"으로 병합된다', (WidgetTester tester) async {
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: null, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    expect(
+      tester.getSemantics(findInBody('모름')),
+      matchesSemantics(label: '시주 모름'),
+    );
+
+    semantics.dispose();
+  });
+
   testWidgets('시간을 모르면 시주 카드가 "모름"으로 표시된다', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(

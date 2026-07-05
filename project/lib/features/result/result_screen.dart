@@ -335,17 +335,28 @@ class _PillarCard extends StatelessWidget {
         : (AppColors.ohaengTextColors[stemOhaeng(pillar!.stemIndex)] ?? AppColors.ink);
 
     return Expanded(
-      child: PastelCard(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Column(
-          children: [
-            Text(
-              pillar?.label ?? '모름',
-              style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 15),
-            ),
-            const SizedBox(height: 6),
-            Text(label, style: const TextStyle(fontSize: 11, color: AppColors.inkSoft)),
-          ],
+      // 시각적으로는 값(예: "갑자")이 위, 기둥 이름("년주")이 아래 순서로 보이지만,
+      // 스크린 리더가 그 순서 그대로 두 노드를 따로 읽으면 "갑자, 년주"처럼 값을
+      // 먼저 들려줘 맥락 없이 혼란스럽다 — "년주 갑자"로 순서를 바로잡아 병합한다.
+      child: Semantics(
+        label: '$label ${pillar?.label ?? "모름"}',
+        excludeSemantics: true,
+        // 4기둥 카드가 한 Row 안에 나란히 있어, container 없이는 이웃 카드의
+        // 시맨틱스와 하나로 합쳐져 "년주 무인\n월주 경신\n..."처럼 뭉개진다 —
+        // 카드마다 독립된 시맨틱스 노드가 되도록 경계를 명시한다.
+        container: true,
+        child: PastelCard(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Column(
+            children: [
+              Text(
+                pillar?.label ?? '모름',
+                style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 15),
+              ),
+              const SizedBox(height: 6),
+              Text(label, style: const TextStyle(fontSize: 11, color: AppColors.inkSoft)),
+            ],
+          ),
         ),
       ),
     );
