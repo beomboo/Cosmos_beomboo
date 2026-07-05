@@ -158,6 +158,58 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('"공유하기"를 눌렀을 때 공유 시트가 실패하면 스낵바로 알려준다', (WidgetTester tester) async {
+    // _handleShare는 이미지 캡처 실패는 try/catch로 잡아 텍스트 폴백을 하고,
+    // SharePlus.instance.share() 자체가 실패해도 스낵바를 띄우도록 구현돼 있다.
+    // 하지만 지금까지는 "SharePlus가 싱글턴이라 자동 테스트 범위 밖(수동 검증만
+    // 가능)"이라고 판단해 실제로 버튼을 눌러보는 테스트가 하나도 없었다 — 실제로
+    // 위젯 테스트 환경에서 share_plus의 플랫폼 채널에 목(mock) 핸들러가 없으면
+    // MissingPluginException이 발생하는데, 이게 바로 우리가 대비하려던 "공유 시트
+    // 자체 실패" 상황과 동일해서 실제로 재현·검증이 가능하다는 걸 이번에 확인했다.
+    // 화면 하단 버튼을 찾으려면(긴 리스트라 기본 뷰포트보다 큼) 뷰포트를 세로로
+    // 키워야 하고, RenderRepaintBoundary.toImage() 캡처가 실제 엔진 콜백을
+    // 기다려야 해서 tester.runAsync()로 감싸야 한다(둘 다 CLAUDE.md에 기록된
+    // 기존 함정과 동일한 이유).
+    final originalSize = tester.view.physicalSize;
+    final originalRatio = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(400, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalRatio;
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    // 실제 이미지 캡처(RenderRepaintBoundary.toImage()) + 실패하는 플랫폼 채널
+    // 왕복까지 실제 시간(wall-clock)이 걸리는 작업이라, 시스템 부하가 높을 때
+    // 300ms로는 부족해 스낵바가 아직 안 뜬 상태에서 검사해버리는 걸 실제로
+    // 확인했다(고정된 짧은 지연은 느린 환경에서 간헐적 실패를 유발함) — 여유 있게
+    // 늘려서 실제 작업이 끝날 시간을 넉넉히 확보한다.
+    await tester.runAsync(() async {
+      await tester.tap(find.text('📸 공유하기'));
+      await tester.pump();
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1000));
+
+    expect(
+      find.text('공유하는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('시간을 모르면 시주 카드가 "모름"으로 표시된다', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
