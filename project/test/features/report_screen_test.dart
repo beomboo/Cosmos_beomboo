@@ -34,6 +34,15 @@ void main() {
     expect(find.text('명식 한 글자씩 뜯어보기'), findsOneWidget);
     expect(find.text('오행 五行 완전 정복'), findsOneWidget);
     expect(find.textContaining('계산 정확도 안내'), findsOneWidget);
+    // 2026-07-06 리서치로 자시 관법(splitJasi 등과 다른 midnight 관법 채택)과 진태양시
+    // 미보정(출생지 경도·균시차 보정 없음)이라는 두 가지 추가 정확도 한계를 새로 문서화했는데,
+    // 지금까지 절기 근사만 안내하고 이 두 가지는 사용자에게 전혀 알리지 않고 있었다 —
+    // 실제 안내 문구에 반영됐는지 확인한다.
+    expect(find.textContaining('진태양시'), findsOneWidget);
+    expect(find.textContaining('자시'), findsOneWidget);
+    // 2026-07-06 추가 발견: 음력 입력을 양력으로 변환하지 않고 그대로 계산에 쓴다는
+    // 한계도 상세 리포트 안내 문구에 함께 반영됐는지 확인한다.
+    expect(find.textContaining('음력'), findsOneWidget);
     // 오행 5종 의미 카드가 모두 렌더링되는지 (결과 화면과 달리 우세 오행 하나가 아니라 5개 전부)
     expect(find.textContaining('목 · 성장'), findsOneWidget);
     expect(find.textContaining('화 · 열정'), findsOneWidget);
@@ -194,5 +203,28 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('상세 리포트'), findsOneWidget);
+  });
+
+  testWidgets('시스템 글자 크기를 크게(2배) 키워도 RenderFlex overflow가 나지 않는다', (tester) async {
+    // result_screen.dart(카테고리 그리드)·share_card.dart에서 실제로 겪었던 고정
+    // 높이+큰 글자 조합 RenderFlex overflow가 이 화면에도 있는지 지금까지 확인한
+    // 적이 없었다 — _OhaengMeaningCard의 40x40 고정 크기 원형 배지처럼 눈여겨볼
+    // 만한 고정 크기 요소가 있어 검증해봤으나, Container는 Row/Column과 달리
+    // 내용이 넘쳐도 조용히 잘릴 뿐 RenderFlex 예외를 던지지 않아 실제로는
+    // 재현되지 않음을 확인(코드 변경 없이 회귀 방지용으로 고정).
+    await useTallViewport(tester);
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+        child: MaterialApp(
+          home: ReportScreen(
+            birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
   });
 }
