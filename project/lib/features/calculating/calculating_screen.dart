@@ -94,12 +94,26 @@ class _CalculatingScreenState extends State<CalculatingScreen>
                     return Stack(
                       alignment: Alignment.center,
                       children: [
+                        // 목업(docs/mockups/01-pastel-cute.html)의 `.orbit .moon`은 단색
+                        // 원이 아니라 흰색→earthSoft→earth로 이어지는 방사형 그라데이션에
+                        // accentSoft 톤의 은은한 링 섀도가 둘러싼 "달" 모양인데, 지금까지는
+                        // 단색 accentSoft 원으로만 구현돼 있었다(2026-07-06 대조 발견).
                         Container(
                           width: 72,
                           height: 72,
-                          decoration: const BoxDecoration(
-                            color: AppColors.accentSoft,
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              center: const Alignment(-0.36, -0.4),
+                              colors: [Colors.white, AppColors.earthSoft, AppColors.earth],
+                              stops: const [0.0, 0.55, 1.0],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.accentSoft.withValues(alpha: 0.7),
+                                spreadRadius: 10,
+                              ),
+                            ],
                           ),
                         ),
                         for (var i = 0; i < _orbitEmojis.length; i++)
@@ -123,15 +137,37 @@ class _CalculatingScreenState extends State<CalculatingScreen>
                 ),
               ),
               const SizedBox(height: 20),
+              // 목업의 `.progress-fill`은 단색이 아니라 공유 버튼(share_btn)과 같은
+              // accent→metal 그라데이션을 쓴다(2026-07-06 대조 발견) — LinearProgressIndicator는
+              // 배경/진행 막대를 한 위젯이 통째로 그려서 ShaderMask를 그냥 씌우면 배경 트랙까지
+              // 같이 물들어버리므로, 배경 트랙은 별도 Container로 먼저 그리고 그 위에 진행
+              // 막대만(배경을 투명하게) ShaderMask로 감싸 그라데이션을 입힌다.
               SizedBox(
                 width: 160,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    minHeight: 6,
-                    backgroundColor: AppColors.border,
-                    valueColor: const AlwaysStoppedAnimation(AppColors.accent),
-                  ),
+                child: Stack(
+                  children: [
+                    Container(
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: ShaderMask(
+                        blendMode: BlendMode.srcIn,
+                        shaderCallback: (rect) => const LinearGradient(
+                          colors: [AppColors.accent, AppColors.metal],
+                        ).createShader(rect),
+                        child: LinearProgressIndicator(
+                          minHeight: 6,
+                          backgroundColor: Colors.transparent,
+                          valueColor: const AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cosmos_saju/app/router.dart';
+import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
 import 'package:cosmos_saju/features/calculating/calculating_screen.dart';
 
@@ -32,6 +33,35 @@ void main() {
     // 화면을 옮기지 않은 채 테스트를 끝내면 내부 Future.delayed(3초) 타이머가
     // pending 상태로 남아 "A Timer is still pending" 오류가 나므로, 미리 3초를
     // 흘려보내 타이머가 발화(→ result로 이동)하도록 만든 뒤 테스트를 마친다.
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump();
+  });
+
+  testWidgets('"달"이 목업대로 흰색→earthSoft→earth 방사형 그라데이션을 쓴다', (tester) async {
+    // 2026-07-06에 단색 accentSoft 원에서 방사형 그라데이션으로 고쳤는데, 그 뒤로도
+    // 실제 그라데이션 색상 값을 확인하는 테스트는 없었다.
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) {
+          if (settings.name == AppRoutes.result) {
+            return MaterialPageRoute(
+              builder: (_) => const Scaffold(body: Text('RESULT_STUB')),
+              settings: settings,
+            );
+          }
+          return MaterialPageRoute(builder: (_) => const CalculatingScreen());
+        },
+        initialRoute: '/',
+      ),
+    );
+    await tester.pump();
+
+    final moonContainer = tester.widgetList<Container>(find.byType(Container)).firstWhere(
+          (c) => (c.decoration as BoxDecoration?)?.gradient is RadialGradient,
+        );
+    final gradient = (moonContainer.decoration! as BoxDecoration).gradient! as RadialGradient;
+    expect(gradient.colors, [Colors.white, AppColors.earthSoft, AppColors.earth]);
+
     await tester.pump(const Duration(seconds: 3));
     await tester.pump();
   });
