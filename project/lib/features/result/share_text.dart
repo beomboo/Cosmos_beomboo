@@ -9,7 +9,7 @@ String buildShareText({
   required BirthInfo birthInfo,
   required FourPillars pillars,
   required String dominant,
-  required (String, String) callout,
+  required (String, String, String) callout,
   required Map<String, int> ohaengCount,
   required int total,
   required String displayName,
@@ -27,8 +27,8 @@ ${buildMetaLine(birthInfo)}
 
 $pillarLine
 
-${callout.$1}($dominant) 기운이 강한 타입이에요
-${callout.$2}
+$dominant(${callout.$1}) 기운이 강한 타입이에요 ${callout.$2}
+${callout.$3}
 
 오행 밸런스: $balanceLine
 

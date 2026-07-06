@@ -10,6 +10,7 @@ import '../../app/theme/app_colors.dart';
 import '../../core/saju/four_pillars.dart';
 import '../../core/saju/ganzhi.dart';
 import '../../core/storage/birth_info_store.dart';
+import '../../core/storage/deep_dive_info_store.dart';
 import '../../shared/widgets/pastel_card.dart';
 import '../birth_input/birth_info.dart';
 import '../birth_input/birth_input_screen.dart';
@@ -20,11 +21,11 @@ import 'share_text.dart';
 
 /// 오행 한자 + 설명 (docs/mockups/01-pastel-cute.html "오행 컬러 시스템" 참고)
 const _ohaengCallout = {
-  '목': ('木', '새로운 걸 벌이는 힘이 넘치는 타입이에요 🌿'),
-  '화': ('火', '표현력과 인기운이 좋은 타입이에요 🔥'),
-  '토': ('土', '안정감 있고 신뢰를 주는 타입이에요 🪵'),
-  '금': ('金', '원칙적이고 결단력 있는 타입이에요 ✨'),
-  '수': ('水', '유연하고 통찰력이 뛰어난 타입이에요 💧'),
+  '목': ('木', '🌿', '새로운 걸 벌이는 힘이 넘쳐요'),
+  '화': ('火', '🔥', '표현력과 인기운이 좋아요'),
+  '토': ('土', '🪵', '안정감 있고 신뢰를 줘요'),
+  '금': ('金', '✨', '원칙적이고 결단력 있어요'),
+  '수': ('水', '💧', '유연하고 통찰력이 뛰어나요'),
 };
 
 /// 사주 결과 화면 — 4기둥 명식 + 오행 밸런스 바 차트 + 영역별 풀이 + 공유.
@@ -100,18 +101,24 @@ class _ResultScreenState extends State<ResultScreen> {
                   style: TextStyle(color: AppColors.inkSoft, fontSize: 11),
                 ),
                 const SizedBox(height: 20),
+                // 목업(`.callout`)은 배경/글자색이 고정된 accentSoft/ink가 아니라, 그 화면의
+                // 우세 오행 색으로 물든다(데모가 목(木)이 우세라 wood-soft 배경으로 보였을
+                // 뿐, 화/토/금/수가 우세면 각각 그 색으로 바뀌어야 함) — 지금까지는 어떤
+                // 오행이 우세하든 항상 같은 accentSoft/ink만 써서 이 색 연동을 놓치고
+                // 있었다(2026-07-06 대조 발견). ohaengTextColors는 이미 ohaengSoftColors
+                // 배경 위에서 WCAG AA를 만족하도록 설계돼 있어 그대로 재사용 가능.
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.accentSoft,
-                    borderRadius: BorderRadius.circular(20),
+                    color: AppColors.ohaengSoftColors[dominant] ?? AppColors.accentSoft,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    '${callout.$1}($dominant) 기운이 강한 타입이에요\n${callout.$2}',
-                    style: const TextStyle(
+                    '$dominant(${callout.$1}) 기운이 강한 타입이에요 ${callout.$2}\n${callout.$3}',
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.ink,
+                      color: AppColors.ohaengTextColors[dominant] ?? AppColors.ink,
                       height: 1.4,
                     ),
                   ),
@@ -181,20 +188,42 @@ class _ResultScreenState extends State<ResultScreen> {
                   ],
                 ),
                 const SizedBox(height: 28),
+                // 목업(docs/mockups/01-pastel-cute.html)의 "공유하기" 버튼(`.share-btn`)은
+                // 다른 CTA 버튼과 달리 단색이 아니라 accent→metal 그라데이션을 쓴다 — 다른
+                // 버튼과 시각적으로 구분되는 이 화면의 유일한 그라데이션 버튼이라 놓치기
+                // 쉬웠음(2026-07-06 대조 발견). ElevatedButton 자체는 backgroundColor를
+                // 못 그라데이션으로 못 받아 Container로 감싸 배경을 대신 그린다.
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => _handleShare(
-                      birthInfo: birthInfo,
-                      pillars: pillars,
-                      dominant: dominant,
-                      callout: callout,
-                      ohaengCount: ohaengCount,
-                      total: total,
-                      displayName: displayName,
-                      metaLine: metaLine,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [AppColors.accent, AppColors.metal],
+                      ),
+                      borderRadius: BorderRadius.circular(15),
                     ),
-                    child: const Text('📸 공유하기'),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        elevation: 0,
+                        foregroundColor: AppColors.accentInk,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      ),
+                      onPressed: () => _handleShare(
+                        birthInfo: birthInfo,
+                        pillars: pillars,
+                        dominant: dominant,
+                        callout: callout,
+                        ohaengCount: ohaengCount,
+                        total: total,
+                        displayName: displayName,
+                        metaLine: metaLine,
+                      ),
+                      child: const Text('📸 공유하기'),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -206,7 +235,16 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                     child: const Text(
                       '상세 리포트 보기 (무료)',
-                      style: TextStyle(color: AppColors.inkSoft, fontWeight: FontWeight.w600),
+                      // 목업(`.report-link`)은 이 문구를 밑줄 있는 링크로 보여주는데,
+                      // 지금까지는 밑줄 없는 일반 버튼 텍스트였다(2026-07-06 대조 발견) —
+                      // 밑줄을 추가하고 목업 값(11px/700)에 맞춰 크기·굵기도 조정.
+                      style: TextStyle(
+                        color: AppColors.inkSoft,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppColors.inkSoft,
+                      ),
                     ),
                   ),
                 ),
@@ -237,7 +275,8 @@ class _ResultScreenState extends State<ResultScreen> {
                   pillars: pillars,
                   dominant: dominant,
                   calloutHanja: callout.$1,
-                  calloutText: callout.$2,
+                  calloutEmoji: callout.$2,
+                  calloutText: callout.$3,
                   ohaengCount: ohaengCount,
                   total: total,
                 ),
@@ -275,6 +314,11 @@ class _ResultScreenState extends State<ResultScreen> {
     // 화면 전환은 항상 진행한다.
     try {
       await BirthInfoStore.clear();
+      // "처음부터 다시 입력하게 돼요"라고 안내하면서 DeepDiveInfoStore(MBTI·관심사)는
+      // 그대로 남겨두면, 완전히 다른 사람이 새로 입력한 뒤 심층 분석에 들어갔을 때
+      // 이전 사람의 MBTI·관심사 선택이 그대로 다시 나타나는 실제 버그가 된다 — 다이얼로그의
+      // 약속대로 두 저장소를 함께 지운다.
+      await DeepDiveInfoStore.clear();
     } catch (_) {
       // 무시
     }
@@ -291,7 +335,7 @@ class _ResultScreenState extends State<ResultScreen> {
     required BirthInfo birthInfo,
     required FourPillars pillars,
     required String dominant,
-    required (String, String) callout,
+    required (String, String, String) callout,
     required Map<String, int> ohaengCount,
     required int total,
     required String displayName,
@@ -407,13 +451,19 @@ class _OhaengBarRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = AppColors.ohaengTextColors[ohaeng] ?? AppColors.ink;
+    // 목업(오행 밸런스 바 `.bar-row .tag`)은 한글(목/화/토/금/수)이 아니라 한자
+    // (木/火/土/金/水)로 표시한다 — report_screen.dart의 오행 뜻풀이 배지도 이미
+    // 같은 이유로 한자를 쓰고 있어(뱃지처럼 짧게 보여줄 땐 한자, 풀어 쓰는 문장에는
+    // 한글이라는 기존 관례와도 일치함, 2026-07-06 대조 발견) `_ohaengCallout`의
+    // 한자 값을 그대로 재사용한다(색상/집계 등 실제 로직은 한글 `ohaeng`를 그대로 씀).
+    final hanja = _ohaengCallout[ohaeng]?.$1 ?? ohaeng;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
           SizedBox(
             width: 20,
-            child: Text(ohaeng, style: TextStyle(fontWeight: FontWeight.w800, color: color)),
+            child: Text(hanja, style: TextStyle(fontWeight: FontWeight.w800, color: color)),
           ),
           const SizedBox(width: 8),
           Expanded(

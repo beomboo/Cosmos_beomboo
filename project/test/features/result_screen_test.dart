@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:cosmos_saju/app/router.dart';
+import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_input_screen.dart';
 import 'package:cosmos_saju/features/result/result_screen.dart';
@@ -42,6 +43,43 @@ void main() {
     expect(findInBody('※ 절기 계산 없이 근사치로 계산한 간이 결과예요'), findsOneWidget);
   });
 
+  testWidgets('"공유하기" 버튼이 목업대로 accent→metal 그라데이션 배경을 쓴다', (WidgetTester tester) async {
+    // 2026-07-06에 이 버튼을 단색 accent에서 accent→metal 그라데이션으로 고쳤는데,
+    // 그 뒤로도 실제 그라데이션 색상 값을 확인하는 테스트는 없었다 — 버튼 문구·onPressed
+    // 동작은 안 바뀌므로 그런 테스트들은 그라데이션이 실수로 다시 단색으로 되돌아가도
+    // 못 잡는다. 버튼이 긴 리스트 아래쪽에 있어(기본 뷰포트로는 지연 빌드돼 못 찾음)
+    // 뷰포트를 세로로 키운다.
+    final originalSize = tester.view.physicalSize;
+    final originalRatio = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(400, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalRatio;
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    final shareButtonContainer = tester.widget<Container>(
+      find.ancestor(
+        of: find.widgetWithText(ElevatedButton, '📸 공유하기'),
+        matching: find.byType(Container),
+      ).first,
+    );
+    final gradient = (shareButtonContainer.decoration! as BoxDecoration).gradient! as LinearGradient;
+    expect(gradient.colors, [AppColors.accent, AppColors.metal]);
+  });
+
   testWidgets('4기둥 명식과 오행 밸런스 퍼센트가 실제 계산값과 정확히 일치하는 값으로 화면에 보인다',
       (WidgetTester tester) async {
     // share_text_test.dart에서는 공유 텍스트의 퍼센트 줄을 정확한 값으로 검증했지만,
@@ -74,6 +112,43 @@ void main() {
     expect(findInBody('13%'), findsOneWidget); // 수
   });
 
+  testWidgets(
+      '2026-07-06 발견: 음력으로 입력해도 양력 변환 없이 같은 날짜로 계산돼 4기둥이 동일하다 (알려진 한계, 회귀 고정용)',
+      (WidgetTester tester) async {
+    // four_pillars.dart의 calculateFourPillars()는 isLunar 파라미터 자체를 받지 않고
+    // birthDate를 무조건 양력으로 취급한다 — 지금까지 이 프로젝트의 모든 위젯 테스트가
+    // isLunar: false만 써왔기 때문에, 음력을 선택해도 결과 화면의 4기둥이 (변환되지 않고)
+    // 양력으로 입력했을 때와 완전히 똑같이 나온다는 것을 값으로 확인한 적이 한 번도 없었다.
+    // 이 테스트는 버그를 고치는 게 아니라 "지금 이렇게 동작한다"는 것을 고정해두는 것 —
+    // 실제 음력→양력 변환 포팅은 절기 근사·자시 관법·진태양시 미보정과 같은 사람 결정 대기 항목.
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: true),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    // isLunar: false일 때와 정확히 같은 4주(년주 무인, 월주 경신, 일주 갑자, 시주 신미).
+    expect(findInBody('무인'), findsOneWidget);
+    expect(findInBody('경신'), findsOneWidget);
+    expect(findInBody('갑자'), findsOneWidget);
+    expect(findInBody('신미'), findsOneWidget);
+
+    // 메타 라인에는 "음력" 라벨만 반영되고(표시상의 차이), 계산 자체는 바뀌지 않는다.
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('resultScrollView')),
+        matching: find.textContaining('음력'),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('우세 오행(dominant) 선정과 그에 맞는 콜아웃·카테고리 풀이가 실제로 정확하다',
       (WidgetTester tester) async {
     // 결과 화면에서 어떤 오행이 "우세하다"고 뽑혀서 콜아웃 문구·카테고리 풀이(연애·재물·
@@ -96,13 +171,25 @@ void main() {
     );
 
     expect(
-      findInBody('金(금) 기운이 강한 타입이에요\n원칙적이고 결단력 있는 타입이에요 ✨'),
+      findInBody('금(金) 기운이 강한 타입이에요 ✨\n원칙적이고 결단력 있어요'),
       findsOneWidget,
     );
     expect(findInBody('눈이 높은 편이라 확실한 상대를 알아보는 시기예요'), findsOneWidget); // 금 연애운
     expect(findInBody('계획적으로 관리하면 돈이 잘 모이는 편이에요'), findsOneWidget); // 금 재물운
     expect(findInBody('호흡기·피부 컨디션을 신경 쓰면 좋아요'), findsOneWidget); // 금 건강운
     expect(findInBody('원칙적이고 맺고 끊음이 확실한 타입이에요'), findsOneWidget); // 금 성격
+
+    // 2026-07-06에 콜아웃 박스가 우세 오행 색(ohaengSoftColors[dominant])으로 물들도록
+    // 고쳤는데, 그 뒤로도 실제 배경색 값 자체를 확인한 테스트는 없었다 — 텍스트 내용만
+    // 맞고 색이 우연히 다시 accentSoft로 되돌아가도(줄 커버리지만으로는) 못 잡는다.
+    final calloutContainer = tester.widget<Container>(
+      find.ancestor(
+        of: findInBody('금(金) 기운이 강한 타입이에요 ✨\n원칙적이고 결단력 있어요'),
+        matching: find.byType(Container),
+      ).first,
+    );
+    final calloutDecoration = calloutContainer.decoration! as BoxDecoration;
+    expect(calloutDecoration.color, AppColors.ohaengSoftColors['금']);
   });
 
   testWidgets('4기둥 카드는 스크린 리더에 "기둥이름 + 값" 순서로 병합된 시맨틱스를 제공한다',
@@ -206,6 +293,65 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 1000));
 
+    expect(
+      find.text('공유하는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+      '2026-07-06 발견: 공유 카드 이미지 캡처 자체가 실패하면(레이아웃 전 등) 텍스트만으로 폴백한다 (커버리지로 확인)',
+      (WidgetTester tester) async {
+    // 위 테스트는 SharePlus.instance.share() 자체가 실패하는 경로("공유 시트 자체
+    // 실패")만 검증했는데, `flutter test --coverage`로 lcov.info를 직접 분석해보니
+    // _handleShare()의 이미지 캡처 실패 시 텍스트 전용으로 폴백하는 else 분기(카드
+    // 캡처에 성공하면 도는 if 분기와 갈라지는 지점)는 지금까지 단 한 번도 실행된 적이
+    // 없었다는 걸 발견했다 — 위 테스트에서는 매번 카드 캡처 자체는 성공하고
+    // (`imageBytes != null`) share() 호출만 실패했기 때문이다.
+    // 이미지 캡처 실패(`boundary.debugNeedsPaint`가 true거나 boundary를 못 찾는
+    // 경우)를 재현하려면, RepaintBoundary가 실제로 paint 단계까지 거치기 전에
+    // 버튼을 눌러야 한다 — `pumpWidget`에 `EnginePhase.layout`을 줘서 build·layout만
+    // 하고 paint는 아직 안 돈 상태로 멈춘 뒤(탭 좌표 계산 없이) 버튼의 onPressed를
+    // 직접 동기 호출하면, `_handleShare`가 읽는 `boundary.debugNeedsPaint`가 아직
+    // true라 캡처를 건너뛰고 텍스트 전용 분기(else)를 타게 된다.
+    final originalSize = tester.view.physicalSize;
+    final originalRatio = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(400, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalRatio;
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+      phase: EnginePhase.layout,
+    );
+
+    final button =
+        tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '📸 공유하기'));
+
+    await tester.runAsync(() async {
+      button.onPressed!();
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
+    });
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1000));
+
+    // SharePlus.instance.share() 자체는 여전히 플랫폼 채널이 없어 실패하므로,
+    // 이 분기를 타도 사용자에게 보이는 결과(스낵바)는 위 테스트와 동일하다 —
+    // 이 테스트가 검증하려는 건 화면에 보이는 결과가 아니라 else 분기 자체의 실행
+    // 여부이며, 그건 이 테스트 실행 후 `coverage/lcov.info`에서 348~349번 줄이
+    // 실제로 히트로 바뀌는지로 확인했다(코드 자체에는 그 사실을 드러내는 관찰 가능한
+    // 차이가 없어 런타임 assertion만으로는 증명할 수 없음).
     expect(
       find.text('공유하는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.'),
       findsOneWidget,
@@ -371,6 +517,46 @@ void main() {
 
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getInt('birth_info.date_millis'), isNull);
+  });
+
+  testWidgets('"다시 입력하기"를 누르면 이전 사람의 심층 분석(MBTI·관심사) 선택도 함께 지워진다',
+      (WidgetTester tester) async {
+    // "저장된 생년월일시 정보가 삭제되고, 처음부터 다시 입력하게 돼요"라는 다이얼로그
+    // 안내와 달리, 지금까지는 BirthInfoStore만 지우고 DeepDiveInfoStore(MBTI·관심사)는
+    // 그대로 남겨두고 있었다 — 완전히 다른 사람이 새로 입력한 뒤 심층 분석 화면에
+    // 들어가면 이전 사람이 골랐던 MBTI·관심사가 그대로 다시 나타나는 실제 버그였다.
+    await SharedPreferences.getInstance().then((prefs) async {
+      await prefs.setInt('birth_info.date_millis', DateTime(1998, 8, 15).millisecondsSinceEpoch);
+      await prefs.setStringList('deep_dive_info.interests', ['love']);
+      await prefs.setString('deep_dive_info.mbti_ei', 'i');
+      await prefs.setString('deep_dive_info.mbti_sn', 'n');
+      await prefs.setString('deep_dive_info.mbti_tf', 't');
+      await prefs.setString('deep_dive_info.mbti_jp', 'j');
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    await tester.tap(find.byTooltip('다시 입력하기'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('다시 입력하기').last);
+    await tester.pumpAndSettle();
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getStringList('deep_dive_info.interests'), isNull);
+    expect(prefs.getString('deep_dive_info.mbti_ei'), isNull);
+    expect(prefs.getString('deep_dive_info.mbti_sn'), isNull);
+    expect(prefs.getString('deep_dive_info.mbti_tf'), isNull);
+    expect(prefs.getString('deep_dive_info.mbti_jp'), isNull);
   });
 
   testWidgets('"다시 입력하기" 확인 다이얼로그에서 "취소"를 누르면 아무 것도 지워지지 않는다',

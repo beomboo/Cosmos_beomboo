@@ -17,7 +17,7 @@ void main() {
         birthInfo: birthInfo,
         pillars: pillars,
         dominant: '목',
-        callout: ('木', '새로운 걸 벌이는 힘이 넘치는 타입이에요 🌿'),
+        callout: ('木', '🌿', '새로운 걸 벌이는 힘이 넘쳐요'),
         ohaengCount: ohaengCount,
         total: total,
         displayName: '민지',
@@ -30,7 +30,8 @@ void main() {
       expect(text, contains('月柱 ${pillars.month.label}'));
       expect(text, contains('日柱 ${pillars.day.label}'));
       expect(text, contains('時柱 ${pillars.hour!.label}'));
-      expect(text, contains('木(목) 기운이 강한 타입이에요'));
+      expect(text, contains('목(木) 기운이 강한 타입이에요 🌿'));
+      expect(text, contains('새로운 걸 벌이는 힘이 넘쳐요'));
       expect(text, contains('#사주랑 #사주팔자 #오행'));
     });
 
@@ -52,7 +53,7 @@ void main() {
         birthInfo: birthInfo,
         pillars: pillars,
         dominant: '목',
-        callout: ('木', '설명'),
+        callout: ('木', '🌿', '설명'),
         ohaengCount: ohaengCount,
         total: total,
         displayName: '회원님',
@@ -77,7 +78,7 @@ void main() {
         birthInfo: birthInfo,
         pillars: pillars,
         dominant: '목',
-        callout: ('木', '설명'),
+        callout: ('木', '🌿', '설명'),
         ohaengCount: ohaengCount,
         total: total,
         displayName: '회원님',
@@ -102,7 +103,7 @@ void main() {
         birthInfo: birthInfo,
         pillars: pillars,
         dominant: '목',
-        callout: ('木', '설명'),
+        callout: ('木', '🌿', '설명'),
         ohaengCount: ohaengCount,
         total: total,
         displayName: '회원님',
@@ -121,7 +122,7 @@ void main() {
         birthInfo: birthInfo,
         pillars: pillars,
         dominant: '목',
-        callout: ('木', '설명'),
+        callout: ('木', '🌿', '설명'),
         ohaengCount: ohaengCount,
         total: total,
         displayName: '회원님',
@@ -141,7 +142,7 @@ void main() {
         birthInfo: birthInfo,
         pillars: pillars,
         dominant: '목',
-        callout: ('木', '설명'),
+        callout: ('木', '🌿', '설명'),
         ohaengCount: ohaengCount,
         total: total,
         displayName: '회원님',
@@ -161,7 +162,7 @@ void main() {
         birthInfo: birthInfo,
         pillars: pillars,
         dominant: '목',
-        callout: ('木', '설명'),
+        callout: ('木', '🌿', '설명'),
         ohaengCount: ohaengCount,
         total: total,
         displayName: '회원님',
@@ -193,7 +194,7 @@ void main() {
         birthInfo: birthInfo,
         pillars: pillars,
         dominant: '목',
-        callout: ('木', '설명'),
+        callout: ('木', '🌿', '설명'),
         ohaengCount: ohaengCount,
         total: total,
         displayName: '회원님',

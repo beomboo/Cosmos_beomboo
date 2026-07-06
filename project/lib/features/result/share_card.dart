@@ -4,6 +4,9 @@ import '../../app/theme/app_colors.dart';
 import '../../core/saju/four_pillars.dart';
 import '../../core/saju/ganzhi.dart';
 
+/// 오행 밸런스 바의 한 글자 라벨용 한자(목업 `.bar-row .tag`가 한글이 아니라 한자를 씀).
+const _ohaengHanja = {'목': '木', '화': '火', '토': '土', '금': '金', '수': '水'};
+
 /// 공유용 9:16 카드 — 실제 화면(스크롤 가능한 ResultScreen)과 별개로,
 /// 캡처해서 이미지로 공유하기 위한 고정 크기 요약 카드.
 /// 참고: docs/mockups/01-pastel-cute.html STEP 4의 "인스타 스토리로 공유하기" 컨셉.
@@ -16,6 +19,7 @@ class ShareCard extends StatelessWidget {
     required this.pillars,
     required this.dominant,
     required this.calloutHanja,
+    required this.calloutEmoji,
     required this.calloutText,
     required this.ohaengCount,
     required this.total,
@@ -26,6 +30,7 @@ class ShareCard extends StatelessWidget {
   final FourPillars pillars;
   final String dominant;
   final String calloutHanja;
+  final String calloutEmoji;
   final String calloutText;
   final Map<String, int> ohaengCount;
   final int total;
@@ -87,17 +92,22 @@ class ShareCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 24),
+            // result_screen.dart와 같은 이유(목업 `.callout`은 우세 오행 색으로 물듦)로
+            // accentSoft/ink 고정 대신 우세 오행 색을 쓴다(2026-07-06 대조 발견).
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.accentSoft,
+                color: AppColors.ohaengSoftColors[dominant] ?? AppColors.accentSoft,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
-                '$calloutHanja($dominant) 기운이 강한 타입이에요\n$calloutText',
-                style:
-                    const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, height: 1.4),
+                '$dominant($calloutHanja) 기운이 강한 타입이에요 $calloutEmoji\n$calloutText',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ohaengTextColors[dominant] ?? AppColors.ink,
+                  height: 1.4,
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -146,11 +156,14 @@ class ShareCard extends StatelessWidget {
   Widget _balanceRow(String ohaeng) {
     final color = AppColors.ohaengTextColors[ohaeng] ?? AppColors.ink;
     final percent = total == 0 ? 0.0 : (ohaengCount[ohaeng]! / total * 100);
+    // result_screen.dart의 _OhaengBarRow와 같은 이유(목업 `.bar-row .tag`는 한글이 아니라
+    // 한자)로 한자를 대신 표시한다(색상/집계는 한글 ohaeng 그대로 사용, 2026-07-06 대조 발견).
+    final hanja = _ohaengHanja[ohaeng] ?? ohaeng;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
-          SizedBox(width: 16, child: Text(ohaeng, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 12))),
+          SizedBox(width: 16, child: Text(hanja, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 12))),
           const SizedBox(width: 6),
           Expanded(
             child: ClipRRect(
