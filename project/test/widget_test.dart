@@ -17,7 +17,7 @@ void main() {
     await tester.pumpWidget(const CosmosSajuApp());
 
     expect(find.text('사주랑'), findsOneWidget);
-    expect(find.text('시작하기'), findsOneWidget);
+    expect(find.text('시작하기 →'), findsOneWidget);
   });
 
   testWidgets('저장된 BirthInfo가 있으면 온보딩을 건너뛰고 결과 화면을 바로 보여준다',
@@ -28,7 +28,7 @@ void main() {
       ),
     );
 
-    expect(find.text('시작하기'), findsNothing);
+    expect(find.text('시작하기 →'), findsNothing);
     expect(
       find.descendant(
         of: find.byKey(const Key('resultScrollView')),
@@ -41,7 +41,7 @@ void main() {
   testWidgets('온보딩의 "시작하기"를 누르면 생년월일시 입력 화면으로 이동한다', (WidgetTester tester) async {
     await tester.pumpWidget(const CosmosSajuApp());
 
-    await tester.tap(find.text('시작하기'));
+    await tester.tap(find.text('시작하기 →'));
     await tester.pumpAndSettle();
 
     expect(find.text('생년월일시를 알려주세요'), findsOneWidget);
@@ -67,7 +67,7 @@ void main() {
 
       await tester.pumpWidget(const CosmosSajuApp());
 
-      await tester.tap(find.text('시작하기'));
+      await tester.tap(find.text('시작하기 →'));
       await tester.pumpAndSettle();
       expect(find.text('생년월일시를 알려주세요'), findsOneWidget);
 

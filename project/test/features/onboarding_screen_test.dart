@@ -26,7 +26,7 @@ void main() {
     expect(find.text('사주랑'), findsOneWidget);
     expect(find.text('내 안의 오행,\n3분이면 알 수 있어요'), findsOneWidget);
     expect(find.text('생년월일시만 입력하면 끝!\n어려운 명리학 용어 없이 쉽게 풀어드려요'), findsOneWidget);
-    expect(find.text('시작하기'), findsOneWidget);
+    expect(find.text('시작하기 →'), findsOneWidget);
     expect(find.text('어떻게 계산되나요?'), findsOneWidget);
   });
 
@@ -34,7 +34,7 @@ void main() {
     var navigated = false;
     await tester.pumpWidget(buildApp(onBirthInputRoute: (_) => navigated = true));
 
-    await tester.tap(find.text('시작하기'));
+    await tester.tap(find.text('시작하기 →'));
     await tester.pumpAndSettle();
 
     expect(navigated, isTrue);
@@ -51,11 +51,33 @@ void main() {
     // 다이얼로그가 뜨면 제목("어떻게 계산되나요?")이 화면에 2번(링크 버튼 + 다이얼로그 타이틀) 나타난다.
     expect(find.text('어떻게 계산되나요?'), findsNWidgets(2));
     expect(find.textContaining('60갑자(간지)로 변환해'), findsOneWidget);
+    // report_screen.dart의 정확도 안내와 같은 취지로, 자시(23시~1시)·지역 시차 보정 한계도
+    // 온보딩 시점에 미리 알려준다 — 2026-07-06에 이 두 항목을 새로 추가했다.
+    expect(find.textContaining('자시'), findsOneWidget);
+    // 2026-07-06 추가 발견: 음력 입력이 양력으로 변환되지 않고 그대로 계산에 쓰인다는
+    // 한계도 지금까지 온보딩에서 전혀 알리지 않고 있었다 — 함께 안내하도록 추가.
+    expect(find.textContaining('음력'), findsOneWidget);
 
     await tester.tap(find.text('확인'));
     await tester.pumpAndSettle();
 
     expect(find.text('어떻게 계산되나요?'), findsOneWidget);
     expect(find.textContaining('60갑자(간지)로 변환해'), findsNothing);
+  });
+
+  testWidgets('시스템 글자 크기를 크게(2배) 키워도 RenderFlex overflow가 나지 않는다', (tester) async {
+    // result_screen.dart(카테고리 그리드)·share_card.dart에서 실제로 겪었던 고정
+    // 높이+큰 글자 조합 RenderFlex overflow가 이 화면에도 있는지 지금까지 확인한
+    // 적이 없었다 — 온보딩은 세로로 쌓이는 단순 Column 레이아웃이라 실제로는
+    // 재현되지 않음을 확인(코드 변경 없이 회귀 방지용으로 고정).
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+        child: buildApp(),
+      ),
+    );
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
   });
 }
