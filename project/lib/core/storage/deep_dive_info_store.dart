@@ -45,17 +45,16 @@ abstract final class DeepDiveInfoStore {
         .whereType<Interest>()
         .toSet();
 
-    final eiName = prefs.getString(_keyMbtiEi);
-    final snName = prefs.getString(_keyMbtiSn);
-    final tfName = prefs.getString(_keyMbtiTf);
-    final jpName = prefs.getString(_keyMbtiJp);
-    final mbti = (eiName != null && snName != null && tfName != null && jpName != null)
-        ? Mbti(
-            ei: MbtiEi.values.asNameMap()[eiName]!,
-            sn: MbtiSn.values.asNameMap()[snName]!,
-            tf: MbtiTf.values.asNameMap()[tfName]!,
-            jp: MbtiJp.values.asNameMap()[jpName]!,
-          )
+    // interests와 마찬가지로 asNameMap()[]로 조회하되 `!`(null 단언)는 쓰지 않는다 —
+    // 저장된 문자열이 현재 enum 값 이름과 하나라도 안 맞으면(예: 향후 MBTI 축 이름이
+    // 바뀌는 경우) null-check 예외를 던지는 대신 mbti 전체를 null(모름)로 취급해
+    // BirthInfoStore.load()의 성별 복원과 같은 방식으로 안전하게 무시한다.
+    final ei = MbtiEi.values.asNameMap()[prefs.getString(_keyMbtiEi)];
+    final sn = MbtiSn.values.asNameMap()[prefs.getString(_keyMbtiSn)];
+    final tf = MbtiTf.values.asNameMap()[prefs.getString(_keyMbtiTf)];
+    final jp = MbtiJp.values.asNameMap()[prefs.getString(_keyMbtiJp)];
+    final mbti = (ei != null && sn != null && tf != null && jp != null)
+        ? Mbti(ei: ei, sn: sn, tf: tf, jp: jp)
         : null;
 
     return DeepDiveInfo(mbti: mbti, interests: interests);

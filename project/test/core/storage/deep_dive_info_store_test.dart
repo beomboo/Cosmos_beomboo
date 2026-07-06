@@ -72,5 +72,44 @@ void main() {
       expect(loaded!.mbti, isNull);
       expect(loaded.interests, {Interest.health, Interest.career});
     });
+
+    test('저장된 관심사 문자열이 현재 Interest enum 값과 하나라도 안 맞으면 그 항목만 조용히 걸러진다',
+        () async {
+      // load()는 각 관심사 이름을 asNameMap()[]로 조회한 뒤 whereType<Interest>()로
+      // null(=현재 enum에 없는 이름)을 걸러낸다 — 향후 Interest 값 이름이 바뀌거나
+      // 목록에서 제거되는 경우, 그 이전에 저장된 값이 남아있어도 예외 없이 무시되는지
+      // 직접 재현해 확인한다.
+      SharedPreferences.setMockInitialValues({
+        'deep_dive_info.interests': ['love', 'no_longer_exists_interest'],
+      });
+
+      final loaded = await DeepDiveInfoStore.load();
+
+      expect(loaded, isNotNull);
+      expect(loaded!.interests, {Interest.love});
+    });
+
+    test('저장된 MBTI 축 문자열이 현재 enum 값과 하나라도 안 맞으면 예외 없이 mbti 전체가 null로 복원된다',
+        () async {
+      // 2026-07-06에 실제로 겪은 버그: load()가 `MbtiEi.values.asNameMap()[eiName]!`처럼
+      // null 단언(!)을 쓰고 있어서, 저장된 문자열이 현재 enum 값과 하나라도 안 맞으면
+      // (예: MBTI 축 enum 이름이 나중에 바뀌는 경우) null-check 예외를 던졌다 — 다행히
+      // 유일한 호출부(deep_dive_input_screen.dart의 _loadSaved())가 try/catch로 감싸고
+      // 있어 화면이 깨지진 않았지만, BirthInfoStore.load()의 성별 복원처럼 저장소 자체가
+      // 안전하게 처리해야 향후 다른 호출부가 생겨도 안전하다 — asNameMap()[] 조회 결과를
+      // null 단언 없이 그대로 확인해 mbti 전체를 null로 처리하도록 고쳤다.
+      SharedPreferences.setMockInitialValues({
+        'deep_dive_info.interests': <String>[],
+        'deep_dive_info.mbti_ei': 'no_longer_exists_axis_value',
+        'deep_dive_info.mbti_sn': 'n',
+        'deep_dive_info.mbti_tf': 't',
+        'deep_dive_info.mbti_jp': 'j',
+      });
+
+      final loaded = await DeepDiveInfoStore.load();
+
+      expect(loaded, isNotNull);
+      expect(loaded!.mbti, isNull);
+    });
   });
 }

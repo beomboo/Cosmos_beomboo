@@ -93,5 +93,26 @@ void main() {
       expect(loaded.hour, isNull);
       expect(loaded.isLunar, isTrue);
     });
+
+    test('저장된 성별 문자열이 현재 Gender enum 값과 일치하지 않으면 예외 없이 null로 복원된다', () async {
+      // load()는 `Gender.values.asNameMap()[genderName]`로 성별을 복원하는데, 이건
+      // Map 조회라 못 찾으면 null을 돌려줄 뿐 예외를 던지지 않는다 — 만약 나중에 누군가
+      // `Gender.values.byName(genderName)`(값이 없으면 ArgumentError를 던짐)으로 무심코
+      // 바꾸면 이 안전성이 조용히 깨질 수 있다. 실제로 이런 상황이 생기는 현실적 경로는
+      // Gender enum 값 이름 자체가 나중에 바뀌는 경우(예: 'female' → 다른 이름)인데, 그러면
+      // 이전에 저장돼 있던 기기의 값("female")은 새 enum과 이름이 안 맞게 된다 — 이 테스트는
+      // 실제 enum을 바꾸는 대신, SharedPreferences에 저장소가 쓰는 것과 같은 키로 존재하지
+      // 않는 이름을 직접 넣어 같은 상황을 재현한다.
+      SharedPreferences.setMockInitialValues({
+        'birth_info.date_millis': DateTime(1998, 8, 15).millisecondsSinceEpoch,
+        'birth_info.is_lunar': false,
+        'birth_info.gender': 'nonbinary_legacy_value_not_in_enum',
+      });
+
+      final loaded = await BirthInfoStore.load();
+
+      expect(loaded, isNotNull);
+      expect(loaded!.gender, isNull);
+    });
   });
 }
