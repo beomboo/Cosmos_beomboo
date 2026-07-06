@@ -42,19 +42,25 @@ class PastelToggleRow<T> extends StatelessWidget {
             excludeSemantics: true,
             child: InkWell(
               onTap: () => onChanged(entry.key),
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: BorderRadius.circular(12),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isActive ? AppColors.accent : AppColors.bgCard,
-                  borderRadius: BorderRadius.circular(999),
+                  // 목업(docs/mockups/01-pastel-cute.html)의 `.pill.is-active`는 배경을
+                  // 진한 accent가 아니라 옅은 accentSoft로, 글자도 흰색이 아니라 진한
+                  // accentText로 쓴다 — 2026-07-06까지는 브랜드 CTA 버튼(.btn-primary)과
+                  // 같은 조합(accent+흰 글자)을 잘못 써서 WCAG AA 텍스트 대비(4.5:1) 미달
+                  // 문제가 있었는데, 목업 그대로 맞추면서 자연히 해결됨(accentText는 이미
+                  // accentSoft 위에서 4.5:1 이상 통과하도록 설계돼 있음, app_colors.dart 참고).
+                  color: isActive ? AppColors.accentSoft : AppColors.bgCard,
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: isActive ? AppColors.accent : AppColors.border),
                 ),
                 child: Text(
                   entry.value,
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: isActive ? AppColors.accentInk : AppColors.ink,
+                    color: isActive ? AppColors.accentText : AppColors.ink,
                   ),
                 ),
               ),

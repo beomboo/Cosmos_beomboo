@@ -23,12 +23,14 @@ class PastelPillButton extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
+        // 목업(docs/mockups/01-pastel-cute.html)의 `.pill`은 완전히 둥근 알약 모양이
+        // 아니라 12px 모서리 반경만 쓴다 — 이름과 달리 "알약"이 아니었음(2026-07-06 대조).
+        borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
             color: onTap == null ? AppColors.border.withValues(alpha: 0.4) : AppColors.bgCard,
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.border),
           ),
           child: Text(
