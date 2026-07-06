@@ -110,6 +110,61 @@ void main() {
     expect(captured!.name, isNull);
   });
 
+  testWidgets('"사주 보러가기"를 빠르게 두 번 연속 눌러도 calculating 화면으로 한 번만 이동한다',
+      (tester) async {
+    // _submit()은 BirthInfoStore.save()를 await하는 비동기 함수라, 그 구간이 끝나기
+    // 전에 버튼을 한 번 더 누르면(실제 기기의 빠른 연속 탭과 동일한 상황) _submit()이
+    // 두 번 실행돼 calculating 라우트가 중복으로 push되는 실제 버그였다 — 재진입을
+    // 막는 `_isSubmitting` 플래그를 추가해 고쳤다. tester.tap()은 내부적으로 프레임을
+    // 진행시키는 타이밍이 화면의 await 횟수에 따라 달라 재현이 불안정할 수 있어(다른
+    // 화면에서 실제로 이 차이 때문에 재현이 안 되는 경우를 확인함), onPressed 콜백을
+    // 직접 두 번 동기적으로 호출해 "완전히 같은 시점에 두 번 눌림"을 결정적으로 재현한다.
+    await useTallViewport(tester);
+    var calculatingPushCount = 0;
+    await tester.pumpWidget(buildApp(
+      onCalculatingRoute: (_) => calculatingPushCount++,
+    ));
+
+    final button =
+        tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '사주 보러가기 🔮'));
+    button.onPressed!();
+    button.onPressed!();
+    await tester.pumpAndSettle();
+
+    expect(calculatingPushCount, 1);
+  });
+
+  testWidgets('한 번 제출한 뒤 뒤로가기로 돌아와도 "사주 보러가기"를 다시 누를 수 있다', (tester) async {
+    // 위 더블탭 가드(_isSubmitting)를 추가하면서 새로 생긴 실제 버그: 제출 시
+    // Navigator.pushNamed()는 화면을 교체(replace)하는 게 아니라 그 위에 쌓기만
+    // 해서(BirthInputScreen이 스택에 그대로 남음), 사용자가 calculating 화면에서
+    // 뒤로가기로 이 화면에 돌아오면 그 인스턴스의 _isSubmitting이 true로 남아있는
+    // 채였다. 원래 코드는 이 플래그를 다시 false로 되돌리는 지점이 전혀 없어서,
+    // 한 번 제출한 뒤 뒤로 돌아오면 "사주 보러가기"를 아무리 눌러도 아무 반응 없이
+    // 영원히 먹통이 되는 실제 버그였다 — pushNamed()가 반환하는 Future가 완료되는
+    // 시점(뒤로가기로 돌아왔을 때)에 맞춰 플래그를 되돌리도록 고쳤다.
+    await useTallViewport(tester);
+    var calculatingPushCount = 0;
+    await tester.pumpWidget(buildApp(
+      onCalculatingRoute: (_) => calculatingPushCount++,
+    ));
+
+    await tester.tap(find.text('사주 보러가기 🔮'));
+    await tester.pumpAndSettle();
+    expect(calculatingPushCount, 1);
+
+    // calculating 스텁 화면에서 뒤로가기로 BirthInputScreen에 돌아온다.
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
+    navigator.pop();
+    await tester.pumpAndSettle();
+    expect(find.text('사주 보러가기 🔮'), findsOneWidget);
+
+    await tester.tap(find.text('사주 보러가기 🔮'));
+    await tester.pumpAndSettle();
+
+    expect(calculatingPushCount, 2);
+  });
+
   testWidgets('"태어난 시간을 몰라요"를 체크하고 제출하면 hour·minute 모두 null로 전달된다', (tester) async {
     await useTallViewport(tester);
     BirthInfo? captured;
@@ -124,6 +179,37 @@ void main() {
 
     expect(captured!.hour, isNull);
     expect(captured!.minute, isNull);
+  });
+
+  testWidgets('"태어난 시간을 몰라요"를 체크했다가 다시 해제하면 골라뒀던 시간이 그대로 유지된다',
+      (tester) async {
+    // _timeUnknown(체크 여부)과 _birthTime(실제 시간값)은 서로 다른 state라, 체크
+    // 해제만으로 _birthTime이 초기화될 이유는 없지만 — deep_dive_input_screen의
+    // MBTI 체크박스와 같은 관례(껐다 켜도 값 유지)를 여기서도 지금까지 직접 값으로
+    // 확인한 적은 없었다. "몰라요"를 체크했다 다시 해제하고 제출해도, 시간이 0시나
+    // null 같은 엉뚱한 값이 아니라 원래 고른 기본값(오후 2시 30분)이 그대로
+    // 전달되는지 확인한다.
+    await useTallViewport(tester);
+    BirthInfo? captured;
+    await tester.pumpWidget(buildApp(
+      onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
+    ));
+
+    await tester.tap(find.text('태어난 시간을 몰라요'));
+    await tester.pump();
+    expect(find.text('시간 모름'), findsOneWidget);
+
+    await tester.tap(find.text('태어난 시간을 몰라요'));
+    await tester.pump();
+    expect(find.text('시간 모름'), findsNothing);
+    expect(find.text('오후 2시 30분'), findsOneWidget);
+
+    await tester.tap(find.text('사주 보러가기 🔮'));
+    await tester.pumpAndSettle();
+
+    expect(captured, isNotNull);
+    expect(captured!.hour, 14);
+    expect(captured!.minute, 30);
   });
 
   testWidgets('음력으로 바꾸고 제출하면 isLunar가 true로 전달된다', (tester) async {
@@ -224,6 +310,23 @@ void main() {
     expect(captured!.name, isNull);
   });
 
+  testWidgets('태어난 곳 필드에 공백만 입력하면 birthPlace는 null로 전달된다', (tester) async {
+    // 이름 필드는 이미 "공백만 입력 → null" 트리밍이 테스트돼 있는데, 출생지도
+    // _submit()에서 정확히 같은 로직(`trimmedBirthPlace.isEmpty ? null : trimmedBirthPlace`)을
+    // 쓰면서도 지금까지 이 경계값을 직접 값으로 확인한 적이 없었다.
+    await useTallViewport(tester);
+    BirthInfo? captured;
+    await tester.pumpWidget(buildApp(
+      onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
+    ));
+
+    await tester.enterText(find.byType(TextField).at(1), '   ');
+    await tester.tap(find.text('사주 보러가기 🔮'));
+    await tester.pumpAndSettle();
+
+    expect(captured!.birthPlace, isNull);
+  });
+
   testWidgets('이름 필드는 20자를 넘겨 입력해도 20자까지만 반영된다', (tester) async {
     await useTallViewport(tester);
     BirthInfo? captured;
@@ -238,6 +341,23 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(captured!.name, '가' * 20);
+  });
+
+  testWidgets('태어난 곳 필드는 30자를 넘겨 입력해도 30자까지만 반영된다', (tester) async {
+    // 이름 필드의 20자 제한(maxLength)은 이미 이 경계값까지 테스트돼 있는데,
+    // 출생지의 30자 제한은 지금까지 실제로 그 이상이 입력되지 않는지 값으로
+    // 확인한 적이 없었다.
+    await useTallViewport(tester);
+    BirthInfo? captured;
+    await tester.pumpWidget(buildApp(
+      onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
+    ));
+
+    await tester.enterText(find.byType(TextField).at(1), '가' * 35);
+    await tester.tap(find.text('사주 보러가기 🔮'));
+    await tester.pumpAndSettle();
+
+    expect(captured!.birthPlace, '가' * 30);
   });
 
   testWidgets('태어난 날짜 pill을 탭해 datePicker를 열고 "확인"을 누르면 정상 진행된다', (tester) async {
@@ -342,5 +462,23 @@ void main() {
     expect(placeLabel, contains('예: 서울특별시'));
 
     semantics.dispose();
+  });
+
+  testWidgets('시스템 글자 크기를 크게(2배) 키워도 RenderFlex overflow가 나지 않는다', (tester) async {
+    // result_screen.dart(카테고리 그리드)·share_card.dart에서 실제로 겪었던 고정
+    // 높이+큰 글자 조합 RenderFlex overflow가 이 화면에도 있는지 지금까지 확인한
+    // 적이 없었다 — 이 화면은 세로로 쌓이는 ListView + PastelPillButton/
+    // PastelToggleRow(고정 높이 없이 내용에 맞춰 늘어남)라 실제로는 재현되지
+    // 않음을 확인(코드 변경 없이 회귀 방지용으로 고정).
+    await useTallViewport(tester);
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+        child: buildApp(),
+      ),
+    );
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
   });
 }

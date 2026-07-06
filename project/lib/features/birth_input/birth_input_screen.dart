@@ -27,6 +27,12 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
   final _nameController = TextEditingController();
   final _birthPlaceController = TextEditingController();
 
+  /// `_submit()`의 `BirthInfoStore.save()` await 구간에서 버튼을 빠르게 두 번
+  /// 연속으로 누르면(실제 기기에서 재현되는 상황), 첫 호출이 아직 끝나지 않은 채
+  /// 두 번째 호출이 그대로 들어와 calculating 라우트가 중복으로 push되는 실제 버그가
+  /// 있었다 — 제출이 진행 중인 동안 재진입을 막는다.
+  bool _isSubmitting = false;
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -67,6 +73,9 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
   }
 
   Future<void> _submit() async {
+    if (_isSubmitting) return;
+    _isSubmitting = true;
+
     final trimmedName = _nameController.text.trim();
     final trimmedBirthPlace = _birthPlaceController.text.trim();
     final birthInfo = BirthInfo(
@@ -86,7 +95,14 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
       // 무시 — 다음에 앱을 열면 다시 입력하면 된다.
     }
     if (!mounted) return;
-    Navigator.of(context).pushNamed(AppRoutes.calculating, arguments: birthInfo);
+    // pushNamed()가 반환하는 Future는 이 화면 위에 올라간 라우트가 나중에 pop되어
+    // 이 화면으로 돌아왔을 때 비로소 완료된다 — 그 시점에 맞춰 플래그를 되돌려야,
+    // 제출 후 뒤로가기로 이 화면에 돌아왔을 때 "사주 보러가기"가 계속 먹통이 되지
+    // 않는다(한 번 true가 된 뒤로 다시 false가 될 일이 없던 실제 버그였음).
+    await Navigator.of(context).pushNamed(AppRoutes.calculating, arguments: birthInfo);
+    if (mounted) {
+      _isSubmitting = false;
+    }
   }
 
   @override
@@ -149,9 +165,10 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
               dense: true,
+              // 목업(`.check-row`)은 12px인데 지금까지 기본 크기였다(2026-07-06 대조 발견).
               title: const Text(
                 '태어난 시간을 몰라요',
-                style: TextStyle(color: AppColors.inkSoft, fontWeight: FontWeight.w600),
+                style: TextStyle(color: AppColors.inkSoft, fontWeight: FontWeight.w600, fontSize: 12),
               ),
             ),
             const SizedBox(height: 20),
