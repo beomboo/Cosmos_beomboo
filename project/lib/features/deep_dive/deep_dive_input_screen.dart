@@ -32,6 +32,11 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
   MbtiTf _tf = MbtiTf.t;
   MbtiJp _jp = MbtiJp.j;
 
+  /// birth_input_screen.dart의 `_submit()`과 같은 이유로 필요하다 — `_saveAndContinue()`의
+  /// `DeepDiveInfoStore.save()` await 구간에서 "심층 분석 보기"를 빠르게 두 번 누르면
+  /// `DeepDiveResultScreen`이 중복으로 push되는 걸 막는다.
+  bool _isSubmitting = false;
+
   @override
   void initState() {
     super.initState();
@@ -74,6 +79,9 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
   /// 제출 시 다음에 다시 열었을 때 이어서 보이도록 저장한다. 저장이 실패해도
   /// (플랫폼 채널 오류 등) 지금 화면 전환은 막지 않는다.
   Future<void> _saveAndContinue(BuildContext context, BirthInfo birthInfo) async {
+    if (_isSubmitting) return;
+    _isSubmitting = true;
+
     final deepDiveInfo = DeepDiveInfo(
       mbti: _knowsMbti ? Mbti(ei: _ei, sn: _sn, tf: _tf, jp: _jp) : null,
       interests: _interests,
@@ -84,11 +92,18 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
       // 무시 — 다음에 열면 다시 고르면 된다.
     }
     if (!context.mounted) return;
-    Navigator.of(context).push(
+    // birth_input_screen.dart의 _submit()과 같은 이유로, push()가 반환하는 Future가
+    // 완료되는 시점(이 화면으로 다시 돌아왔을 때)에 맞춰 플래그를 되돌린다 — 그렇지
+    // 않으면 제출 후 뒤로가기로 이 화면에 돌아왔을 때 "심층 분석 보기"가 계속
+    // 먹통이 되는 실제 버그가 있었다(한 번 true가 된 뒤로 다시 false가 될 일이 없었음).
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => DeepDiveResultScreen(birthInfo: birthInfo, deepDiveInfo: deepDiveInfo),
       ),
     );
+    if (context.mounted) {
+      _isSubmitting = false;
+    }
   }
 
   @override
@@ -128,9 +143,11 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
               dense: true,
+              // birth_input_screen.dart의 "태어난 시간을 몰라요"와 같은 이유(목업
+              // `.check-row`는 12px)로 크기 조정(2026-07-06 대조 발견).
               title: const Text(
                 'MBTI를 알고 있어요',
-                style: TextStyle(color: AppColors.inkSoft, fontWeight: FontWeight.w600),
+                style: TextStyle(color: AppColors.inkSoft, fontWeight: FontWeight.w600, fontSize: 12),
               ),
             ),
             if (_knowsMbti) ...[
@@ -195,19 +212,21 @@ class _InterestChip extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: selected ? AppColors.accent : AppColors.bgCard,
-            borderRadius: BorderRadius.circular(999),
+            // PastelToggleRow와 같은 이유로 accent+흰 글자 대신 목업의 `.pill.is-active`와
+            // 같은 accentSoft+accentText 조합을 쓴다(2026-07-06, WCAG AA 텍스트 대비 자연 해결).
+            color: selected ? AppColors.accentSoft : AppColors.bgCard,
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: selected ? AppColors.accent : AppColors.border),
           ),
           child: Text(
             '${interest.icon} ${interest.categoryTitle}',
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: selected ? AppColors.accentInk : AppColors.ink,
+              color: selected ? AppColors.accentText : AppColors.ink,
             ),
           ),
         ),

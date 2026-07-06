@@ -105,6 +105,25 @@ void main() {
     expect(find.text('민지의 심층 분석 ✨'), findsOneWidget);
   });
 
+  testWidgets('이름이 없으면 헤더에 "회원님"으로 표시된다', (tester) async {
+    // result_screen_test.dart는 이름 없음("회원님" 폴백)과 공백만 있는 이름을
+    // 이미 값으로 검증해뒀는데, 같은 폴백 로직(`birthInfo.name?.trim().isNotEmpty
+    // == true ? ... : '회원님'`)을 그대로 쓰는 이 화면은 "이름이 있는" 경우만
+    // 테스트돼 있었고 이름이 없거나 공백뿐인 경우는 확인한 적이 없었다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DeepDiveResultScreen(
+          birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false, name: '   '),
+          deepDiveInfo: const DeepDiveInfo(interests: {Interest.love}),
+        ),
+      ),
+    );
+
+    expect(find.text('회원님의 심층 분석 ✨'), findsOneWidget);
+    expect(find.text('   의 심층 분석 ✨'), findsNothing);
+  });
+
   testWidgets('메타 라인(날짜·시간·성별·출생지)이 실제 buildMetaLine 값 그대로 화면에 보인다', (tester) async {
     // result_screen_test.dart/report_screen_test.dart는 메타 라인 렌더링을 이미
     // 값으로 검증해뒀는데, 같은 buildMetaLine을 재사용하는 이 화면만 지금까지
@@ -129,5 +148,30 @@ void main() {
 
     expect(find.text(buildMetaLine(infoWithAll)), findsOneWidget);
     expect(find.text('1998.08.15 · 오후 2시生 · 양력 · 여성 · 서울특별시'), findsOneWidget);
+  });
+
+  testWidgets('태어난 시간을 몰라도(시주 없이) 3기둥만으로 우세 오행 풀이가 정확히 반영된다',
+      (tester) async {
+    // 지금까지 이 화면의 모든 테스트는 birthHour: 14(시간을 아는 경우)만 썼다 —
+    // birth_input에서 "태어난 시간을 몰라요"를 선택할 수 있고 결과/상세 리포트
+    // 화면은 이미 이 경로를 검증해뒀는데, 심층 분석 화면만 시간 미상 케이스를
+    // 한 번도 실제로 통과시켜본 적이 없었다. 같은 1998-08-15 생일이라도 시주가
+    // 빠지면 우세 오행이 '금'(8글자 기준)에서 '목'(6글자 기준)으로 실제로
+    // 바뀐다는 것까지 값으로 확인한다(계산은 test/core/saju/four_pillars_test.dart의
+    // 분포값을 근거로 삼음: 시주 신미=금+토가 빠지면 금 3→2, 토 2→1).
+    await useTallViewport(tester);
+    final noHourInfo = BirthInfo(date: DateTime(1998, 8, 15), hour: null, isLunar: false);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DeepDiveResultScreen(
+          birthInfo: noHourInfo,
+          deepDiveInfo: const DeepDiveInfo(interests: {Interest.career}),
+        ),
+      ),
+    );
+
+    expect(find.text(readingFor(Interest.career, '목')), findsOneWidget);
+    expect(find.text(readingFor(Interest.career, '금')), findsNothing);
   });
 }
