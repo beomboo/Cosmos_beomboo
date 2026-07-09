@@ -72,13 +72,28 @@ FourPillars calculateFourPillars({
   final yearBranchIndex = yearCycleIndex % 12;
 
   // 2) 일주 — 1900-01-01 = 갑진일(甲辰, 60갑자 index 40)
-  final daysSinceEpoch = date.difference(DateTime(1900, 1, 1)).inDays;
+  // **2026-07-07 버그 수정**: 로컬(non-UTC) `DateTime.difference()`는 두 날짜 사이에
+  // 서머타임 오프셋 변경이 끼어 있으면(한국은 1948~1960년·1987~1988년에 서머타임을
+  // 실시했음, 위 doc-comment의 "다섯 번째 정확도 이슈" 참고) 실제 달력 일수보다 하루 적게
+  // 계산되는 것을 실측으로 확인했다(`TZ=Asia/Seoul`에서 1987-08-15처럼 서머타임 기간에
+  // 태어난 날짜는 `.inDays`가 실제보다 하루 작게 나와 일주·시주가 통째로 하루씩 밀림).
+  // 이건 이미 알려진 "서머타임 미반영"(사용자가 입력한 시각 자체가 실제보다 빨랐을 수
+  // 있다는 문제)과는 다른, 이 함수 자체의 산술 버그다 — UTC로 정규화하면(UTC는 서머타임이
+  // 없음) 서머타임 기간과 무관하게 항상 정확한 날짜 차이가 나온다.
+  final utcDate = DateTime.utc(date.year, date.month, date.day);
+  final daysSinceEpoch = utcDate.difference(DateTime.utc(1900, 1, 1)).inDays;
   final dayCycleIndex = ((40 + daysSinceEpoch) % 60 + 60) % 60;
   final dayStemIndex = dayCycleIndex % 10;
   final dayBranchIndex = dayCycleIndex % 12;
 
   // 3) 월주 — 월지는 그레고리력 월 기준 근사, 월간은 오호둔년기월법(년간 기준 공식)
-  final monthBranchIndex = date.month % 12; // 1월→축(1) ... 12월→자(0)
+  // **2026-07-07 버그 수정**: 월지가 그레고리력 월만 보고 결정돼(`date.month`), 년주가
+  // 이미 입춘 이전으로 판단해 전년도로 롤백한 2/1~2/3에도 월지는 여전히 "2월=인월"로
+  // 계산돼 년주·월주가 서로 모순되는 날짜가 있었음(입춘 이전이면 아직 인월이 시작되지
+  // 않아 1월과 같은 축월이어야 함) — `isBeforeIpchun`과 같은 판단으로 이 3일간은 1월로
+  // 취급해 년주 롤백과 일관되게 맞춘다.
+  final effectiveMonthForBranch = (date.month == 2 && date.day < 4) ? 1 : date.month;
+  final monthBranchIndex = effectiveMonthForBranch % 12; // 1월→축(1) ... 12월→자(0)
   final traditionalMonthNumber = ((monthBranchIndex - 2 + 12) % 12) + 1; // 인월=1 ~ 축월=12
   final monthStemIndex = (((yearStemIndex % 5) * 2 + 2) + (traditionalMonthNumber - 1)) % 10;
 

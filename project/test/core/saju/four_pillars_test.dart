@@ -72,6 +72,18 @@ void main() {
       expect(result.dominantOhaeng, '금');
     });
 
+    test('1위 자리 자체가 동률이어도 목화토금수 순서로 우세 오행을 고른다', () {
+      // 2026-07-08 발견한 커버리지 공백: 위 테스트는 "1위(금)는 유일하고 그 아래(목·토)만
+      // 동률"인 경우만 확인했다 — reduce()의 동률 처리(`a.value >= b.value ? a : b`,
+      // 먼저 나온 쪽이 이긴다)가 실제로 중요해지는 건 "1위 자리 자체가 동률"일 때인데,
+      // 이 경우는 지금까지 값으로 확인한 적이 없었다. 1990-01-12/14시(년주 기사·월주 정축·
+      // 일주 정미·시주 정미)는 화·토가 정확히 4개씩 동률로 공동 1위이고 나머지 셋(목·금·수)은
+      // 0인 깔끔한 사례 — 목화토금수 순서상 화가 토보다 먼저이므로 화가 선택돼야 한다.
+      final result = calculateFourPillars(birthDate: DateTime(1990, 1, 12), birthHour: 14);
+      expect(result.ohaengCount, {'목': 0, '화': 4, '토': 4, '금': 0, '수': 0});
+      expect(result.dominantOhaeng, '화');
+    });
+
     group('시주(時柱) 경계값 — 전통 시진 경계가 정확히 반영되는지', () {
       // 시진 경계: 자시 23~01시, 축시 01~03시, 인시 03~05시 ... 해시 21~23시.
       // 시주 지지 계산(((hour+1)~/2)%12)이 실제 이 경계와 맞는지 지금까지 직접
@@ -122,6 +134,51 @@ void main() {
 
         expect(feb3.year.label, prevYear.year.label);
         expect(feb4.year.label, thisYear.year.label);
+      });
+    });
+
+    group('일주(日柱) — 서머타임 기간 생일도 시스템 타임존과 무관하게 정확한지', () {
+      // 2026-07-07 버그 수정: 로컬(non-UTC) DateTime.difference()는 두 날짜 사이에
+      // 서머타임 오프셋 변경이 끼어 있으면(한국은 1948~1960년·1987~1988년에 서머타임을
+      // 실시) 실제 달력 일수보다 하루 적게 계산됐다(TZ=Asia/Seoul에서 실측 확인).
+      // 기대값은 TZ=Asia/Seoul과 TZ=UTC 양쪽에서 `calculateFourPillars`를 직접 실행해
+      // 서로 같은 값이 나오는 것으로 교차 검증한 값이다(수정 전에는 두 타임존의
+      // 결과가 하루씩 어긋났음).
+      test('1987년 서머타임 기간(8/15) 생일의 일주는 병인이다', () {
+        final result = calculateFourPillars(birthDate: DateTime(1987, 8, 15));
+        expect(result.day.label, '병인');
+      });
+
+      test('1950년 서머타임 기간(8/15) 생일의 일주는 임자이다', () {
+        final result = calculateFourPillars(birthDate: DateTime(1950, 8, 15));
+        expect(result.day.label, '임자');
+      });
+
+      test('서머타임 기간이 아닌 1998년 8/15과 비교해도 60갑자 순환 규칙이 일관된다', () {
+        // 1998-08-15(서머타임 없음) → 갑자. 1987-08-15와 1998-08-15는 순수 날짜 차이가
+        // 60의 배수가 아니므로 라벨이 다른 게 정상 — 여기서는 "같은 계산 경로가 서머타임
+        // 유무와 무관하게 항상 동작한다"는 것만 별도로 확인(위 두 테스트가 실제 정답).
+        final result = calculateFourPillars(birthDate: DateTime(1998, 8, 15));
+        expect(result.day.label, '갑자');
+      });
+    });
+
+    group('월주(月柱) — 입춘 이전 2/1~2/3은 월지도 전년도 축월(丑月)이어야 하는지', () {
+      // 2026-07-07 버그 수정: 년주는 입춘(2/4 근사) 이전이면 전년도로 롤백하는데,
+      // 월지는 그레고리력 월(`date.month`)만 보고 결정돼 2/1~2/3에도 "2월→인월"로
+      // 계산돼 년주·월주가 서로 모순됐다(입춘 전이면 아직 인월이 시작되지 않아
+      // 1월과 같은 축월이어야 함). 실제 실행 결과로 재현: 수정 전에는 2월 3일의
+      // 월주가 "갑인"(인월)이었는데, 1월 15일과 같은 축월(을축)이어야 정답이다.
+      test('2월 3일(입춘 이전)의 월주는 1월 15일과 같은 을축(축월)이다', () {
+        final feb3 = calculateFourPillars(birthDate: DateTime(2024, 2, 3));
+        final jan15 = calculateFourPillars(birthDate: DateTime(2024, 1, 15));
+        expect(feb3.month.label, '을축');
+        expect(feb3.month.label, jan15.month.label);
+      });
+
+      test('2월 4일(입춘 당일 이후)의 월주는 새 연도의 인월(병인)로 넘어간다', () {
+        final feb4 = calculateFourPillars(birthDate: DateTime(2024, 2, 4));
+        expect(feb4.month.label, '병인');
       });
     });
 
