@@ -5,6 +5,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/core/storage/deep_dive_info_store.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_info.dart';
@@ -69,27 +70,7 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('"MBTI를 알고 있어요"를 체크하기 전에는 축 토글이 보이지 않는다', (tester) async {
-    await useTallViewport(tester);
-    await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
-
-    expect(find.text('E · 외향'), findsNothing);
-  });
-
-  testWidgets('"MBTI를 알고 있어요"를 체크하면 네 축 토글이 나타난다', (tester) async {
-    await useTallViewport(tester);
-    await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
-
-    await tester.tap(find.text('MBTI를 알고 있어요'));
-    await tester.pump();
-
-    expect(find.text('E · 외향'), findsOneWidget);
-    expect(find.text('S · 감각'), findsOneWidget);
-    expect(find.text('T · 사고'), findsOneWidget);
-    expect(find.text('J · 판단'), findsOneWidget);
-  });
-
-  testWidgets('MBTI를 체크하지 않고 제출하면 심층 분석 화면에 MBTI 코멘트가 없다', (tester) async {
+  testWidgets('MBTI를 미리 저장해두지 않고 제출하면 심층 분석 화면에 MBTI 코멘트가 없다', (tester) async {
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
 
@@ -98,6 +79,24 @@ void main() {
 
     expect(find.byType(DeepDiveResultScreen), findsOneWidget);
     expect(find.textContaining('INTJ'), findsNothing);
+  });
+
+  testWidgets('생성자 birthInfo도 라우트 arguments도 없으면 하드코딩된 기본값(1998-08-15 14시)이 다음 화면까지 그대로 전달된다',
+      (tester) async {
+    // build()의 `widget.birthInfo ?? (라우트 arguments) ?? BirthInfo(1998-08-15, 14시)`
+    // 3단 폴백은 result_screen.dart/report_screen.dart와 완전히 같은 패턴인데, 이
+    // 화면은 그 birthInfo를 자기 화면에 직접 표시하지 않고 "심층 분석 보기"를 누를 때
+    // 다음 화면(DeepDiveResultScreen)에 그대로 넘기기만 한다 — 그래서 지금까지 이
+    // 화면의 어떤 테스트도 이 폴백이 실제로 타는지 확인한 적이 없었다(전부 birthInfo를
+    // 생성자로 명시적으로 넘겼음). 값 자체가 하드코딩된 기본값(1998-08-15 14시)인 채로
+    // 다음 화면까지 이어지는지 메타 라인으로 확인한다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(const MaterialApp(home: DeepDiveInputScreen()));
+
+    await tester.tap(find.text('심층 분석 보기'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('1998.08.15 · 오후 2시生 · 양력'), findsOneWidget);
   });
 
   testWidgets('"심층 분석 보기"를 빠르게 두 번 연속 눌러도 결과 화면으로 한 번만 이동한다', (tester) async {
@@ -161,83 +160,33 @@ void main() {
     expect(pushedRoutes.length, 2);
   });
 
-  testWidgets('MBTI 축 하나만 바꿔 제출하면 나머지 기본값(E·S·T·J)이 그대로 반영된 코드가 보인다',
-      (tester) async {
+  testWidgets(
+      '2026-07-07: birth_input_screen.dart에서 미리 저장해둔 MBTI가 있으면 이 화면엔 '
+      '따로 보이지 않지만 제출 시 그대로 이어져 심층 분석 화면에 반영된다', (tester) async {
+    // MBTI 질문 자체가 birth_input_screen.dart로 옮겨가면서, 이 화면은 더 이상 MBTI
+    // 축을 직접 입력받지 않는다(체크박스·토글 자체가 없음) — birth_input에서 저장해둔
+    // 값을 조용히 이어받아(`_mbti`) 제출 시 그대로 실어 보내는지 확인한다.
+    await DeepDiveInfoStore.save(
+      const DeepDiveInfo(
+        mbti: Mbti(ei: MbtiEi.i, sn: MbtiSn.n, tf: MbtiTf.t, jp: MbtiJp.j),
+        interests: {...Interest.values},
+      ),
+    );
+
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.text('MBTI를 알고 있어요'));
-    await tester.pump();
-
-    // 기본값(E·S·T·J)을 그대로 두고 S만 N으로 바꾸면 "ENTJ"가 된다.
-    await tester.tap(find.text('N · 직관'));
-    await tester.pump();
+    // 이 화면 자체에는 MBTI 관련 텍스트가 전혀 없다(체크박스·토글 모두 삭제됨).
+    expect(find.textContaining('MBTI'), findsNothing);
 
     await tester.tap(find.text('심층 분석 보기'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('ENTJ'), findsOneWidget);
-  });
-
-  testWidgets('MBTI 네 축을 전부 바꿔 제출하면 그 조합 그대로 코드가 반영된다', (tester) async {
-    // 위 테스트는 S/N 축 하나만 바꿨을 뿐이라, 나머지 세 축(E/I·T/F·J/P)의
-    // onChanged 콜백 자체는 지금까지 한 번도 실제로 발동된 적이 없었다 — 커버리지로
-    // 확인해 발견한 빈틈이다. 네 축을 전부 반대로 뒤집어 "INFP"가 되는지 확인한다.
-    await useTallViewport(tester);
-    await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
-
-    await tester.tap(find.text('MBTI를 알고 있어요'));
-    await tester.pump();
-
-    await tester.tap(find.text('I · 내향'));
-    await tester.pump();
-    await tester.tap(find.text('N · 직관'));
-    await tester.pump();
-    await tester.tap(find.text('F · 감정'));
-    await tester.pump();
-    await tester.tap(find.text('P · 인식'));
-    await tester.pump();
-
-    await tester.tap(find.text('심층 분석 보기'));
-    await tester.pumpAndSettle();
-
-    expect(find.textContaining('INFP'), findsOneWidget);
-  });
-
-  testWidgets('"MBTI를 알고 있어요"를 껐다가 다시 켜도 그 사이에 고른 축 선택은 그대로 유지된다',
-      (tester) async {
-    // birth_input의 "태어난 시간을 몰라요" 체크박스도 껐다 켜도 이미 고른 시간을 잃지
-    // 않는 것과 같은 관례다 — 체크박스는 축 토글을 보여줄지만 결정할 뿐, 축 값
-    // 자체(_ei/_sn/_tf/_jp)는 별개 상태라 체크 해제만으로 초기화되지 않는다. 지금까지는
-    // 이 "껐다 켜도 안 잃어버림" 자체를 직접 확인한 테스트가 없었다 — 나중에 누군가
-    // onChanged에 "체크 해제 시 기본값으로 리셋" 로직을 실수로 추가하면 이 테스트가
-    // 잡아준다.
-    await useTallViewport(tester);
-    await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
-
-    await tester.tap(find.text('MBTI를 알고 있어요'));
-    await tester.pump();
-
-    await tester.tap(find.text('I · 내향'));
-    await tester.pump();
-    await tester.tap(find.text('N · 직관'));
-    await tester.pump();
-
-    // 체크 해제 → 축 토글이 안 보임
-    await tester.tap(find.text('MBTI를 알고 있어요'));
-    await tester.pump();
-    expect(find.text('I · 내향'), findsNothing);
-
-    // 다시 체크 → 방금 고른 I·N이 그대로 남아있어야 한다(기본값 E·S로 되돌아가지 않음).
-    await tester.tap(find.text('MBTI를 알고 있어요'));
-    await tester.pump();
-
-    await tester.tap(find.text('심층 분석 보기'));
-    await tester.pumpAndSettle();
-
-    // 기본값(E·S·T·J)에서 I·N만 바꿨으니 "INTJ"가 나와야 한다 — 체크 해제로
-    // 기본값(E·S)으로 되돌아갔다면 "ESTJ"가 나왔을 것이다.
     expect(find.textContaining('INTJ'), findsOneWidget);
+
+    final saved = await DeepDiveInfoStore.load();
+    expect(saved!.mbti?.code, 'INTJ');
   });
 
   testWidgets('관심사 칩을 껐다가 다시 탭하면 재선택된다', (tester) async {
@@ -264,9 +213,9 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('이전에 저장된 관심사·MBTI가 있으면 화면을 열 때 그대로 반영된다', (tester) async {
+  testWidgets('이전에 저장된 관심사가 있으면 화면을 열 때 그대로 반영된다', (tester) async {
     // DeepDiveInfoStore에 미리 저장해두고 화면을 열어, initState의 비동기 로드가
-    // 기본값(전체 선택·MBTI 모름)이 아니라 저장된 값으로 화면을 채우는지 확인한다.
+    // 기본값(전체 선택)이 아니라 저장된 값으로 화면을 채우는지 확인한다.
     const saved = DeepDiveInfo(
       mbti: Mbti(ei: MbtiEi.i, sn: MbtiSn.n, tf: MbtiTf.t, jp: MbtiJp.j),
       interests: {Interest.health},
@@ -287,9 +236,6 @@ void main() {
       tester.getSemantics(find.text('💘 연애운')).flagsCollection.isSelected,
       Tristate.isFalse,
     );
-    // MBTI를 알고 있었으므로 체크박스가 켜져 있고, 저장된 축(I·N·T·J)이 그대로 보인다.
-    expect(find.text('I · 내향'), findsOneWidget);
-    expect(find.text('N · 직관'), findsOneWidget);
 
     semantics.dispose();
   });
@@ -406,6 +352,48 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('선택된/선택 안 된 관심사 칩의 배경·테두리·글자색이 목업(.pill.is-active)값과 정확히 일치한다',
+      (tester) async {
+    // _InterestChip은 PastelToggleRow(pastel_toggle_row_test.dart 참고)와 완전히 같은
+    // accentSoft+accentText 선택 색 조합을 독립적으로 재구현하는데, 이 화면 쪽은 지금까지
+    // 선택 여부(isSelected 시맨틱스)만 확인했을 뿐 실제 색 값 자체는 검증한 적이 없었다 —
+    // 두 위젯이 각자 같은 로직을 중복 구현하면서 한쪽만 값이 잠겨있던 비대칭 공백.
+    await useTallViewport(tester);
+    await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+
+    // 기본으로 전체 선택 상태이니 하나만 꺼서 선택/비선택 대조군을 만든다.
+    await tester.tap(find.text('💼 직장운'));
+    await tester.pump();
+
+    BoxDecoration decorationOf(String text) =>
+        tester.widget<Container>(find.ancestor(of: find.text(text), matching: find.byType(Container)).first).decoration!
+            as BoxDecoration;
+
+    final selectedDecoration = decorationOf('💘 연애운');
+    expect(selectedDecoration.color, AppColors.accentSoft);
+    expect(selectedDecoration.border!.top.color, AppColors.accent);
+    expect(selectedDecoration.border!.top.width, 1.5);
+    expect(tester.widget<Text>(find.text('💘 연애운')).style!.color, AppColors.accentText);
+
+    final unselectedDecoration = decorationOf('💼 직장운');
+    expect(unselectedDecoration.color, AppColors.bgCard);
+    expect(unselectedDecoration.border!.top.color, AppColors.border);
+    expect(tester.widget<Text>(find.text('💼 직장운')).style!.color, AppColors.ink);
+  });
+
+  testWidgets('관심사 칩의 스크린 리더 라벨에는 이모지가 포함되지 않는다', (tester) async {
+    // result_screen.dart의 _CategoryCard/_OhaengMeaningCard는 장식용 이모지까지
+    // 스크린 리더가 유니코드 이름으로 읽어 혼란스러운 문제를 2026-07-07에 이미
+    // 고쳤는데(라벨에서 이모지 제외, 시각적 텍스트에는 그대로 유지), 정작 관심사
+    // 목록의 "원본"인 이 칩만 라벨에 이모지("💘 연애운")를 그대로 포함하고 있어서
+    // 지금까지 검증한 적이 없었다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+
+    final node = tester.getSemantics(find.text('💘 연애운'));
+    expect(node.label, '연애운');
   });
 }
 

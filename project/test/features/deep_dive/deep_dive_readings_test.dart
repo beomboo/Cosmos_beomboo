@@ -40,6 +40,25 @@ void main() {
     test('알 수 없는 오행이 들어오면 토(土) 문구로 폴백한다', () {
       expect(readingFor(Interest.career, '알수없음'), readingFor(Interest.career, '토'));
     });
+
+    test('연애·재물·건강의 categoryTitle은 항상 ohaeng_readings.dart 제목과 일치한다', () {
+      // 2026-07-08 발견: `Interest.categoryTitle`(deep_dive_info.dart)과
+      // `categoryReadingsByOhaeng`의 제목(ohaeng_readings.dart)은 서로 다른 파일의
+      // 문자열 리터럴이라 컴파일 타임 연결이 없다 — 지금까지는 우연히 값이 일치해서
+      // `readingFor()` 내부의 조회가 항상 성공했을 뿐, 둘 중 하나만 바뀌면
+      // (예: "건강운"→"건강 운" 오타 수정) `readingFor()`가 크래시하는 실제 위험이
+      // 있었다(같은 파일 다른 조회는 전부 기본값 폴백이 있는데 이것만 없었음, 지금은
+      // 폴백 추가함). 이 테스트는 그 크래시를 막는 런타임 폴백 자체가 아니라, 애초에
+      // 두 문자열이 어긋나면 여기서 먼저 실패하도록 만들어 CI에서 조기에 잡기 위함이다.
+      final titles = categoryReadingsByOhaeng['토']!.map((c) => c.$2).toSet();
+      for (final interest in [Interest.love, Interest.wealth, Interest.health]) {
+        expect(
+          titles.contains(interest.categoryTitle),
+          isTrue,
+          reason: '${interest.categoryTitle}이 categoryReadingsByOhaeng 제목 목록에 없음',
+        );
+      }
+    });
   });
 
   group('mbtiCommentFor', () {

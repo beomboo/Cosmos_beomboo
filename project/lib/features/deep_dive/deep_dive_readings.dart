@@ -18,7 +18,13 @@ String readingFor(Interest interest, String ohaeng) {
     return _careerReadingByOhaeng[ohaeng] ?? _careerReadingByOhaeng['토']!;
   }
   final categories = categoryReadingsByOhaeng[ohaeng] ?? categoryReadingsByOhaeng['토']!;
-  return categories.firstWhere((c) => c.$2 == interest.categoryTitle).$3;
+  // `Interest.categoryTitle`(deep_dive_info.dart)과 `categoryReadingsByOhaeng`의 제목
+  // (ohaeng_readings.dart)은 서로 다른 파일의 문자열 리터럴이라 컴파일 타임 연결이
+  // 없다 — 둘 중 하나만 바뀌면(예: 향후 "건강운"을 "건강 운"으로 오타 수정) 여기서
+  // `StateError`가 나 심층 분석 결과 화면 전체가 크래시했을 것(2026-07-08 발견,
+  // 같은 파일의 다른 조회들은 전부 기본값 폴백이 있는데 이것만 없었음).
+  final match = categories.where((c) => c.$2 == interest.categoryTitle);
+  return match.isEmpty ? categories.first.$3 : match.first.$3;
 }
 
 /// MBTI 16유형별 짧은 코멘트. 오행과 곱하면(5×16=80가지) 손으로 쓰기 어려워,

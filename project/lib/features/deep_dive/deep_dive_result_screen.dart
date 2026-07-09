@@ -68,29 +68,37 @@ class DeepDiveResultScreen extends StatelessWidget {
                 if (deepDiveInfo.interests.contains(interest))
                   Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: PastelCard(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(interest.icon, style: const TextStyle(fontSize: 20)),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  interest.categoryTitle,
-                                  style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  readingFor(interest, dominant),
-                                  style: const TextStyle(fontSize: 13, color: AppColors.inkSoft),
-                                ),
-                              ],
+                    // result_screen.dart의 _CategoryCard와 같은 이유(2026-07-07 발견) —
+                    // 지금까지는 아이콘·제목·설명이 각각 별도 Text라 스크린 리더가 세 번
+                    // 나눠 읽었다. "제목. 설명"으로 병합해 하나의 노드로 읽히게 한다.
+                    child: Semantics(
+                      label: '${interest.categoryTitle}. ${readingFor(interest, dominant)}',
+                      excludeSemantics: true,
+                      container: true,
+                      child: PastelCard(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(interest.icon, style: const TextStyle(fontSize: 20)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    interest.categoryTitle,
+                                    style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    readingFor(interest, dominant),
+                                    style: const TextStyle(fontSize: 13, color: AppColors.inkSoft),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),

@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme/app_colors.dart';
 import '../../core/storage/deep_dive_info_store.dart';
-import '../../shared/widgets/pastel_toggle_row.dart';
 import '../birth_input/birth_info.dart';
 import 'deep_dive_info.dart';
 import 'deep_dive_result_screen.dart';
 
-/// MBTI·관심사 입력 화면 — 결과 화면의 "MBTI·관심사로 심층 분석 받기"에서 진입.
-/// 목업에는 없는 화면이라(1단계 신규 기능), 기존 birth_input 화면의 토글/체크박스
-/// 패턴(PastelToggleRow, "몰라요" 체크로 선택 입력 감추기)을 그대로 재사용해 톤을 맞춘다.
+/// 관심사 입력 화면 — 상세 리포트의 "MBTI·관심사로 심층 분석 받기"에서 진입.
+/// 목업에는 없는 화면이라(1단계 신규 기능), 파스텔 큐트 톤에 맞춘 커스텀 칩(`_InterestChip`)으로
+/// 관심사를 다중 선택한다.
+/// **2026-07-07 변경(사용자 요청)**: MBTI 질문 자체는 birth_input_screen.dart로
+/// 옮겨졌다 — 이 화면에는 더 이상 체크박스가 없고, 그때 저장된 MBTI를 다시 묻지
+/// 않고 그대로 이어받아(`_mbti`) 관심사와 함께 저장만 한다.
 class DeepDiveInputScreen extends StatefulWidget {
   const DeepDiveInputScreen({super.key, this.birthInfo});
 
@@ -24,13 +26,9 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
   // 하나하나 골라 담는 것보다 진입 장벽이 낮다.
   Set<Interest> _interests = {...Interest.values};
 
-  // MBTI는 모르는 사람이 많으므로 기본은 꺼둔 채, birth_input의 "시간 모름" 체크와
-  // 같은 방식으로 켰을 때만 네 축 토글을 보여준다.
-  bool _knowsMbti = false;
-  MbtiEi _ei = MbtiEi.e;
-  MbtiSn _sn = MbtiSn.s;
-  MbtiTf _tf = MbtiTf.t;
-  MbtiJp _jp = MbtiJp.j;
+  // birth_input_screen.dart에서 이미 물어본 MBTI를 그대로 이어받아 저장할 때만
+  // 쓴다 — 이 화면에서 새로 입력받거나 고칠 수 있는 값이 아니다.
+  Mbti? _mbti;
 
   /// birth_input_screen.dart의 `_submit()`과 같은 이유로 필요하다 — `_saveAndContinue()`의
   /// `DeepDiveInfoStore.save()` await 구간에서 "심층 분석 보기"를 빠르게 두 번 누르면
@@ -57,14 +55,7 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
 
     setState(() {
       _interests = saved!.interests;
-      final mbti = saved.mbti;
-      if (mbti != null) {
-        _knowsMbti = true;
-        _ei = mbti.ei;
-        _sn = mbti.sn;
-        _tf = mbti.tf;
-        _jp = mbti.jp;
-      }
+      _mbti = saved.mbti;
     });
   }
 
@@ -82,10 +73,7 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
     if (_isSubmitting) return;
     _isSubmitting = true;
 
-    final deepDiveInfo = DeepDiveInfo(
-      mbti: _knowsMbti ? Mbti(ei: _ei, sn: _sn, tf: _tf, jp: _jp) : null,
-      interests: _interests,
-    );
+    final deepDiveInfo = DeepDiveInfo(mbti: _mbti, interests: _interests);
     try {
       await DeepDiveInfoStore.save(deepDiveInfo);
     } catch (_) {
@@ -136,51 +124,6 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            CheckboxListTile(
-              value: _knowsMbti,
-              onChanged: (v) => setState(() => _knowsMbti = v ?? false),
-              activeColor: AppColors.accent,
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              // birth_input_screen.dart의 "태어난 시간을 몰라요"와 같은 이유(목업
-              // `.check-row`는 12px)로 크기 조정(2026-07-06 대조 발견).
-              title: const Text(
-                'MBTI를 알고 있어요',
-                style: TextStyle(color: AppColors.inkSoft, fontWeight: FontWeight.w600, fontSize: 12),
-              ),
-            ),
-            if (_knowsMbti) ...[
-              const SizedBox(height: 8),
-              PastelToggleRow<MbtiEi>(
-                value: _ei,
-                options: const {MbtiEi.e: 'E · 외향', MbtiEi.i: 'I · 내향'},
-                onChanged: (v) => setState(() => _ei = v),
-                semanticLabel: '외향 또는 내향',
-              ),
-              const SizedBox(height: 8),
-              PastelToggleRow<MbtiSn>(
-                value: _sn,
-                options: const {MbtiSn.s: 'S · 감각', MbtiSn.n: 'N · 직관'},
-                onChanged: (v) => setState(() => _sn = v),
-                semanticLabel: '감각 또는 직관',
-              ),
-              const SizedBox(height: 8),
-              PastelToggleRow<MbtiTf>(
-                value: _tf,
-                options: const {MbtiTf.t: 'T · 사고', MbtiTf.f: 'F · 감정'},
-                onChanged: (v) => setState(() => _tf = v),
-                semanticLabel: '사고 또는 감정',
-              ),
-              const SizedBox(height: 8),
-              PastelToggleRow<MbtiJp>(
-                value: _jp,
-                options: const {MbtiJp.j: 'J · 판단', MbtiJp.p: 'P · 인식'},
-                onChanged: (v) => setState(() => _jp = v),
-                semanticLabel: '판단 또는 인식',
-              ),
-            ],
-            const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -207,20 +150,32 @@ class _InterestChip extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: '${interest.icon} ${interest.categoryTitle}',
+      // 2026-07-08 발견: result_screen.dart의 _CategoryCard/_OhaengMeaningCard는
+      // 이미 같은 이유(장식용 이모지까지 스크린 리더가 유니코드 이름으로 읽어
+      // 혼란스러움, 2026-07-07 발견·수정)로 라벨에서 이모지를 뺐는데, 정작 그
+      // 관심사 목록의 "원본"인 이 칩만 라벨에 이모지를 그대로 포함하고 있었다 —
+      // 시각적 표시(아래 Text)에는 이모지를 그대로 유지하고 라벨만 뗀다.
+      label: interest.categoryTitle,
       onTap: onTap,
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          // PastelPillButton/PastelToggleRow와 같은 이유(목업 `.pill`은
+          // padding:9px 14px)로 맞춘다(2026-07-07 대조 발견, 기존 16/10).
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
             // PastelToggleRow와 같은 이유로 accent+흰 글자 대신 목업의 `.pill.is-active`와
             // 같은 accentSoft+accentText 조합을 쓴다(2026-07-06, WCAG AA 텍스트 대비 자연 해결).
             color: selected ? AppColors.accentSoft : AppColors.bgCard,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: selected ? AppColors.accent : AppColors.border),
+            // 목업(`.pill`)은 1.5px 테두리를 쓰는데 지금까지는 기본값인 1px이었다
+            // (2026-07-07 대조 발견).
+            border: Border.all(
+              color: selected ? AppColors.accent : AppColors.border,
+              width: 1.5,
+            ),
           ),
           child: Text(
             '${interest.icon} ${interest.categoryTitle}',
