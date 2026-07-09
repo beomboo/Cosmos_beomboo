@@ -85,9 +85,14 @@ class _CalculatingScreenState extends State<CalculatingScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // 목업(`.orbit`)은 120x120인데 지금까지는 200x200이었다(2026-07-07
+              // 대조 발견) — 카드 패딩 판단을 뒤집은 것과 같은 이유(비율이 서로
+              // 안 맞아 의도적 확대로 보기 어려움: 궤도 200/120=1.67배, 달 72/64=1.13배,
+              // 궤도 반경 90/58=1.55배로 제각각), 아래 달 크기·궤도 반경·이모지 크기도
+              // 함께 목업 값 그대로 맞춘다.
               SizedBox(
-                width: 200,
-                height: 200,
+                width: 120,
+                height: 120,
                 child: AnimatedBuilder(
                   animation: _orbitController,
                   builder: (context, _) {
@@ -99,8 +104,8 @@ class _CalculatingScreenState extends State<CalculatingScreen>
                         // accentSoft 톤의 은은한 링 섀도가 둘러싼 "달" 모양인데, 지금까지는
                         // 단색 accentSoft 원으로만 구현돼 있었다(2026-07-06 대조 발견).
                         Container(
-                          width: 72,
-                          height: 72,
+                          width: 64,
+                          height: 64,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: RadialGradient(
@@ -127,7 +132,10 @@ class _CalculatingScreenState extends State<CalculatingScreen>
                   },
                 ),
               ),
-              const SizedBox(height: 32),
+              // 목업(`.loading .screen-body`)은 자식 사이에 균일한 gap:22px를 쓰는데,
+              // 지금까지는 32/20/12px로 제각각이었다(2026-07-07 대조 발견) — 이하 세 곳
+              // 모두 22로 통일.
+              const SizedBox(height: 22),
               Text(
                 _loadingMessages[_messageIndex],
                 style: const TextStyle(
@@ -136,14 +144,16 @@ class _CalculatingScreenState extends State<CalculatingScreen>
                   color: AppColors.ink,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 22),
               // 목업의 `.progress-fill`은 단색이 아니라 공유 버튼(share_btn)과 같은
               // accent→metal 그라데이션을 쓴다(2026-07-06 대조 발견) — LinearProgressIndicator는
               // 배경/진행 막대를 한 위젯이 통째로 그려서 ShaderMask를 그냥 씌우면 배경 트랙까지
               // 같이 물들어버리므로, 배경 트랙은 별도 Container로 먼저 그리고 그 위에 진행
               // 막대만(배경을 투명하게) ShaderMask로 감싸 그라데이션을 입힌다.
+              // 목업(`.progress-track`)은 180px인데 지금까지는 160px이었다
+              // (2026-07-07 대조 발견).
               SizedBox(
-                width: 160,
+                width: 180,
                 child: Stack(
                   children: [
                     Container(
@@ -170,10 +180,12 @@ class _CalculatingScreenState extends State<CalculatingScreen>
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 22),
+              // 목업(`.loading-caption`)은 11px/font-weight 600인데 지금까지는 13px에
+              // 기본 굵기였다(2026-07-07 대조 발견).
               const Text(
                 '평균 3초 소요돼요',
-                style: TextStyle(fontSize: 13, color: AppColors.inkSoft),
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.inkSoft),
               ),
             ],
           ),
@@ -183,12 +195,15 @@ class _CalculatingScreenState extends State<CalculatingScreen>
   }
 
   Widget _orbitingEmoji({required String emoji, required double angle}) {
-    const radius = 90.0;
+    // 목업(`.ring i:nth-child(1){transform:translate(-6px,-58px)}`)의 중심에서
+    // 떨어진 거리는 sqrt(6²+58²)≈58.3px, 글자 크기는 13px인데 지금까지는
+    // 반경 90/22px이었다(2026-07-07 대조 발견).
+    const radius = 58.0;
     final dx = radius * math.cos(angle);
     final dy = radius * math.sin(angle);
     return Transform.translate(
       offset: Offset(dx, dy),
-      child: Text(emoji, style: const TextStyle(fontSize: 22)),
+      child: Text(emoji, style: const TextStyle(fontSize: 13)),
     );
   }
 }

@@ -123,8 +123,18 @@ void main() {
 
     expect(after, equals(before));
 
-    // 남은 타이머(3초 뒤 이동)를 흘려보내 "A Timer is still pending" 오류를 막는다.
-    await tester.pump(const Duration(seconds: 2));
+    // 궤도 회전뿐 아니라 로딩 문구 순환 타이머(_messageTimer)도 같은
+    // disableAnimations 가드를 갖고 있는데, 지금까지는 이 분기를 실제로 통과시켜
+    // "1.8초가 지나도 문구가 그대로인지"를 확인한 테스트가 없었다 — 궤도 회전
+    // 테스트는 1초만 흘려보내 1.8초 문턱을 아예 넘지 않았고, 문구 순환 테스트는
+    // 반대로 disableAnimations를 켜지 않았다. 여기서 0.8초를 더 흘려보내(총 1.8초
+    // 경과, 문구 타이머가 처음 발화하는 시점) 문구가 첫 문구 그대로인지 확인한다.
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(find.text('사주팔자를 계산하고 있어요...'), findsOneWidget);
+
+    // 남은 타이머(3초 뒤 이동, 지금까지 1.8초 경과)를 흘려보내 "A Timer is still
+    // pending" 오류를 막는다.
+    await tester.pump(const Duration(milliseconds: 1200));
     await tester.pump();
   });
 
