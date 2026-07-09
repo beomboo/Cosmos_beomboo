@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/shared/widgets/pastel_pill_button.dart';
 
 void main() {
@@ -83,5 +84,32 @@ void main() {
     expect(tapped, isTrue);
 
     semantics.dispose();
+  });
+
+  testWidgets('활성/비활성 배경색이 실제로 다르다(onTap이 null이면 옅어진 border색을 쓴다)', (tester) async {
+    // 지금까지 활성/비활성 여부는 시맨틱스(enabled 플래그)로만 확인했을 뿐, 목업의
+    // 비활성 `.pill`(옅게 죽은 느낌)을 반영한 실제 배경색 값(`border.withValues(alpha: 0.4)`
+    // vs `bgCard`) 자체는 한 번도 값으로 검증한 적이 없었다.
+    BoxDecoration decorationOf(String text) =>
+        tester.widget<Container>(find.ancestor(of: find.text(text), matching: find.byType(Container)).first).decoration!
+            as BoxDecoration;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PastelPillButton(label: '2024.01.01', onTap: () {}),
+        ),
+      ),
+    );
+    expect(decorationOf('2024.01.01').color, AppColors.bgCard);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: PastelPillButton(label: '시간 모름', onTap: null),
+        ),
+      ),
+    );
+    expect(decorationOf('시간 모름').color, AppColors.border.withValues(alpha: 0.4));
   });
 }

@@ -9,7 +9,11 @@ class PastelCard extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(14),
-    this.borderRadius = 16,
+    // 목업(docs/mockups/01-pastel-cute.html)의 `.pillar-card`/`.cat-card`는 실제로
+    // 13px 모서리 반경을 쓰는데, 이 위젯을 쓰는 4기둥 카드·카테고리 카드·심층 분석
+    // 카드·상세 리포트 카드 전부 지금까지 이 기본값을 그대로 써서 16px이었다
+    // (2026-07-07 대조 발견).
+    this.borderRadius = 13,
   });
 
   final Widget child;

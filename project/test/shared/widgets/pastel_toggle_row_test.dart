@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/shared/widgets/pastel_toggle_row.dart';
 
 enum _Option { a, b }
@@ -126,5 +127,38 @@ void main() {
     expect(tapped, _Option.b);
 
     semantics.dispose();
+  });
+
+  testWidgets('선택된/선택 안 된 옵션의 배경·테두리·글자색이 목업(.pill.is-active)값과 정확히 일치한다', (tester) async {
+    // 2026-07-06에 accent+흰 글자(WCAG 미달) 대신 accentSoft+accentText 조합으로
+    // 고친 뒤로, 그 근거가 된 실제 색 값 자체는 이 위젯 테스트에서도(그리고
+    // 같은 조합을 독립적으로 재구현한 deep_dive_input_screen.dart의 _InterestChip
+    // 쪽에서도) 한 번도 값으로 확인한 적이 없었다 — 시맨틱스만 검증돼 있었다.
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PastelToggleRow<_Option>(
+            value: _Option.a,
+            options: const {_Option.a: '양력', _Option.b: '음력'},
+            onChanged: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    BoxDecoration decorationOf(String text) =>
+        tester.widget<Container>(find.ancestor(of: find.text(text), matching: find.byType(Container)).first).decoration!
+            as BoxDecoration;
+
+    final activeDecoration = decorationOf('양력');
+    expect(activeDecoration.color, AppColors.accentSoft);
+    expect(activeDecoration.border!.top.color, AppColors.accent);
+    expect(activeDecoration.border!.top.width, 1.5);
+    expect(tester.widget<Text>(find.text('양력')).style!.color, AppColors.accentText);
+
+    final inactiveDecoration = decorationOf('음력');
+    expect(inactiveDecoration.color, AppColors.bgCard);
+    expect(inactiveDecoration.border!.top.color, AppColors.border);
+    expect(tester.widget<Text>(find.text('음력')).style!.color, AppColors.ink);
   });
 }

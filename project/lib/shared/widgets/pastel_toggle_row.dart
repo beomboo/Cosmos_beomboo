@@ -44,7 +44,9 @@ class PastelToggleRow<T> extends StatelessWidget {
               onTap: () => onChanged(entry.key),
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                // 목업(`.pill`)은 padding:9px 14px인데 지금까지는 20/12였다
+                // (2026-07-07 대조 발견).
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(
                   // 목업(docs/mockups/01-pastel-cute.html)의 `.pill.is-active`는 배경을
                   // 진한 accent가 아니라 옅은 accentSoft로, 글자도 흰색이 아니라 진한
@@ -54,7 +56,12 @@ class PastelToggleRow<T> extends StatelessWidget {
                   // accentSoft 위에서 4.5:1 이상 통과하도록 설계돼 있음, app_colors.dart 참고).
                   color: isActive ? AppColors.accentSoft : AppColors.bgCard,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isActive ? AppColors.accent : AppColors.border),
+                  // 목업(`.pill`)은 1.5px 테두리를 쓰는데 지금까지는 기본값인 1px이었다
+                  // (2026-07-07 대조 발견).
+                  border: Border.all(
+                    color: isActive ? AppColors.accent : AppColors.border,
+                    width: 1.5,
+                  ),
                 ),
                 child: Text(
                   entry.value,

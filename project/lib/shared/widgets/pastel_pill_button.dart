@@ -27,11 +27,15 @@ class PastelPillButton extends StatelessWidget {
         // 아니라 12px 모서리 반경만 쓴다 — 이름과 달리 "알약"이 아니었음(2026-07-06 대조).
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          // 목업(`.pill`)은 padding:9px 14px인데 지금까지는 20/14였다
+          // (2026-07-07 대조 발견).
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
             color: onTap == null ? AppColors.border.withValues(alpha: 0.4) : AppColors.bgCard,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            // 목업(`.pill`)은 1.5px 테두리를 쓰는데 지금까지는 기본값인 1px이었다
+            // (2026-07-07 대조 발견).
+            border: Border.all(color: AppColors.border, width: 1.5),
           ),
           child: Text(
             label,

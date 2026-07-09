@@ -31,7 +31,8 @@ void main() {
 
     expect(decoration.color, AppColors.bgCard);
     expect(decoration.border, Border.all(color: AppColors.border));
-    expect(decoration.borderRadius, BorderRadius.circular(16));
+    // 목업(.pillar-card/.cat-card)의 실제 값인 13px (2026-07-07 대조 발견, 이전엔 16px).
+    expect(decoration.borderRadius, BorderRadius.circular(13));
   });
 
   testWidgets('padding/borderRadius를 커스텀하면 반영된다', (tester) async {
