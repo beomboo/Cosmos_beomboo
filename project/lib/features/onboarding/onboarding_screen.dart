@@ -13,7 +13,9 @@ class OnboardingScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+          // 목업(`.screen-body`)의 좌우 padding은 20px인데 지금까지는 32px이었다
+          // (2026-07-07 대조 발견).
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -28,41 +30,79 @@ class OnboardingScreen extends StatelessWidget {
               // "눈"(`.face i`)이 있는 캐릭터였음 — Flutter의 `Radius.elliptical`이
               // CSS의 가로/세로 분리 반경(`/`로 구분된 두 값)과 정확히 대응돼 그대로 포팅.
               ExcludeSemantics(
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.elliptical(53, 58),
-                      topRight: Radius.elliptical(67, 53),
-                      bottomRight: Radius.elliptical(70, 67),
-                      bottomLeft: Radius.elliptical(50, 62),
-                    ),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [AppColors.accentSoft, AppColors.woodSoft],
-                    ),
-                    border: Border.all(color: AppColors.accent.withValues(alpha: 0.3), width: 2),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      2,
-                      (_) => Container(
-                        width: 8,
-                        height: 10,
-                        margin: const EdgeInsets.symmetric(horizontal: 7),
-                        decoration: const BoxDecoration(
-                          color: AppColors.ink,
-                          shape: BoxShape.circle,
+                child: SizedBox(
+                  width: 104,
+                  height: 104,
+                  child: Stack(
+                    // 반짝이(spark) 두 개가 블롭 경계 밖으로 살짝 나가는 위치라
+                    // (top:-6, left:-10) 잘리지 않게 clip을 끈다.
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        // 목업(`.mascot`)은 104x104인데 지금까지는 120x120이었다(2026-07-07
+                        // 대조 발견) — 모서리 반경(`.mascot .blob`의 44%~58% 퍼센트값)도
+                        // 120 기준으로 계산돼 있었던 걸 104 기준으로 다시 계산해 맞춤.
+                        width: 104,
+                        height: 104,
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.elliptical(46, 50),
+                            topRight: Radius.elliptical(58, 46),
+                            bottomRight: Radius.elliptical(60, 58),
+                            bottomLeft: Radius.elliptical(44, 54),
+                          ),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [AppColors.accentSoft, AppColors.woodSoft],
+                          ),
+                          border: Border.all(
+                            color: AppColors.accent.withValues(alpha: 0.3),
+                            width: 2,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(
+                            2,
+                            // 목업(`.mascot .face i`)은 6x8인데 지금까지는 8x10이었다
+                            // (2026-07-07 대조 발견). 가로 여백(7)은 `.face{gap:14px}`와
+                            // 이미 일치(점 두 개 사이에 각 7씩 더하면 총 14).
+                            (_) => Container(
+                              width: 6,
+                              height: 8,
+                              margin: const EdgeInsets.symmetric(horizontal: 7),
+                              decoration: const BoxDecoration(
+                                color: AppColors.ink,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      // 목업(`.mascot .spark`)의 반짝이 두 개 — 지금까지는 아예 없었다
+                      // (2026-07-07 대조 발견). CSS의 `float`/`twinkle` 애니메이션은
+                      // 순수 장식용 낮은 우선순위 항목이라 이번에도 스코프 밖으로 남겨두고
+                      // (test/tool 등에서 무한 반복 애니메이션 처리 패턴이 필요해질 수 있음),
+                      // 정적 위치·크기만 추가한다.
+                      const Positioned(
+                        top: -6,
+                        right: 6,
+                        child: Text('✨', style: TextStyle(fontSize: 14)),
+                      ),
+                      const Positioned(
+                        bottom: 2,
+                        left: -10,
+                        child: Text('⋆', style: TextStyle(fontSize: 10)),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              // 목업(`.onboarding .screen-body`)은 자식 사이에 균일한 gap:18px를 쓰고,
+              // 마스코트만 자기 margin-bottom:4px가 더해져 18+4=22px다 — 지금까지는 20px
+              // 이었다(2026-07-07 대조 발견).
+              const SizedBox(height: 22),
               // 목업(STEP 1)의 워드마크 — 아래 헤드라인보다 작게, 브랜드 이름만 짧게 보여준다.
               // 목업 CSS는 이 텍스트에 accent(#FF6B8A)를 그대로 쓰지만 WCAG AA 미달(2.64:1)이라,
               // 오행 텍스트와 같은 방식으로 만든 accentText(텍스트 전용 진한 버전)를 대신 쓴다.
@@ -75,7 +115,8 @@ class OnboardingScreen extends StatelessWidget {
                   letterSpacing: 1,
                 ),
               ),
-              const SizedBox(height: 12),
+              // 목업의 gap:18px인데 지금까지는 12px이었다(2026-07-07 대조 발견).
+              const SizedBox(height: 18),
               const Text(
                 '내 안의 오행,\n3분이면 알 수 있어요',
                 textAlign: TextAlign.center,
@@ -86,7 +127,8 @@ class OnboardingScreen extends StatelessWidget {
                   color: AppColors.ink,
                 ),
               ),
-              const SizedBox(height: 12),
+              // 목업의 gap:18px인데 지금까지는 12px이었다(2026-07-07 대조 발견).
+              const SizedBox(height: 18),
               const Text(
                 '생년월일시만 입력하면 끝!\n어려운 명리학 용어 없이 쉽게 풀어드려요',
                 textAlign: TextAlign.center,
@@ -147,7 +189,9 @@ void _showHowItWorksDialog(BuildContext context) {
         '그래서 절기 경계에 가까운 생일은 정통 만세력과 며칠 차이가 날 수 있어요. '
         '자시(밤 11시~새벽 1시) 출생이나 태어난 지역의 시차 보정도 아직 반영하지 않아서, '
         '그 경우엔 결과가 조금 다를 수 있어요. 음력으로 입력해도 지금은 양력으로 변환하지 않고 '
-        '입력한 날짜를 그대로 계산에 사용하니, 음력 생일이라면 결과가 실제와 다를 수 있어요.',
+        '입력한 날짜를 그대로 계산에 사용하니, 음력 생일이라면 결과가 실제와 다를 수 있어요. '
+        '한국이 서머타임을 시행했던 1948~1960년·1987~1988년생이라면 그 보정도 아직 반영하지 '
+        '않아 실제 시각과 최대 1시간까지 차이가 날 수 있어요.',
         style: TextStyle(height: 1.5),
       ),
       actions: [

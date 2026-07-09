@@ -57,6 +57,10 @@ void main() {
     // 2026-07-06 추가 발견: 음력 입력이 양력으로 변환되지 않고 그대로 계산에 쓰인다는
     // 한계도 지금까지 온보딩에서 전혀 알리지 않고 있었다 — 함께 안내하도록 추가.
     expect(find.textContaining('음력'), findsOneWidget);
+    // 2026-07-08 발견: 2026-07-07에 문서화된 다섯 번째 정확도 이슈(한국의 역사적
+    // 서머타임 미반영)가 report_screen.dart 안내 문구엔 지금까지 빠져 있었던 것과
+    // 같은 이유로 온보딩에서도 전혀 알리지 않고 있었다 — 함께 안내하도록 추가.
+    expect(find.textContaining('서머타임'), findsOneWidget);
 
     await tester.tap(find.text('확인'));
     await tester.pumpAndSettle();
