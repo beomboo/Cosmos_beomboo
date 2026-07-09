@@ -6,8 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:cosmos_saju/app/router.dart';
+import 'package:cosmos_saju/core/storage/deep_dive_info_store.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
 import 'package:cosmos_saju/features/birth_input/birth_input_screen.dart';
+import 'package:cosmos_saju/features/deep_dive/deep_dive_info.dart';
 
 void main() {
   // 제출 시 BirthInfoStore.save()가 SharedPreferences를 사용하므로 목(mock) 초기값을 설정해둔다.
@@ -64,6 +66,7 @@ void main() {
     expect(find.text('여성'), findsOneWidget);
     expect(find.text('남성'), findsOneWidget);
     expect(find.text('태어난 시간을 몰라요'), findsOneWidget);
+    expect(find.text('MBTI를 알고 있어요'), findsOneWidget);
     expect(find.text('사주 보러가기 🔮'), findsOneWidget);
   });
 
@@ -72,7 +75,10 @@ void main() {
     await tester.pumpWidget(buildApp());
 
     expect(find.text('시간 모름'), findsNothing);
-    await tester.tap(find.byType(Checkbox));
+    // 이제 이 화면엔 체크박스가 둘("태어난 시간을 몰라요"·"MBTI를 알고 있어요") 있어
+    // 첫 번째("태어난 시간을 몰라요")를 명시적으로 골라야 한다(2026-07-07, MBTI
+    // 체크박스 추가로 생긴 모호성).
+    await tester.tap(find.byType(Checkbox).first);
     await tester.pump();
     expect(find.text('시간 모름'), findsOneWidget);
   });
@@ -445,6 +451,38 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('MBTI 축 토글에서 옵션을 누르면 스크린 리더용 selected 시맨틱스가 바뀐다', (tester) async {
+    // 성별 토글과 같은 이유로, MBTI 축(2026-07-07 이 화면으로 이전됨)도 PastelToggleRow
+    // 위젯 자체의 테스트(pastel_toggle_row_test.dart)와는 별개로 이 화면에 실제로
+    // 연결된 onChanged·semanticLabel 배선이 tester.tap()이 아니라 스크린 리더가
+    // 보내는 것과 같은 selected 플래그 갱신까지 정확히 이어지는지 확인한 적이 없었다.
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    await tester.tap(find.text('MBTI를 알고 있어요'));
+    await tester.pump();
+
+    expect(
+      tester.getSemantics(find.text('E · 외향')).flagsCollection.isSelected,
+      Tristate.isTrue,
+    );
+
+    await tester.tap(find.text('I · 내향'));
+    await tester.pump();
+
+    expect(
+      tester.getSemantics(find.text('I · 내향')).flagsCollection.isSelected,
+      Tristate.isTrue,
+    );
+    expect(
+      tester.getSemantics(find.text('E · 외향')).flagsCollection.isSelected,
+      Tristate.isFalse,
+    );
+
+    semantics.dispose();
+  });
+
   testWidgets('이름/출생지 입력란은 hintText뿐 아니라 필드 용도도 스크린 리더에 전달된다', (tester) async {
     final semantics = tester.ensureSemantics();
     await useTallViewport(tester);
@@ -480,5 +518,153 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
+  });
+
+  // 2026-07-07: 원래 심층 분석 입력 화면에서 물었던 MBTI를 이 화면으로 옮겨왔다(사용자
+  // 요청) — deep_dive_input_screen_test.dart에 있던 대응 테스트들을 이 화면 기준으로 다시 작성.
+
+  testWidgets('"MBTI를 알고 있어요"를 체크하기 전에는 축 토글이 보이지 않는다', (tester) async {
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    expect(find.text('E · 외향'), findsNothing);
+  });
+
+  testWidgets('"MBTI를 알고 있어요"를 체크하면 네 축 토글이 나타난다', (tester) async {
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    await tester.tap(find.text('MBTI를 알고 있어요'));
+    await tester.pump();
+
+    expect(find.text('E · 외향'), findsOneWidget);
+    expect(find.text('S · 감각'), findsOneWidget);
+    expect(find.text('T · 사고'), findsOneWidget);
+    expect(find.text('J · 판단'), findsOneWidget);
+  });
+
+  testWidgets('MBTI를 체크하지 않고 제출하면 DeepDiveInfoStore에 mbti가 저장되지 않는다', (tester) async {
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    await tester.tap(find.text('사주 보러가기 🔮'));
+    await tester.pumpAndSettle();
+
+    final saved = await DeepDiveInfoStore.load();
+    expect(saved, isNotNull);
+    expect(saved!.mbti, isNull);
+    // 관심사는 deep_dive_input_screen.dart의 기존 기본값(전체 선택)으로 미리
+    // 채워둬야, 나중에 그 화면을 열었을 때 처음부터 하나도 안 고른 것처럼 보이지 않는다.
+    expect(saved.interests, Interest.values.toSet());
+  });
+
+  testWidgets('"MBTI를 알고 있어요"를 껐다가 다시 켜도 그 사이에 고른 축 선택은 그대로 유지된다',
+      (tester) async {
+    // deep_dive_input_screen.dart에 있던 이 테스트가 MBTI 질문이 이 화면으로
+    // 옮겨오면서(2026-07-07) 새 화면 기준으로 다시 작성되지 않았던 걸 발견 —
+    // "태어난 시간을 몰라요" 체크박스도 껐다 켜도 이미 고른 시간을 잃지 않는 것과
+    // 같은 관례로, 체크박스는 축 토글을 보여줄지만 결정할 뿐 축 값(_ei/_sn/_tf/_jp)
+    // 자체는 별개 상태라 체크 해제만으로 초기화되지 않아야 한다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    await tester.tap(find.text('MBTI를 알고 있어요'));
+    await tester.pump();
+
+    await tester.tap(find.text('I · 내향'));
+    await tester.pump();
+    await tester.tap(find.text('N · 직관'));
+    await tester.pump();
+
+    // 체크 해제 → 축 토글이 안 보임
+    await tester.tap(find.text('MBTI를 알고 있어요'));
+    await tester.pump();
+    expect(find.text('I · 내향'), findsNothing);
+
+    // 다시 체크 → 방금 고른 I·N이 그대로 남아있어야 한다(기본값 E·S로 되돌아가지 않음).
+    await tester.tap(find.text('MBTI를 알고 있어요'));
+    await tester.pump();
+
+    await tester.tap(find.text('사주 보러가기 🔮'));
+    await tester.pumpAndSettle();
+
+    // 기본값(E·S·T·J)에서 I·N만 바꿨으니 "INTJ"가 나와야 한다 — 체크 해제로
+    // 기본값(E·S)으로 되돌아갔다면 "ESTJ"가 나왔을 것이다.
+    final saved = await DeepDiveInfoStore.load();
+    expect(saved!.mbti?.code, 'INTJ');
+  });
+
+  testWidgets('MBTI를 체크하고 축을 바꿔 제출하면 그 조합 그대로 DeepDiveInfoStore에 저장된다',
+      (tester) async {
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    await tester.tap(find.text('MBTI를 알고 있어요'));
+    await tester.pump();
+    await tester.tap(find.text('I · 내향'));
+    await tester.pump();
+    await tester.tap(find.text('N · 직관'));
+    await tester.pump();
+
+    await tester.tap(find.text('사주 보러가기 🔮'));
+    await tester.pumpAndSettle();
+
+    final saved = await DeepDiveInfoStore.load();
+    expect(saved, isNotNull);
+    expect(saved!.mbti?.code, 'INTJ');
+  });
+
+  testWidgets('MBTI 네 축을 전부 바꿔 제출하면 그 조합 그대로 DeepDiveInfoStore에 저장된다', (tester) async {
+    // 위 테스트는 E/I·S/N 축만 바꿨을 뿐이라, 나머지 두 축(T/F·J/P)의 onChanged
+    // 콜백 자체는 지금까지 한 번도 실제로 발동된 적이 없었다 — MBTI 질문이
+    // deep_dive_input_screen.dart에서 이 화면으로 옮겨오면서(2026-07-07) 예전에
+    // 있던 "네 축 전부 바꿔보는" 테스트가 새 화면 기준으로 다시 작성되지 않아
+    // 생긴 커버리지 공백(`flutter test --coverage`로 확인). 네 축을 전부 반대로
+    // 뒤집어 "INFP"가 되는지 확인한다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    await tester.tap(find.text('MBTI를 알고 있어요'));
+    await tester.pump();
+
+    await tester.tap(find.text('I · 내향'));
+    await tester.pump();
+    await tester.tap(find.text('N · 직관'));
+    await tester.pump();
+    await tester.tap(find.text('F · 감정'));
+    await tester.pump();
+    await tester.tap(find.text('P · 인식'));
+    await tester.pump();
+
+    await tester.tap(find.text('사주 보러가기 🔮'));
+    await tester.pumpAndSettle();
+
+    final saved = await DeepDiveInfoStore.load();
+    expect(saved, isNotNull);
+    expect(saved!.mbti?.code, 'INFP');
+  });
+
+  testWidgets('이미 심층 분석에서 좁혀둔 관심사가 있으면 제출해도 전체 선택으로 되돌아가지 않는다',
+      (tester) async {
+    // 2026-07-08 버그 수정: 사주 결과 화면은 이 화면이 스택 아래에 그대로 남아 있어
+    // (계산 중 화면만 pushReplacement로 교체되고 이 화면은 안 지워짐) Flutter가
+    // AppBar에 자동으로 뒤로 가기 버튼을 붙여준다 — "다시 입력하기"(명시적으로 두
+    // 스토어를 함께 지움)를 거치지 않고 이 자동 뒤로 가기로 이 화면에 돌아와 재제출하면,
+    // 심층 분석에서 이미 관심사를 좁혀뒀어도(예: 연애운만 남기고 나머지 해제) 조용히
+    // 전체 선택으로 되돌아가는 실제 데이터 유실 버그가 있었다. 여기서는 뒤로 가기
+    // 내비게이션 자체를 재현하지 않고(그건 result_screen_test.dart 영역), 이 화면
+    // 단독으로 "제출 시점에 이미 좁혀진 관심사가 저장돼 있으면 그대로 유지되는지"만
+    // 확인한다 — 좁혀진 값을 미리 저장해두고 제출한 뒤 값이 그대로인지 본다.
+    await DeepDiveInfoStore.save(const DeepDiveInfo(interests: {Interest.love}));
+
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    await tester.tap(find.text('사주 보러가기 🔮'));
+    await tester.pumpAndSettle();
+
+    final saved = await DeepDiveInfoStore.load();
+    expect(saved, isNotNull);
+    expect(saved!.interests, {Interest.love});
   });
 }
