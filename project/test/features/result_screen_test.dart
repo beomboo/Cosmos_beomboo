@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 
-import 'package:cosmos_saju/app/router.dart';
 import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
-import 'package:cosmos_saju/features/deep_dive/deep_dive_input_screen.dart';
 import 'package:cosmos_saju/features/result/result_screen.dart';
 
 void main() {
@@ -104,6 +103,16 @@ void main() {
     expect(findInBody('경신'), findsOneWidget);
     expect(findInBody('갑자'), findsOneWidget);
     expect(findInBody('신미'), findsOneWidget);
+
+    // 2026-07-08 발견한 커버리지 공백: `_PillarCard`는 시맨틱스(라벨+값 병합)는 이미
+    // 검증돼 있지만, 정작 그 카드의 글자색 자체(`ohaengTextColors[stemOhaeng(stemIndex)]`,
+    // 천간의 오행에 따라 달라짐)가 실제로 맞는 색으로 렌더링되는지는 한 번도 확인한
+    // 적이 없었다 — 년주 무인(戊)은 토, 월주 경신(庚)은 금, 일주 갑자(甲)는 목,
+    // 시주 신미(辛)는 금(천간 기준, 지지는 무시).
+    expect(tester.widget<Text>(findInBody('무인')).style!.color, AppColors.ohaengTextColors['토']);
+    expect(tester.widget<Text>(findInBody('경신')).style!.color, AppColors.ohaengTextColors['금']);
+    expect(tester.widget<Text>(findInBody('갑자')).style!.color, AppColors.ohaengTextColors['목']);
+    expect(tester.widget<Text>(findInBody('신미')).style!.color, AppColors.ohaengTextColors['금']);
 
     // ohaengCount 분포 {목:2, 화:0, 토:2, 금:3, 수:1}(총 8) → 25%/0%/25%/38%/13%.
     expect(findInBody('25%'), findsNWidgets(2)); // 목, 토
@@ -219,6 +228,35 @@ void main() {
     expect(
       tester.getSemantics(findInBody('신미')),
       matchesSemantics(label: '시주 신미'),
+    );
+
+    semantics.dispose();
+  });
+
+  testWidgets('카테고리 카드(연애·재물·건강·성격)도 스크린 리더에 "제목. 설명"으로 병합된 시맨틱스를 제공한다',
+      (WidgetTester tester) async {
+    // _CategoryCard는 _PillarCard와 같은 파일에 있지만 지금까지 병합 시맨틱스가
+    // 없었다(2026-07-07 발견) — 아이콘·제목·설명이 각각 별도 Text라 스크린 리더가
+    // 세 번 나눠 읽었고, 장식용 이모지까지 유니코드 이름으로 읽어 혼란스러웠다.
+    // 1998-08-15/14시 생일의 우세 오행은 '금'이라 categoryReadingsByOhaeng['금']의
+    // 첫 항목("연애운. 눈이 높은...")으로 병합됐는지 확인한다.
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    expect(
+      tester.getSemantics(findInBody('연애운')),
+      matchesSemantics(label: '연애운. 눈이 높은 편이라 확실한 상대를 알아보는 시기예요'),
     );
 
     semantics.dispose();
@@ -358,46 +396,6 @@ void main() {
     );
   });
 
-  testWidgets('"MBTI·관심사로 심층 분석 받기"를 누르면 심층 분석 입력 화면으로 이동한다',
-      (WidgetTester tester) async {
-    // 새로 추가한 버튼이 "상세 리포트 보기" 버튼보다도 더 아래에 있어 기본
-    // 테스트 뷰포트(800x600)에서는 지연 빌드되어 탭할 수 없다 — 세로로 키운다.
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 1600);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
-
-    await tester.pumpWidget(
-      MaterialApp(
-        onGenerateRoute: (settings) {
-          if (settings.name == AppRoutes.deepDiveInput) {
-            return MaterialPageRoute(
-              builder: (_) => DeepDiveInputScreen(
-                birthInfo: settings.arguments as BirthInfo?,
-              ),
-            );
-          }
-          return MaterialPageRoute(
-            builder: (_) => const ResultScreen(),
-            settings: RouteSettings(
-              arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
-            ),
-          );
-        },
-        initialRoute: '/',
-      ),
-    );
-
-    await tester.tap(find.text('MBTI·관심사로 심층 분석 받기 →'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(DeepDiveInputScreen), findsOneWidget);
-  });
-
   testWidgets('시간을 모르면 시주 카드가 "모름"으로 표시된다', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -430,6 +428,47 @@ void main() {
 
     expect(findInBody('민지의 사주팔자 ✨'), findsOneWidget);
     expect(findInBody('회원님의 사주팔자 ✨'), findsNothing);
+  });
+
+  testWidgets('이름이 없거나 공백뿐이면 헤더에 "회원님"으로 표시된다', (WidgetTester tester) async {
+    // report_screen.dart/deep_dive_result_screen.dart도 이 화면과 똑같은 이름 폴백
+    // (`name?.trim().isNotEmpty == true ? ... : '회원님'`)을 각자 복제해 갖고 있고,
+    // 그쪽 테스트들은 이미 null/공백뿐인 이름 둘 다 값으로 검증돼 있었다(그중
+    // deep_dive_result_screen_test.dart의 주석은 심지어 "result_screen_test.dart는
+    // 이미 검증해뒀다"고 적어뒀을 정도) — 그런데 정작 이 로직이 처음 만들어진 원본
+    // 화면인 이 파일에는 "이름이 있는" 경우만 테스트돼 있었을 뿐, null/공백뿐인
+    // 경우를 값으로 확인하는 전용 테스트가 없었던 실제 공백이었다.
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+    expect(findInBody('회원님의 사주팔자 ✨'), findsOneWidget);
+
+    // 같은 구조의 MaterialApp을 그대로 다시 pumpWidget하면 Flutter가 기존 엘리먼트를
+    // 재사용해버려(같은 위젯 트리 형태) 새 라우트 arguments가 실제로 반영되지 않는
+    // 것을 실측으로 확인했다(deep_dive_input_screen_test.dart에서 겪은 것과 같은
+    // 종류의 함정) — 완전히 언마운트한 뒤 다시 pumpWidget해야 한다.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false, name: '   '),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+    expect(findInBody('회원님의 사주팔자 ✨'), findsOneWidget);
+    expect(findInBody('   의 사주팔자 ✨'), findsNothing);
   });
 
   testWidgets('태어난 곳을 입력했으면 메타 라인에 표시된다', (WidgetTester tester) async {
@@ -485,6 +524,25 @@ void main() {
     );
 
     expect(findInBody('민지의 사주팔자 ✨'), findsOneWidget);
+  });
+
+  testWidgets('생성자 birthInfo도 라우트 arguments도 없으면 하드코딩된 기본값(1998-08-15 14시)으로 표시된다',
+      (WidgetTester tester) async {
+    // build()의 `widget.birthInfo ?? (라우트 arguments) ?? BirthInfo(1998-08-15, 14시)`
+    // 3단 폴백 중 마지막(둘 다 없을 때의 하드코딩된 기본값) 분기는 지금까지 어떤
+    // 테스트에서도 실제로 타본 적이 없었다 — 다른 테스트는 항상 constructor 아니면
+    // 라우트 arguments 둘 중 하나로 실제 값을 넘겼다. 이 분기는 실제 앱 흐름에서는
+    // (calculating_screen.dart가 항상 arguments를 넘기므로) 도달하지 않아야 정상이지만,
+    // 미래에 라우트 배선이 실수로 깨지면(예: arguments 전달을 빠뜨림) 크래시 대신
+    // 조용히 엉뚱한 남의 생년월일시(1998-08-15 14시)를 자기 결과인 것처럼 보여주는
+    // 회귀가 될 수 있어, 이 기본값 자체가 여전히 그 값인지 값으로 고정해둔다.
+    await tester.pumpWidget(const MaterialApp(home: ResultScreen()));
+
+    expect(findInBody('회원님의 사주팔자 ✨'), findsOneWidget);
+    expect(findInBody('무인'), findsOneWidget);
+    expect(findInBody('경신'), findsOneWidget);
+    expect(findInBody('갑자'), findsOneWidget);
+    expect(findInBody('신미'), findsOneWidget);
   });
 
   testWidgets('"다시 입력하기"를 누르면 저장된 정보를 지우고 생년월일시 입력 화면으로 이동한다',
@@ -559,6 +617,50 @@ void main() {
     expect(prefs.getString('deep_dive_info.mbti_jp'), isNull);
   });
 
+  testWidgets('BirthInfoStore 삭제가 실패해도(플랫폼 채널 오류 등) DeepDiveInfoStore는 그대로 지워진다',
+      (WidgetTester tester) async {
+    // 2026-07-08 버그 수정: `_resetAndReenter()`가 두 clear() 호출을 하나의 try 블록
+    // 안에 같이 넣어뒀었다 — BirthInfoStore.clear()가 실패하면 catch로 바로 건너뛰어
+    // DeepDiveInfoStore.clear()가 아예 호출되지 않아, 바로 위 테스트가 고쳤던 그
+    // "이전 사람의 MBTI·관심사가 다음 사람에게 그대로 보이는" 데이터 유실 버그가 이
+    // 실패 경로에서만 조용히 재발할 수 있었다. 실제 플랫폼 채널 오류를 재현하기 위해
+    // `SharedPreferencesStorePlatform.instance`를 birth_info 키만 remove() 시
+    // 예외를 던지는 가짜 구현으로 바꿔치기한다.
+    final failingStore = _BirthInfoRemoveFailingStore({
+      'flutter.birth_info.date_millis': DateTime(1998, 8, 15).millisecondsSinceEpoch,
+      'flutter.deep_dive_info.interests': ['love'],
+      'flutter.deep_dive_info.mbti_ei': 'i',
+    });
+    final originalStore = SharedPreferencesStorePlatform.instance;
+    SharedPreferencesStorePlatform.instance = failingStore;
+    addTearDown(() => SharedPreferencesStorePlatform.instance = originalStore);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    await tester.tap(find.byTooltip('다시 입력하기'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('다시 입력하기').last);
+    await tester.pumpAndSettle();
+
+    // 핵심 확인: BirthInfoStore 삭제가 실패했어도 DeepDiveInfoStore는 그대로 지워져야 한다.
+    // (BirthInfoStore 쪽 값 자체가 실제로 지속 저장소에 남아있는지는 SharedPreferences의
+    // 로컬 캐시가 플랫폼 호출 성공 여부와 무관하게 즉시 지워지는 구현 세부사항 때문에
+    // 이 테스트 방식으로는 신뢰성 있게 확인할 수 없어— 이 테스트의 관심사도 아니다.)
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getStringList('deep_dive_info.interests'), isNull);
+    expect(prefs.getString('deep_dive_info.mbti_ei'), isNull);
+  });
+
   testWidgets('"다시 입력하기" 확인 다이얼로그에서 "취소"를 누르면 아무 것도 지워지지 않는다',
       (WidgetTester tester) async {
     await SharedPreferences.getInstance().then(
@@ -584,6 +686,48 @@ void main() {
     await tester.pumpAndSettle();
 
     // 여전히 결과 화면에 남아있고, 저장된 값도 그대로다.
+    expect(findInBody('회원님의 사주팔자 ✨'), findsOneWidget);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getInt('birth_info.date_millis'), isNotNull);
+  });
+
+  testWidgets('"다시 입력하기" 다이얼로그를 "취소"가 아니라 바깥(바리어) 탭이나 뒤로 가기로 닫아도 아무 것도 지워지지 않는다',
+      (WidgetTester tester) async {
+    // 2026-07-08 발견한 커버리지 공백: `showDialog<bool>()`는 `barrierDismissible`를
+    // 명시하지 않아 기본값 true다 — 즉 "취소" 버튼을 누르지 않고 다이얼로그 바깥을
+    // 탭하거나 안드로이드 뒤로 가기를 눌러도 닫히고, 이때는 `pop(false)`가 아니라
+    // `pop()`(인자 없음, null)으로 닫힌다. `_resetAndReenter`의 가드가 `confirmed != true`
+    // 라 null도 "취소"와 똑같이 안전하게 처리되긴 하지만, 지금까지 "취소" 버튼을 직접
+    // 누르는 경로만 테스트돼 있었을 뿐 이 null 경로 자체는 한 번도 값으로 확인된 적이
+    // 없었다 — `Navigator.pop()`을 직접 호출해 바리어 닫기를 재현한다.
+    await SharedPreferences.getInstance().then(
+      (prefs) => prefs.setInt('birth_info.date_millis', DateTime(1998, 8, 15).millisecondsSinceEpoch),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    await tester.tap(find.byTooltip('다시 입력하기'));
+    await tester.pumpAndSettle();
+    expect(find.text('다시 입력할까요?'), findsOneWidget);
+
+    // "취소"를 누르는 대신, 다이얼로그 안의 BuildContext로 얻은 Navigator에 인자
+    // 없이 pop() — 바리어 탭·뒤로 가기와 똑같이 null을 반환하며 닫히는 경로를
+    // 그대로 재현한다.
+    final dialogContext = tester.element(find.text('다시 입력할까요?'));
+    Navigator.of(dialogContext).pop();
+    await tester.pumpAndSettle();
+
+    expect(find.text('다시 입력할까요?'), findsNothing);
     expect(findInBody('회원님의 사주팔자 ✨'), findsOneWidget);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getInt('birth_info.date_millis'), isNotNull);
@@ -625,4 +769,18 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+}
+
+/// `birth_info.`가 포함된 키를 지우려 하면 실제 플랫폼 채널 오류를 흉내 내 예외를
+/// 던지는 가짜 저장소 — 다른 키(DeepDiveInfoStore 등)는 평소처럼 정상 동작한다.
+class _BirthInfoRemoveFailingStore extends InMemorySharedPreferencesStore {
+  _BirthInfoRemoveFailingStore(super.data) : super.withData();
+
+  @override
+  Future<bool> remove(String key) {
+    if (key.contains('birth_info')) {
+      throw Exception('시뮬레이션된 플랫폼 채널 오류');
+    }
+    return super.remove(key);
+  }
 }

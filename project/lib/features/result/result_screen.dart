@@ -80,7 +80,9 @@ class _ResultScreenState extends State<ResultScreen> {
           children: [
             ListView(
               key: const Key('resultScrollView'),
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+              // 목업(`.result .screen-body`)은 padding-top:12px 외엔 기본값(가로 20px,
+              // 아래 18px)을 그대로 쓰는데 지금까지는 24/8/24/32였다(2026-07-07 대조 발견).
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
               children: [
                 Text(
                   '$displayName의 사주팔자 ✨',
@@ -123,7 +125,9 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                // 목업(`.callout`)은 margin-bottom:14px인데 지금까지는 24px이었다
+                // (2026-07-07 대조 발견).
+                const SizedBox(height: 14),
                 Row(
                   children: [
                     _PillarCard(label: '년주', pillar: pillars.year),
@@ -135,23 +139,31 @@ class _ResultScreenState extends State<ResultScreen> {
                     _PillarCard(label: '시주', pillar: pillars.hour),
                   ],
                 ),
-                const SizedBox(height: 28),
+                // 목업(`.pillars`)은 margin-bottom:14px인데 지금까지는 28px이었다
+                // (2026-07-07 대조 발견).
+                const SizedBox(height: 14),
                 const Text(
                   '오행 밸런스',
                   style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 15),
                 ),
-                const SizedBox(height: 12),
+                // 목업(`.bars h3`)은 margin:0 0 8px인데 지금까지는 12px이었다
+                // (2026-07-07 대조 발견).
+                const SizedBox(height: 8),
                 for (final ohaeng in const ['목', '화', '토', '금', '수'])
                   _OhaengBarRow(
                     ohaeng: ohaeng,
                     percent: total == 0 ? 0 : (ohaengCount[ohaeng]! / total * 100),
                   ),
-                const SizedBox(height: 28),
+                // 목업(`.bars`)은 margin-bottom:14px인데 지금까지는 28px이었다
+                // (2026-07-07 대조 발견).
+                const SizedBox(height: 14),
                 const Text(
                   '오늘 궁금한 것부터',
                   style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 15),
                 ),
-                const SizedBox(height: 12),
+                // 목업(`.cards h3`)은 margin:0 0 8px인데 지금까지는 12px이었다
+                // (2026-07-07 대조 발견).
+                const SizedBox(height: 8),
                 // 이전엔 GridView.count(childAspectRatio: 1.3)로 셀 높이를 고정했는데,
                 // 시스템 글자 크기를 키우면(접근성 큰 텍스트, 일부 기기는 기본 "큼"
                 // 설정만으로도 1.3배) 카드 안 텍스트가 고정 높이를 넘겨 RenderFlex
@@ -169,25 +181,29 @@ class _ResultScreenState extends State<ResultScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Expanded(child: _CategoryCard(category: categories[0])),
-                          const SizedBox(width: 12),
+                          // 목업(`.cat-grid`)은 gap:8px인데 지금까지는 12px이었다
+                          // (2026-07-07 대조 발견) — 가로/세로 간격 모두 수정.
+                          const SizedBox(width: 8),
                           Expanded(child: _CategoryCard(category: categories[1])),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     IntrinsicHeight(
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Expanded(child: _CategoryCard(category: categories[2])),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 8),
                           Expanded(child: _CategoryCard(category: categories[3])),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 28),
+                // 목업(`.cat-grid`)은 margin-bottom:14px인데 지금까지는 28px이었다
+                // (2026-07-07 대조 발견).
+                const SizedBox(height: 14),
                 // 목업(docs/mockups/01-pastel-cute.html)의 "공유하기" 버튼(`.share-btn`)은
                 // 다른 CTA 버튼과 달리 단색이 아니라 accent→metal 그라데이션을 쓴다 — 다른
                 // 버튼과 시각적으로 구분되는 이 화면의 유일한 그라데이션 버튼이라 놓치기
@@ -226,7 +242,9 @@ class _ResultScreenState extends State<ResultScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                // 목업(`.share-btn`)은 margin-bottom:8px인데 지금까지는 12px이었다
+                // (2026-07-07 대조 발견).
+                const SizedBox(height: 8),
                 Center(
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pushNamed(
@@ -245,18 +263,6 @@ class _ResultScreenState extends State<ResultScreen> {
                         decoration: TextDecoration.underline,
                         decorationColor: AppColors.inkSoft,
                       ),
-                    ),
-                  ),
-                ),
-                Center(
-                  child: TextButton(
-                    onPressed: () => Navigator.of(context).pushNamed(
-                      AppRoutes.deepDiveInput,
-                      arguments: birthInfo,
-                    ),
-                    child: const Text(
-                      'MBTI·관심사로 심층 분석 받기 →',
-                      style: TextStyle(color: AppColors.inkSoft, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -311,13 +317,21 @@ class _ResultScreenState extends State<ResultScreen> {
     if (confirmed != true) return;
 
     // 삭제가 실패해도(플랫폼 채널 오류 등) 사용자가 입력 화면으로 못 돌아가면 안 되므로
-    // 화면 전환은 항상 진행한다.
+    // 화면 전환은 항상 진행한다. "처음부터 다시 입력하게 돼요"라고 안내하면서
+    // DeepDiveInfoStore(MBTI·관심사)는 그대로 남겨두면, 완전히 다른 사람이 새로 입력한
+    // 뒤 심층 분석에 들어갔을 때 이전 사람의 MBTI·관심사 선택이 그대로 다시 나타나는
+    // 실제 버그가 된다 — 다이얼로그의 약속대로 두 저장소를 함께 지운다.
+    // **2026-07-08 버그 수정**: 두 clear()를 하나의 try 블록에 같이 넣어뒀었는데,
+    // BirthInfoStore.clear()가 실패하면 catch로 바로 건너뛰어 DeepDiveInfoStore.clear()가
+    // 아예 호출되지 않아, 바로 위에서 설명한 그 데이터 유실 버그가 이 실패 경로에서만
+    // 조용히 재발할 수 있었다 — 각각 독립된 try로 분리해 한쪽이 실패해도 다른 쪽은
+    // 그대로 시도되도록 수정.
     try {
       await BirthInfoStore.clear();
-      // "처음부터 다시 입력하게 돼요"라고 안내하면서 DeepDiveInfoStore(MBTI·관심사)는
-      // 그대로 남겨두면, 완전히 다른 사람이 새로 입력한 뒤 심층 분석에 들어갔을 때
-      // 이전 사람의 MBTI·관심사 선택이 그대로 다시 나타나는 실제 버그가 된다 — 다이얼로그의
-      // 약속대로 두 저장소를 함께 지운다.
+    } catch (_) {
+      // 무시
+    }
+    try {
       await DeepDiveInfoStore.clear();
     } catch (_) {
       // 무시
@@ -425,7 +439,12 @@ class _PillarCard extends StatelessWidget {
         // 카드마다 독립된 시맨틱스 노드가 되도록 경계를 명시한다.
         container: true,
         child: PastelCard(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          // 목업(`.pillar-card`)은 padding:9px 4px인데 지금까지는 세로만 14(가로 0)였다
+          // (2026-07-07 대조 발견) — 앞서 border-width/gap 감사 때는 카드별 패딩 차이를
+          // "모바일 터치 영역을 위한 의도적 조정일 가능성"으로 보류했지만, 이후 여러
+          // 사이클에서 비슷한 값 차이들이 실제로는 대조 누락이었음이 반복 확인돼 판단을
+          // 뒤집고 목업 값 그대로 맞춘다.
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
           child: Column(
             children: [
               Text(
@@ -433,7 +452,16 @@ class _PillarCard extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 15),
               ),
               const SizedBox(height: 6),
-              Text(label, style: const TextStyle(fontSize: 11, color: AppColors.inkSoft)),
+              // 목업(`.pillar-card .label`)은 9.5px/font-weight 700인데 지금까지는
+              // 11px에 기본 굵기였다(2026-07-07 대조 발견).
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.inkSoft,
+                ),
+              ),
             ],
           ),
         ),
@@ -483,7 +511,13 @@ class _OhaengBarRow extends StatelessWidget {
             child: Text(
               '${percent.round()}%',
               textAlign: TextAlign.end,
-              style: const TextStyle(fontSize: 12, color: AppColors.inkSoft),
+              // 목업(`.bar-row .pct`)은 10px/font-weight 700인데 지금까지는 12px에
+              // 기본 굵기였다(2026-07-07 대조 발견).
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppColors.inkSoft,
+              ),
             ),
           ),
         ],
@@ -500,21 +534,39 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (icon, title, desc) = category;
-    return PastelCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 20)),
-          const SizedBox(height: 6),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink)),
-          const SizedBox(height: 4),
-          Text(
-            desc,
-            style: const TextStyle(fontSize: 12, color: AppColors.inkSoft),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+    // 같은 파일의 _PillarCard와 같은 이유(2026-07-07 목업 대조 수정 때 남긴 이유 참고) —
+    // 지금까지는 아이콘·제목·설명이 각각 별도 Text라 스크린 리더가 세 번 나눠 읽었다
+    // (장식용 이모지까지 유니코드 이름으로 읽어 더 헷갈림). "제목. 설명"으로 병합하고
+    // 카드 4개가 Row 안에 나란히 있어 container:true로 경계를 명시한다.
+    return Semantics(
+      label: '$title. $desc',
+      excludeSemantics: true,
+      container: true,
+      child: PastelCard(
+        // 목업(`.cat-card`)은 padding:10px 11px인데 지금까지는 PastelCard의 기본값인
+        // 14px 균일 패딩을 그대로 썼다(2026-07-07 대조 발견).
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 20)),
+            const SizedBox(height: 6),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink)),
+            const SizedBox(height: 4),
+            // 목업(`.cat-card .d`)은 10.5px/font-weight 600인데 지금까지는 12px에
+            // 기본 굵기였다(2026-07-07 대조 발견).
+            Text(
+              desc,
+              style: const TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.inkSoft,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -67,5 +67,17 @@ void main() {
       expect(info.minute, isNull);
       expect(buildMetaLine(info), '1998.08.15 · 오후 2시生 · 양력');
     });
+
+    test('출생지가 공백뿐이면(null이 아니어도) 접미사가 붙지 않는다', () {
+      // birth_input_screen.dart는 입력값을 trim() 후 비어있으면 null로 바꿔서
+      // BirthInfo를 만들지만, buildMetaLine() 자체는 어떤 BirthInfo가 와도 안전해야
+      // 하는 공용 함수다 — `birthPlace?.trim().isNotEmpty == true` 가드가 "null"과
+      // "공백뿐인 문자열" 두 경우 모두 접미사를 붙이지 않도록 방어하는데, 지금까지는
+      // null 케이스(성별·출생지 둘 다 없는 테스트)만 검증됐을 뿐 "공백뿐인 값이 실제로
+      // null과 동일하게 처리되는지"는 값으로 확인한 적이 없었다.
+      final info = BirthInfo(date: DateTime(2000, 1, 1), hour: 0, isLunar: false, birthPlace: '   ');
+
+      expect(buildMetaLine(info), '2000.01.01 · 오전 12시生 · 양력');
+    });
   });
 }

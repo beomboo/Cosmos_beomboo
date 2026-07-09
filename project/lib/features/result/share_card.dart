@@ -146,7 +146,16 @@ class ShareCard extends StatelessWidget {
           children: [
             Text(hanja, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 13)),
             const SizedBox(height: 4),
-            Text(label, style: const TextStyle(fontSize: 9, color: AppColors.inkSoft)),
+            // result_screen.dart의 _PillarCard와 같은 이유(목업 `.pillar-card .label`은
+            // 9.5px/font-weight 700)로 맞춘다(2026-07-07 대조 발견).
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w700,
+                color: AppColors.inkSoft,
+              ),
+            ),
           ],
         ),
       ),
@@ -182,7 +191,14 @@ class ShareCard extends StatelessWidget {
             child: Text(
               '${percent.round()}%',
               textAlign: TextAlign.end,
-              style: const TextStyle(fontSize: 10, color: AppColors.inkSoft),
+              // result_screen.dart의 _OhaengBarRow와 같은 이유(목업 `.bar-row .pct`는
+              // font-weight 700)로 굵기를 맞춘다(2026-07-07 대조 발견, 크기는 이미
+              // 10px로 목업과 일치했음).
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppColors.inkSoft,
+              ),
             ),
           ),
         ],
