@@ -30,15 +30,6 @@ abstract final class AppTheme {
         elevation: 0,
         centerTitle: true,
       ),
-      cardTheme: CardThemeData(
-        color: AppColors.bgCard,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: AppColors.border),
-        ),
-      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.accent,
@@ -50,10 +41,28 @@ abstract final class AppTheme {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
           textStyle: const TextStyle(fontWeight: FontWeight.w800),
+          // 목업의 `.btn-primary`는 `box-shadow:0 10px 22px -10px accent(70%)`로
+          // 브랜드 색이 은은하게 번지는 그림자를 쓰는데, 지금까지는 그림자 자체가
+          // 없었다(2026-07-07 대조 발견) — CSS box-shadow를 픽셀 단위로 그대로
+          // 옮길 수는 없지만(Flutter의 elevation 모델은 offset/blur/spread를 따로
+          // 못 받음), `shadowColor`를 accent로, `elevation`을 눈에 띄는 값으로 줘서
+          // 같은 "브랜드색 은은한 글로우" 느낌을 낸다. "공유하기" 버튼(자체 그라데이션
+          // Container로 감싸 elevation:0/shadowColor:transparent를 명시적으로 덮어씀,
+          // result_screen.dart 참고)에는 영향 없음.
+          elevation: 6,
+          shadowColor: AppColors.accent.withValues(alpha: 0.7),
         ),
       ),
+      // 2026-07-07: 위젯 테스트로 실제 렌더링 스타일을 직접 확인해 각 항목이 어디에
+      // 쓰이는지 검증했다(코드에 `Theme.of(context).textTheme.xxx`로 명시 참조하는 곳이
+      // 하나도 없어 이 셋도 자칫 cardTheme처럼 죽은 설정으로 오인하기 쉬웠음) —
+      // `titleLarge`는 AppBar 제목(모든 화면 헤더), `bodyLarge`는 TextField 입력 텍스트
+      // (birth_input_screen.dart의 이름/출생지 필드), `bodyMedium`은 AlertDialog 본문·
+      // 스타일 없는 일반 Text의 기본값으로 Flutter Material 3가 암묵적으로 적용한다.
+      // (참고로 원래 있던 `headlineMedium`은 같은 방식으로 확인해보니 이 앱이 쓰는
+      // 어떤 위젯의 기본값도 아니라 실제로 죽은 설정이어서 제거함 — AlertDialog 제목은
+      // `headlineSmall`을 쓰는데 커스터마이즈하지 않아 그대로 Material 3 기본값임.)
       textTheme: const TextTheme(
-        headlineMedium: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink),
         titleLarge: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink),
         bodyLarge: TextStyle(color: AppColors.ink),
         bodyMedium: TextStyle(color: AppColors.inkSoft),

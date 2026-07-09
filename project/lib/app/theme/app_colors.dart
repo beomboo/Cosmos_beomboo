@@ -38,7 +38,12 @@ abstract final class AppColors {
   static const water = Color(0xFF3F8FCB);
   static const waterSoft = Color(0xFFD9ECFA);
 
-  /// 오행 이름(한자 1자) → 포인트 컬러 매핑. 결과 화면의 오행 밸런스 바 차트 등에서 사용.
+  /// 오행 이름(한자 1자) → 포인트 컬러 매핑.
+  /// 2026-07-08 확인: 현재 화면 위젯들은 전부 `ohaengSoftColors`/`ohaengTextColors`만
+  /// 쓰고 이 원색 맵은 실제 앱 화면 어디서도 참조하지 않는다 — 유일한 소비처는
+  /// `test/tool/generate_app_icon.dart`(앱 아이콘 생성 도구)라, `cardTheme`처럼 완전히
+  /// 죽은 코드는 아니다(제거하면 아이콘 생성이 깨짐). `wood`/`fire`/`water`도 이 맵을
+  /// 통해서만 쓰이는 간접 참조라 마찬가지다(`earth`/`metal`은 이 맵 밖에서도 직접 쓰임).
   static const Map<String, Color> ohaengColors = {
     '목': wood,
     '화': fire,
