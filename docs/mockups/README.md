@@ -34,6 +34,8 @@ mockups/
 4. **결과** — 사주 명식 4기둥 + 오행 밸런스 바 차트 + 영역별(애정·재물·건강·기질) 풀이 + 공유 버튼
 
 ## 다음 단계
-1. 4개 중 하나(또는 조합)를 최종 방향으로 확정
-2. 확정된 컬러 토큰·타이포 스케일을 실제 디자인 시스템(Tailwind config 등)으로 옮기기
-3. 이 목업의 DOM 구조를 참고해 실제 프레임워크(Next.js/React 등) 컴포넌트로 전환
+
+**1번(컨셉 확정)은 완료됨 — 01 파스텔 큐트로 채택**(자세한 내용은 [PROJECT_ROUTER.md](../../PROJECT_ROUTER.md)의 "채택된 디자인 컨셉" 참고). 02~04는 참고용 대안으로 그대로 보관하고 더 이상 갱신하지 않음.
+
+2. ~~확정된 컬러 토큰·타이포 스케일을 실제 디자인 시스템(Tailwind config 등)으로 옮기기~~ → `project/lib/app/theme/app_colors.dart`/`app_theme.dart`에 이미 반영 완료
+3. ~~이 목업의 DOM 구조를 참고해 실제 프레임워크(Next.js/React 등) 컴포넌트로 전환~~ → Next.js/React가 아니라 Flutter(`project/lib/`)로 확정, 화면별 구현은 [PROJECT_ROUTER.md](../../PROJECT_ROUTER.md)의 기능 라우팅 표 참고
