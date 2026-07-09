@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 
+import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_info.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_readings.dart';
@@ -18,6 +21,52 @@ void main() {
 
     expect(find.text('사주랑'), findsOneWidget);
     expect(find.text('시작하기 →'), findsOneWidget);
+  });
+
+  test('저장된 정보를 읽다가 실패해도(플랫폼 채널 오류 등) null로 간주해 앱이 계속 실행된다', () async {
+    // main()은 runApp()으로 실제 엔진 바인딩에 붙어서 flutter test로 직접 실행할 수
+    // 없다 — `flutter test --coverage`로 main.dart를 확인해보니 이 try/catch 폴백
+    // 로직 자체가 지금까지 값으로 검증된 적이 없었다(라인 커버리지가 비어 있었음).
+    // BirthInfoStore.load()가 실제로 던지는 상황(플랫폼 채널 오류)을 재현하기 위해
+    // SharedPreferences.getInstance() 내부가 쓰는 getAllWithParameters()가 실패하는
+    // 가짜 저장소로 바꿔치기한다.
+    final originalStore = SharedPreferencesStorePlatform.instance;
+    SharedPreferencesStorePlatform.instance = _FailingGetAllStore();
+    addTearDown(() => SharedPreferencesStorePlatform.instance = originalStore);
+
+    expect(await loadInitialBirthInfo(), isNull);
+  });
+
+  testWidgets('기기가 다크 모드여도 항상 파스텔 큐트 라이트 테마를 그대로 쓴다 (2026-07-08, 사용자 요청)',
+      (WidgetTester tester) async {
+    // MaterialApp 자체가 만드는 MediaQuery를 builder에서 덮어써야 시스템 다크 모드가
+    // 실제로 앱 트리에 전달된다(온보딩 등 개별 화면 테스트에서도 쓰는 패턴).
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(platformBrightness: Brightness.dark),
+          child: child!,
+        ),
+        home: const CosmosSajuApp(),
+      ),
+    );
+
+    // CosmosSajuApp 내부에서 실제로 쓰이는 Theme(darkTheme/themeMode를 명시해도,
+    // 라우트가 이 MaterialApp을 한 겹 더 씌운 구조라 안쪽 CosmosSajuApp의 Theme이
+    // 실제로 적용되는지 확인해야 한다).
+    final context = tester.element(find.text('사주랑'));
+    expect(Theme.of(context).scaffoldBackgroundColor, AppColors.bg);
+    expect(Theme.of(context).colorScheme.brightness, Brightness.light);
+
+    // AppBar 없는 화면(온보딩)에서도 상태 표시줄 아이콘이 시스템 다크 모드를 따라가지
+    // 않고 항상 밝은 배경 기준(어두운 아이콘)으로 강제되는지 확인한다.
+    final region = tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+      find.byType(AnnotatedRegion<SystemUiOverlayStyle>),
+    );
+    expect(region.value.statusBarIconBrightness, Brightness.dark);
+    expect(region.value.statusBarBrightness, Brightness.light);
+    expect(region.value.systemNavigationBarColor, AppColors.bg);
+    expect(region.value.systemNavigationBarIconBrightness, Brightness.dark);
   });
 
   testWidgets('저장된 BirthInfo가 있으면 온보딩을 건너뛰고 결과 화면을 바로 보여준다',
@@ -157,16 +206,22 @@ void main() {
   );
 
   testWidgets(
-    '결과 화면부터 심층 분석 결과까지 실제 라우트로 이어서 진행하면 우세 오행 기준 풀이가 반영된다',
+    '결과 화면 → 상세 리포트 → 심층 분석 결과까지 실제 라우트로 이어서 진행하면 우세 오행 기준 풀이가 반영된다',
     (WidgetTester tester) async {
       // 지금까지 심층 분석 관련 테스트는 전부 개별 화면을 스텁 라우트나 직접 생성으로만
       // 검증했을 뿐, CosmosSajuApp의 실제 AppRoutes.routes 배선을 그대로 타고
-      // 결과 화면 → 심층 분석 입력 → 심층 분석 결과까지 이어서 통과한 적은 없었다 —
-      // 각 구간이 개별로는 통과해도 실제 라우트 배선이나 인자 전달이 깨지는 회귀는
-      // 이런 전체 여정 테스트가 아니면 못 잡는다(온보딩→상세 리포트 여정 테스트와 같은 이유).
+      // 결과 화면 → 상세 리포트 → 심층 분석 입력 → 심층 분석 결과까지 이어서 통과한 적은
+      // 없었다 — 각 구간이 개별로는 통과해도 실제 라우트 배선이나 인자 전달이 깨지는
+      // 회귀는 이런 전체 여정 테스트가 아니면 못 잡는다(온보딩→상세 리포트 여정 테스트와
+      // 같은 이유). **2026-07-07 변경(사용자 요청)**: "MBTI·관심사로 심층 분석 받기"
+      // 진입점이 결과 화면에서 상세 리포트 화면으로 옮겨져, 이 여정도 상세 리포트를
+      // 한 번 거치도록 갱신됨.
+      // 상세 리포트 화면의 콘텐츠(오행 5종 설명+전체 풀이 등)가 아주 길어
+      // report_screen_test.dart와 같은 400x3000 뷰포트가 필요하다(2000으로는
+      // 맨 아래 "MBTI·관심사로 심층 분석 받기" 버튼이 지연 빌드돼 탭할 수 없었음).
       final originalSize = tester.view.physicalSize;
       final originalRatio = tester.view.devicePixelRatio;
-      tester.view.physicalSize = const Size(400, 2000);
+      tester.view.physicalSize = const Size(400, 3000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
         tester.view.physicalSize = originalSize;
@@ -181,11 +236,16 @@ void main() {
         ),
       );
 
+      await tester.tap(find.text('상세 리포트 보기 (무료)'));
+      await tester.pumpAndSettle();
+      expect(find.text('회원님의 상세 리포트'), findsOneWidget);
+
       await tester.tap(find.text('MBTI·관심사로 심층 분석 받기 →'));
       await tester.pumpAndSettle();
       expect(find.text('조금 더 깊이 볼까요?'), findsOneWidget);
 
-      // 관심사는 기본 전체 선택, MBTI는 입력하지 않고 그대로 제출한다.
+      // 관심사는 기본 전체 선택, MBTI는 birth_input에서 입력하지 않았으니(테스트가
+      // BirthInfoStore를 직접 넘겨 시작해 birth_input 자체를 거치지 않음) 그대로 제출한다.
       await tester.tap(find.text('심층 분석 보기'));
       await tester.pumpAndSettle();
 
@@ -201,4 +261,67 @@ void main() {
       }
     },
   );
+
+  testWidgets(
+    '온보딩 → 생년월일시 입력(MBTI 포함) → 결과 → 상세 리포트 → 심층 분석까지 이어지면 '
+    'birth_input에서 고른 MBTI가 심층 분석 결과에 그대로 반영된다',
+    (WidgetTester tester) async {
+      // 2026-07-07(사용자 요청): MBTI 질문이 심층 분석 입력 화면에서 birth_input_screen.dart로
+      // 옮겨졌다 — 온보딩부터 시작해 birth_input에서 MBTI를 실제로 체크·선택하고, 그 값이
+      // 결과→상세 리포트→심층 분석 입력(화면엔 안 보임)을 거쳐 심층 분석 결과 화면의 MBTI
+      // 코멘트로 정확히 이어지는지 실제 라우트로 검증한다.
+      // 상세 리포트 화면 콘텐츠가 길어 위 테스트와 같은 이유로 3000까지 키운다.
+      final originalSize = tester.view.physicalSize;
+      final originalRatio = tester.view.devicePixelRatio;
+      tester.view.physicalSize = const Size(400, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.physicalSize = originalSize;
+        tester.view.devicePixelRatio = originalRatio;
+      });
+
+      await tester.pumpWidget(const CosmosSajuApp());
+
+      await tester.tap(find.text('시작하기 →'));
+      await tester.pumpAndSettle();
+      expect(find.text('생년월일시를 알려주세요'), findsOneWidget);
+
+      await tester.tap(find.text('MBTI를 알고 있어요'));
+      await tester.pump();
+      await tester.tap(find.text('I · 내향'));
+      await tester.pump();
+      await tester.tap(find.text('N · 직관'));
+      await tester.pump();
+
+      await tester.tap(find.text('사주 보러가기 🔮'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.tap(find.text('상세 리포트 보기 (무료)'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('MBTI·관심사로 심층 분석 받기 →'));
+      await tester.pumpAndSettle();
+      // 심층 분석 입력 화면 자체에는 MBTI 관련 UI가 전혀 없다(이미 birth_input에서 받음).
+      expect(find.textContaining('MBTI'), findsNothing);
+
+      await tester.tap(find.text('심층 분석 보기'));
+      await tester.pumpAndSettle();
+
+      // 기본값(E·S·T·J)에서 I·N만 바꿨으니 "INTJ"로 반영돼야 한다.
+      expect(find.textContaining('INTJ'), findsOneWidget);
+    },
+  );
+}
+
+/// `SharedPreferences.getInstance()`가 내부적으로 쓰는 `getAll()`이 항상 실패하는
+/// 가짜 저장소 — 플랫폼 채널 오류를 흉내 낸다.
+class _FailingGetAllStore extends InMemorySharedPreferencesStore {
+  _FailingGetAllStore() : super.empty();
+
+  @override
+  Future<Map<String, Object>> getAll() =>
+      throw Exception('시뮬레이션된 플랫폼 채널 오류');
 }
