@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/router.dart';
 import '../../app/theme/app_colors.dart';
 import '../../core/saju/four_pillars.dart';
 import '../../core/saju/ganzhi.dart';
@@ -79,7 +80,9 @@ class ReportScreen extends StatelessWidget {
               '절기 경계에 걸친 생일은 정통 만세력과 며칠 차이가 날 수 있어요. 또한 진태양시(출생지 경도·균시차 '
               '보정)는 반영하지 않고 입력한 시각을 그대로 사용하며, 자시(밤 11시~새벽 1시) 출생은 일주를 '
               '정하는 방식이 유파마다 달라 저희 결과와 차이가 날 수 있어요. 음력으로 입력한 경우에도 '
-              '지금은 양력으로 변환하지 않고 입력한 날짜를 그대로 계산에 사용해요.',
+              '지금은 양력으로 변환하지 않고 입력한 날짜를 그대로 계산에 사용해요. 그리고 한국이 '
+              '서머타임(일광절약시간제)을 시행했던 1948~1960년·1987~1988년에 태어났다면, 그 보정은 '
+              '아직 반영하지 않아 실제 시각과 최대 1시간까지 차이가 날 수 있어요.',
               style: TextStyle(color: AppColors.inkSoft, fontSize: 11, height: 1.5),
             ),
             const SizedBox(height: 32),
@@ -114,6 +117,22 @@ class ReportScreen extends StatelessWidget {
               child: const Text(
                 '지금은 모든 내용을 무료로 볼 수 있어요. 더 깊은 개인 맞춤 해석은 추후 추가될 예정이에요.',
                 style: TextStyle(color: AppColors.inkSoft, fontSize: 12),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // 결과 화면에 있던 "MBTI·관심사로 심층 분석 받기" 진입점을 여기로 옮겨왔다
+            // (2026-07-07, 사용자 요청) — 상세 리포트까지 다 본 다음 더 보고 싶은
+            // 사람만 자연스럽게 이어가도록 함.
+            Center(
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pushNamed(
+                  AppRoutes.deepDiveInput,
+                  arguments: info,
+                ),
+                child: const Text(
+                  'MBTI·관심사로 심층 분석 받기 →',
+                  style: TextStyle(color: AppColors.inkSoft, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ],
@@ -219,31 +238,40 @@ class _OhaengMeaningCard extends StatelessWidget {
     final color = AppColors.ohaengTextColors[ohaeng] ?? AppColors.ink;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: PastelCard(
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.ohaengSoftColors[ohaeng],
-                shape: BoxShape.circle,
+      // 같은 파일의 _PillarBreakdownTable._pillarRow(위 참고)와 같은 이유(2026-07-07
+      // 발견) — 배지 한자·"오행 · 의미" 제목·설명이 각각 별도 Text/Container라
+      // 지금까지 스크린 리더가 세 번 나눠 읽었다. 카드 5개가 한 Column 안에 나란히
+      // 있어 container:true로 이웃 카드와 안 섞이게 한다.
+      child: Semantics(
+        label: '$ohaeng · ${meaning.$2}. ${meaning.$3}',
+        excludeSemantics: true,
+        container: true,
+        child: PastelCard(
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.ohaengSoftColors[ohaeng],
+                  shape: BoxShape.circle,
+                ),
+                child: Text(meaning.$1, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 16)),
               ),
-              child: Text(meaning.$1, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 16)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('$ohaeng · ${meaning.$2}', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, fontSize: 13)),
-                  const SizedBox(height: 2),
-                  Text(meaning.$3, style: const TextStyle(fontSize: 12, color: AppColors.inkSoft)),
-                ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$ohaeng · ${meaning.$2}', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, fontSize: 13)),
+                    const SizedBox(height: 2),
+                    Text(meaning.$3, style: const TextStyle(fontSize: 12, color: AppColors.inkSoft)),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
