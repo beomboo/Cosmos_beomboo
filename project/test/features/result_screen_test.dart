@@ -201,6 +201,51 @@ void main() {
     expect(calloutDecoration.color, AppColors.ohaengSoftColors['금']);
   });
 
+  testWidgets('우세 오행 콜아웃 문구가 나머지 4개 오행(목·화·토·수)에서도 실제 값과 정확히 일치한다',
+      (WidgetTester tester) async {
+    // 위 테스트는 '금'만 확인했다 — 콜아웃 문구(`_ohaengCallout`)는 5개 오행 전부
+    // 별도 (한자·이모지·설명) 튜플을 갖는데, 나머지 4개는 지금까지 어떤 birthInfo로도
+    // 실제로 우세 오행이 되게 만들어 값으로 확인한 적이 없었다 — 오행별 영역 풀이·
+    // 직장운·MBTI 코멘트·오행 5종 의미에서 반복 발견된 것과 같은 종류의 공백. 다만
+    // 이 문구는 "$dominant($한자) 기운이 강한 타입이에요 $이모지\n$설명"처럼 오행 이름 자체가
+    // 문자열 안에 포함된 하나의 Text이므로, 그대로 값을 대조하면 오행끼리 문구가
+    // 뒤바뀌어도 자동으로 잡힌다(_OhaengMeaningCard에서 겪은 것과 달리 별도 스코핑이
+    // 필요 없음). 실제 우세 오행이 각각 되는 생년월일을 미리 찾아 각각 pumpWidget한다.
+    const fixtures = {
+      '목': ('1980-02-18', '木', '🌿', '새로운 걸 벌이는 힘이 넘쳐요'),
+      '화': ('1980-01-15', '火', '🔥', '표현력과 인기운이 좋아요'),
+      '토': ('1980-01-01', '土', '🪵', '안정감 있고 신뢰를 줘요'),
+      '수': ('1980-06-01', '水', '💧', '유연하고 통찰력이 뛰어나요'),
+    };
+
+    for (final entry in fixtures.entries) {
+      final (dateStr, hanja, emoji, desc) = entry.value;
+      final parts = dateStr.split('-').map(int.parse).toList();
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpWidget(
+        MaterialApp(
+          onGenerateRoute: (settings) => MaterialPageRoute(
+            builder: (_) => const ResultScreen(),
+            settings: RouteSettings(
+              arguments: BirthInfo(
+                date: DateTime(parts[0], parts[1], parts[2]),
+                hour: 14,
+                isLunar: false,
+              ),
+            ),
+          ),
+          initialRoute: '/',
+        ),
+      );
+
+      expect(
+        findInBody('${entry.key}($hanja) 기운이 강한 타입이에요 $emoji\n$desc'),
+        findsOneWidget,
+        reason: '${entry.key} 콜아웃 문구',
+      );
+    }
+  });
+
   testWidgets('4기둥 카드는 스크린 리더에 "기둥이름 + 값" 순서로 병합된 시맨틱스를 제공한다',
       (WidgetTester tester) async {
     // _PillarCard는 시각적으로 값("갑자")이 위, 기둥 이름("년주")이 아래로 보이는데,
