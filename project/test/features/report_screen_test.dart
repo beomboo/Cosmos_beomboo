@@ -219,6 +219,43 @@ void main() {
     }
   });
 
+  testWidgets('오행 5종 의미 카드의 제목·설명 문구가 5개 전부 실제 값과 정확히 일치한다', (tester) async {
+    // 기존 테스트는 '목'만 "목 · 성장 · 시작 · 추진력. 새싹이 자라나는 이미지"처럼
+    // 제목+설명 전체를 시맨틱 라벨로 확인했고, 나머지 4개(화·토·금·수)는
+    // "화 · 열정"처럼 제목의 접두어만 textContaining으로 확인했을 뿐 설명 문구
+    // ("따뜻한 온기의 이미지" 등)는 단 한 번도 값으로 확인한 적이 없었다 —
+    // ohaeng_readings.dart/deep_dive_readings.dart의 문구에서 반복 발견된 것과
+    // 같은 종류의 공백(2026-07-08/2026-07-11). find.text()로 문구가 "어딘가에"
+    // 존재하는지만 보면 두 오행의 설명이 통째로 맞바뀌어도 둘 다 화면 어딘가에는
+    // 여전히 존재해 못 잡는다(실제로 이렇게 짰다가 화-토 설명을 맞바꿔도 통과하는
+    // 것을 발견해 재작성함) — `_OhaengMeaningCard`가 이미 "$ohaeng · 제목. 설명"을
+    // 하나의 병합 시맨틱 라벨로 제공하므로, 그 병합 라벨 전체가 정확히 일치하는지
+    // 확인해야 특정 오행의 설명이 맞는 카드에 붙어 있는지 확실히 검증된다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportScreen(
+          birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+        ),
+      ),
+    );
+
+    const expected = {
+      '목 · 성장 · 시작 · 추진력': '목 · 성장 · 시작 · 추진력. 새싹이 자라나는 이미지',
+      '화 · 열정 · 표현력 · 인기운': '화 · 열정 · 표현력 · 인기운. 따뜻한 온기의 이미지',
+      '토 · 안정 · 신뢰 · 중재': '토 · 안정 · 신뢰 · 중재. 땅에 발붙인 이미지',
+      '금 · 원칙 · 결단력 · 완성도': '금 · 원칙 · 결단력 · 완성도. 정제된 금속의 이미지',
+      '수 · 지혜 · 유연함 · 통찰': '수 · 지혜 · 유연함 · 통찰. 흐르는 물의 이미지',
+    };
+    for (final entry in expected.entries) {
+      expect(
+        tester.getSemantics(find.textContaining(entry.key)),
+        matchesSemantics(label: entry.value),
+        reason: entry.key,
+      );
+    }
+  });
+
   testWidgets('오행별 오늘의 풀이 모음 섹션이 5개 오행 전부의 실제 풀이 내용·제목 색을 그대로 보여준다',
       (tester) async {
     // "오행별 오늘의 풀이 모음"(_AllReadingsSection, ohaeng_readings.dart의
