@@ -37,6 +37,25 @@ void main() {
       expect(seen.length, 5);
     });
 
+    test('직장운(career) 5가지 문구가 실제 값과 정확히 일치한다', () {
+      // 위 테스트는 "5개 전부 비어있지 않고 서로 다르다"는 구조적 조건만 확인할 뿐,
+      // 그 문구들이 오행끼리 통째로 뒤바뀌어도(예: 목과 화의 직장운 문구를 맞바꿔도)
+      // 마찬가지로 "서로 다른 5개"는 참이라 이 테스트로는 못 잡는다 —
+      // ohaeng_readings.dart의 categoryReadingsByOhaeng에서 실제로 겪은 것과 같은
+      // 종류의 공백(2026-07-08 발견)이 이 파일의 _careerReadingByOhaeng에도 그대로
+      // 있었음(지금까지 이 5가지 문구는 단 한 곳에서도 값으로 고정된 적이 없었음).
+      const expected = {
+        '목': '새 프로젝트나 이직처럼 확장하는 움직임이 잘 맞는 시기예요',
+        '화': '적극적으로 어필하면 성과를 인정받기 좋은 타이밍이에요',
+        '토': '묵묵히 맡은 역할을 다지면 신뢰를 얻는 타입이에요',
+        '금': '원칙과 기준이 분명해서 책임 있는 자리가 잘 어울려요',
+        '수': '상황 판단이 빨라 위기 속에서도 기회를 찾는 타입이에요',
+      };
+      for (final entry in expected.entries) {
+        expect(readingFor(Interest.career, entry.key), entry.value, reason: '${entry.key} 직장운');
+      }
+    });
+
     test('알 수 없는 오행이 들어오면 토(土) 문구로 폴백한다', () {
       expect(readingFor(Interest.career, '알수없음'), readingFor(Interest.career, '토'));
     });
