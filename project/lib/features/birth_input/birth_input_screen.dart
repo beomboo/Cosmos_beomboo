@@ -59,6 +59,11 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
       firstDate: DateTime(1900),
       lastDate: now,
     );
+    // 다이얼로그가 떠 있는 동안(await 구간) 이 화면이 사라질 수 있다 — 다른 비동기
+    // 메서드(_submit() 등)와 같은 이유로 방어한다(2026-07-11 발견, 이 화면의 두 피커
+    // 메서드만 이 가드가 빠져 있었음 — 정확한 경쟁 상태 재현은 위젯 테스트로는
+    // 결정적으로 만들기 어려워 값 검증 테스트 없이 기존 관례에 맞춰 방어만 추가함).
+    if (!mounted) return;
     if (picked != null) {
       setState(() => _birthDate = picked);
     }
@@ -69,6 +74,7 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
       context: context,
       initialTime: _birthTime,
     );
+    if (!mounted) return;
     if (picked != null) {
       setState(() => _birthTime = picked);
     }
