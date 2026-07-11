@@ -75,6 +75,23 @@ void main() {
     expect(find.text('0%'), findsOneWidget); // 화
     expect(find.text('38%'), findsOneWidget); // 금
     expect(find.text('13%'), findsOneWidget); // 수
+
+    // 위 검증은 한자 5종·퍼센트 4종이 각각 "화면 어딘가에" 존재하는지만 볼 뿐, 특정
+    // 한자가 그 오행의 실제 퍼센트와 같은 줄(Row)에 붙어 있는지는 확인하지 않는다 —
+    // 예를 들어 `_ohaengHanja`에서 목·화의 한자가 서로 뒤바뀌어도(둘 다 여전히
+    // 화면에 하나씩 존재하므로) 위 assertion들은 그대로 통과해버린다. 한자를 감싼
+    // Row 안에서 퍼센트 텍스트를 찾아 같은 줄에 있는지까지 확인한다.
+    String percentInRowOf(String hanja) {
+      final row = find.ancestor(of: find.text(hanja), matching: find.byType(Row)).first;
+      final percentFinder = find.descendant(of: row, matching: find.textContaining('%'));
+      return tester.widget<Text>(percentFinder).data!;
+    }
+
+    expect(percentInRowOf('木'), '25%', reason: '목');
+    expect(percentInRowOf('火'), '0%', reason: '화');
+    expect(percentInRowOf('土'), '25%', reason: '토');
+    expect(percentInRowOf('金'), '38%', reason: '금');
+    expect(percentInRowOf('水'), '13%', reason: '수');
   });
 
   testWidgets('4기둥 칩의 한자가 실제 계산값과 정확히 일치한다', (tester) async {
