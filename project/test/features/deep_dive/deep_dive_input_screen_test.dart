@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 
 import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/core/storage/deep_dive_info_store.dart';
@@ -240,6 +242,57 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('저장된 관심사를 불러오는 도중 사용자가 칩을 탭하면, 로드가 늦게 끝나도 탭이 이긴다',
+      (tester) async {
+    // 2026-07-11 버그 수정: initState()가 _loadSaved()를 기다리지 않고(fire-and-forget)
+    // 바로 반환한다 — 이미 저장된 관심사가 있는 상태(재방문)에서 그 비동기 로드가
+    // 아직 끝나기 전에 사용자가 칩을 탭하면, _toggleInterest()의 setState 직후에
+    // 뒤늦게 도착하는 _loadSaved()의 setState(저장된 값으로 무조건 덮어씀)가 방금
+    // 누른 탭을 조용히 되돌리는 실제 버그였다.
+    //
+    // (구현 노트) 처음엔 pumpWidget() 직후 pump() 없이 바로 탭해서 재현하려 했으나,
+    // 목(mock) SharedPreferences는 실제 지연이 없어 pumpWidget() 자체가 이미 마이크로
+    // 태스크 큐를 다 비워버려 로드가 탭보다 먼저 끝나버리는 것을 실측으로 확인했다 —
+    // 경쟁을 결정적으로 재현하려면 로드 완료 시점을 직접 통제해야 해서, getAll()이
+    // 수동으로 완료시키는 Completer를 기다리는 가짜 스토어로 바꿔치기한다.
+    final loadGate = Completer<void>();
+    final store = _GatedLoadStore(
+      {'flutter.deep_dive_info.interests': ['health']},
+      loadGate.future,
+    );
+    final originalStore = SharedPreferencesStorePlatform.instance;
+    SharedPreferencesStorePlatform.instance = store;
+    addTearDown(() => SharedPreferencesStorePlatform.instance = originalStore);
+
+    await useTallViewport(tester);
+    await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tester.pump();
+    // 로드가 아직 loadGate에 막혀 안 끝난 시점 — 기본값(전체 선택)이 보여야 한다.
+    expect(
+      tester.getSemantics(find.text('💰 재물운')).flagsCollection.isSelected,
+      Tristate.isTrue,
+    );
+
+    await tester.tap(find.text('💰 재물운'));
+    await tester.pump();
+
+    // 이제서야 로드가 끝나도록 놓아준다.
+    loadGate.complete();
+    await tester.pumpAndSettle();
+
+    // 사용자가 직접 끈 재물운은 꺼진 채로 유지돼야 하고(로드된 값에 덮이면 안 됨),
+    // 다른 관심사(연애운)도 로드된 값({건강운}만)에 덮이지 않고 탭 시점의 기본값
+    // (전체 선택)이 그대로 유지돼야 한다.
+    expect(
+      tester.getSemantics(find.text('💰 재물운')).flagsCollection.isSelected,
+      Tristate.isFalse,
+    );
+    expect(
+      tester.getSemantics(find.text('💘 연애운')).flagsCollection.isSelected,
+      Tristate.isTrue,
+    );
+  });
+
   testWidgets('제출하면 선택한 관심사·MBTI가 저장되어 다음에 열 때 이어서 보인다', (tester) async {
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
@@ -410,5 +463,21 @@ class _CountingNavigatorObserver extends NavigatorObserver {
     if (previousRoute != null) {
       pushedRoutes.add(route as Route<void>);
     }
+  }
+}
+
+/// `getAll()`이 즉시 끝나지 않고 [gate]가 완료될 때까지 기다리는 가짜 저장소 —
+/// initState()의 비동기 로드 완료 시점을 테스트에서 직접 통제하기 위함(실제
+/// SharedPreferences는 지연이 없어 로드가 사용자 탭보다 항상 먼저 끝나버려
+/// 경쟁 상태를 재현할 수 없었다).
+class _GatedLoadStore extends InMemorySharedPreferencesStore {
+  _GatedLoadStore(super.data, this.gate) : super.withData();
+
+  final Future<void> gate;
+
+  @override
+  Future<Map<String, Object>> getAll() async {
+    await gate;
+    return super.getAll();
   }
 }

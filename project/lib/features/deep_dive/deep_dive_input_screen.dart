@@ -35,6 +35,15 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
   /// `DeepDiveResultScreen`이 중복으로 push되는 걸 막는다.
   bool _isSubmitting = false;
 
+  /// **2026-07-11 버그 수정**: `initState()`가 `_loadSaved()`를 기다리지 않고(fire-and-forget)
+  /// 바로 반환하는데, 이미 저장된 관심사가 있는 상태(재방문)에서 그 비동기 로드가
+  /// 끝나기 전에 사용자가 칩을 탭하면 `_toggleInterest()`의 `setState`가 곧바로 뒤이어
+  /// 도착하는 `_loadSaved()`의 `setState`(저장된 값으로 무조건 덮어씀)에 조용히
+  /// 덮여써져, 방금 누른 탭이 화면에는 잠깐 반영됐다가 다시 예전 값으로 되돌아가는
+  /// 실제 버그였다. 사용자가 한 번이라도 직접 상호작용했으면 그 뒤에 로드가 끝나도
+  /// 더 이상 덮어쓰지 않도록 막는다.
+  bool _userInteracted = false;
+
   @override
   void initState() {
     super.initState();
@@ -51,7 +60,7 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
     } catch (_) {
       saved = null;
     }
-    if (saved == null || !mounted) return;
+    if (saved == null || !mounted || _userInteracted) return;
 
     setState(() {
       _interests = saved!.interests;
@@ -60,6 +69,7 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
   }
 
   void _toggleInterest(Interest interest) {
+    _userInteracted = true;
     setState(() {
       _interests = _interests.contains(interest)
           ? ({..._interests}..remove(interest))
