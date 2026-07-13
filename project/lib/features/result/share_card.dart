@@ -4,9 +4,6 @@ import '../../app/theme/app_colors.dart';
 import '../../core/saju/four_pillars.dart';
 import '../../core/saju/ganzhi.dart';
 
-/// 오행 밸런스 바의 한 글자 라벨용 한자(목업 `.bar-row .tag`가 한글이 아니라 한자를 씀).
-const _ohaengHanja = {'목': '木', '화': '火', '토': '土', '금': '金', '수': '水'};
-
 /// 공유용 9:16 카드 — 실제 화면(스크롤 가능한 ResultScreen)과 별개로,
 /// 캡처해서 이미지로 공유하기 위한 고정 크기 요약 카드.
 /// 참고: docs/mockups/01-pastel-cute.html STEP 4의 "인스타 스토리로 공유하기" 컨셉.
@@ -167,7 +164,8 @@ class ShareCard extends StatelessWidget {
     final percent = total == 0 ? 0.0 : (ohaengCount[ohaeng]! / total * 100);
     // result_screen.dart의 _OhaengBarRow와 같은 이유(목업 `.bar-row .tag`는 한글이 아니라
     // 한자)로 한자를 대신 표시한다(색상/집계는 한글 ohaeng 그대로 사용, 2026-07-06 대조 발견).
-    final hanja = _ohaengHanja[ohaeng] ?? ohaeng;
+    // 한자 값은 core/saju/ganzhi.dart의 공용 상수 `ohaengHanja`를 재사용한다.
+    final hanja = ohaengHanja[ohaeng] ?? ohaeng;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(

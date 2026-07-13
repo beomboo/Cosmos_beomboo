@@ -18,6 +18,12 @@ String stemOhaeng(int stemIndex) => _stemOhaeng[stemIndex % 10];
 
 String branchOhaeng(int branchIndex) => _branchOhaeng[branchIndex % 12];
 
+/// 오행 이름(한글) → 한자. 목업(`.bar-row .tag`, 오행 뜻풀이 배지 등)이 오행을 짧게
+/// 표시할 때는 한글이 아니라 한자를 쓰는 관례라, 결과/리포트/공유 카드 화면이 모두
+/// 이 상수를 공유해서 참조한다(각자 하드코딩하면 한 곳만 고쳤을 때 화면마다 값이
+/// 어긋나는 회귀가 생길 수 있음).
+const ohaengHanja = {'목': '木', '화': '火', '토': '土', '금': '金', '수': '水'};
+
 /// 하나의 기둥(柱) — 천간 1자 + 지지 1자.
 class GanzhiPillar {
   const GanzhiPillar({required this.stemIndex, required this.branchIndex});

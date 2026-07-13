@@ -29,6 +29,16 @@ void main() {
     });
   });
 
+  group('ohaengHanja', () {
+    test('오행 5종(목화토금수)을 한자(木火土金水)로 매핑한다', () {
+      expect(ohaengHanja['목'], '木');
+      expect(ohaengHanja['화'], '火');
+      expect(ohaengHanja['토'], '土');
+      expect(ohaengHanja['금'], '金');
+      expect(ohaengHanja['수'], '水');
+    });
+  });
+
   group('GanzhiPillar', () {
     test('stemIndex/branchIndex로 천간·지지 한 글자씩을 조합해 label을 만든다', () {
       const pillar = GanzhiPillar(stemIndex: 0, branchIndex: 0);

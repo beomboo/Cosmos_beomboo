@@ -20,12 +20,14 @@ import 'share_card.dart';
 import 'share_text.dart';
 
 /// 오행 한자 + 설명 (docs/mockups/01-pastel-cute.html "오행 컬러 시스템" 참고)
-const _ohaengCallout = {
-  '목': ('木', '🌿', '새로운 걸 벌이는 힘이 넘쳐요'),
-  '화': ('火', '🔥', '표현력과 인기운이 좋아요'),
-  '토': ('土', '🪵', '안정감 있고 신뢰를 줘요'),
-  '금': ('金', '✨', '원칙적이고 결단력 있어요'),
-  '수': ('水', '💧', '유연하고 통찰력이 뛰어나요'),
+/// 한자 값은 core/saju/ganzhi.dart의 공용 상수 `ohaengHanja`를 재사용한다(화면마다
+/// 따로 하드코딩하면 한 곳만 고쳤을 때 값이 어긋나는 회귀가 생길 수 있음).
+final _ohaengCallout = {
+  '목': (ohaengHanja['목']!, '🌿', '새로운 걸 벌이는 힘이 넘쳐요'),
+  '화': (ohaengHanja['화']!, '🔥', '표현력과 인기운이 좋아요'),
+  '토': (ohaengHanja['토']!, '🪵', '안정감 있고 신뢰를 줘요'),
+  '금': (ohaengHanja['금']!, '✨', '원칙적이고 결단력 있어요'),
+  '수': (ohaengHanja['수']!, '💧', '유연하고 통찰력이 뛰어나요'),
 };
 
 /// 사주 결과 화면 — 4기둥 명식 + 오행 밸런스 바 차트 + 영역별 풀이 + 공유.
@@ -482,9 +484,10 @@ class _OhaengBarRow extends StatelessWidget {
     // 목업(오행 밸런스 바 `.bar-row .tag`)은 한글(목/화/토/금/수)이 아니라 한자
     // (木/火/土/金/水)로 표시한다 — report_screen.dart의 오행 뜻풀이 배지도 이미
     // 같은 이유로 한자를 쓰고 있어(뱃지처럼 짧게 보여줄 땐 한자, 풀어 쓰는 문장에는
-    // 한글이라는 기존 관례와도 일치함, 2026-07-06 대조 발견) `_ohaengCallout`의
-    // 한자 값을 그대로 재사용한다(색상/집계 등 실제 로직은 한글 `ohaeng`를 그대로 씀).
-    final hanja = _ohaengCallout[ohaeng]?.$1 ?? ohaeng;
+    // 한글이라는 기존 관례와도 일치함, 2026-07-06 대조 발견) core/saju/ganzhi.dart의
+    // 공용 `ohaengHanja` 상수를 그대로 재사용한다(색상/집계 등 실제 로직은 한글
+    // `ohaeng`를 그대로 씀).
+    final hanja = ohaengHanja[ohaeng] ?? ohaeng;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
