@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:cosmos_saju/core/saju/ganzhi.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_info.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_readings.dart';
 import 'package:cosmos_saju/features/result/ohaeng_readings.dart';
@@ -126,6 +127,41 @@ void main() {
             sub: readingFor(Interest.career, '목', sub, subCount: 1),
         };
         expect(combos.values.toSet().length, 4);
+      });
+
+      test('직장운 접미사가 20가지 (dominant, sub) 조합 전부에서 관계(OhaengRelation)와 정확히 일치한다 (스왑 방지)',
+          () {
+        // ohaeng_readings.dart의 _categoryComboSuffix와 별개로 이 파일에 독립적으로
+        // 존재하는 _careerComboSuffix도 같은 스왑 취약점을 가진다 — 바로 위 테스트(목
+        // 기준 4가지 유일성)만으로는 예를 들어 dominantOvercomesSub와
+        // subOvercomesDominant의 문구가 통째로 서로 바뀌어도 "4가지가 서로 다르다"는
+        // 여전히 참이라 못 잡는다. ohaengRelationOf로 실제 관계를 구해 20가지 조합
+        // 전부를 관계별 기대 접미사와 대조한다.
+        String expectedSuffix(OhaengRelation relation, String sub) {
+          switch (relation) {
+            case OhaengRelation.dominantGeneratesSub:
+              return '$sub 기운까지 힘을 보태서 이 흐름이 한층 살아나요';
+            case OhaengRelation.subGeneratesDominant:
+              return '$sub 기운이 뒤에서 든든하게 받쳐줘서 이 흐름이 오래 유지돼요';
+            case OhaengRelation.dominantOvercomesSub:
+              return '$sub 기운을 잘 다스리는 편이라 중심을 잃지 않아요';
+            case OhaengRelation.subOvercomesDominant:
+              return '$sub 기운이 브레이크가 되어줘서 과하지 않게 조절이 돼요';
+          }
+        }
+
+        for (final dominant in const ['목', '화', '토', '금', '수']) {
+          for (final sub in const ['목', '화', '토', '금', '수']) {
+            if (sub == dominant) continue;
+            final relation = ohaengRelationOf(dominant, sub);
+            final reading = readingFor(Interest.career, dominant, sub, subCount: 1);
+            expect(
+              reading,
+              endsWith(expectedSuffix(relation, sub)),
+              reason: '($dominant, $sub) 직장운 접미사',
+            );
+          }
+        }
       });
     });
   });
