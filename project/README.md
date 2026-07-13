@@ -6,7 +6,6 @@
 
 - [../CLAUDE.md](../CLAUDE.md) — 작업 규칙
 - [../PROJECT_ROUTER.md](../PROJECT_ROUTER.md) — 기능별 경로 안내
-- [../PROGRESS.md](../PROGRESS.md) — 진행 로그
 
 ## 실행/빌드
 
