@@ -19,13 +19,13 @@
 | 라우팅 | `project/lib/app/router.dart` | 🟢 | 화면 간 라우트 정의 |
 | 생년월일시 저장소 | `project/lib/core/storage/` | 🟢 | `BirthInfoStore`/`DeepDiveInfoStore` (SharedPreferences) |
 | 온보딩 화면 | `project/lib/features/onboarding/` | 🟢 | 최초 진입 화면 |
-| 생년월일시 정보 입력 화면 | `project/lib/features/birth_input/` | 🟢 | 생년월일시·성별·MBTI 입력 |
+| 생년월일시 정보 입력 화면 | `project/lib/features/birth_input/` | 🟢 | 생년월일시·성별·MBTI 입력. 제출 시 `pushReplacementNamed`로 계산 중 화면으로 넘어가 스택에서 제거됨(뒤로가기로 재진입 불가) |
 | 명식 계산 중 화면 | `project/lib/features/calculating/` | 🟢 | 계산 중 애니메이션 |
-| 사주 결과 화면 | `project/lib/features/result/` | 🟢 | 4기둥·오행 밸런스·공유 카드 |
+| 사주 결과 화면 | `project/lib/features/result/` | 🟢 | 4기둥·오행 밸런스(우세+2순위 오행 상생상극 콤보 콜아웃·카테고리 접미사·서술 문단, `ohaeng_readings.dart`)·공유 카드 |
 | 상세 리포트 화면 | `project/lib/features/report/` | 🟢 | 오행별 상세 해석 |
 | 심층 분석(MBTI·관심사) | `project/lib/features/deep_dive/` | 🟢 | 관심사 선택 + 심층 분석 결과 |
 | 십신(十神) 콘텐츠 확장 | 아직 없음 — 만든다면 `project/lib/features/deep_dive/` 또는 `project/lib/features/ten_gods/` | ⚪ | 사람 결정 대기, 자동화 루프 임의 착수 금지 |
-| 사주 계산 로직 | `project/lib/core/saju/` | 🟡 | `ganzhi.dart`(오행 한자 공용 상수 `ohaengHanja` 포함)+`four_pillars.dart`. 절기 근사·자시 관법·진태양시·음력 변환 등 정확도 이슈는 사람 결정 대기 |
+| 사주 계산 로직 | `project/lib/core/saju/` | 🟡 | `ganzhi.dart`(오행 한자 공용 상수 `ohaengHanja`, 오행 상생상극 관계 판별 `ohaengRelationOf`/`OhaengRelation` 포함)+`four_pillars.dart`(`dominantOhaeng`/`subDominantOhaeng`). 절기 근사·자시 관법·진태양시·음력 변환 등 정확도 이슈는 사람 결정 대기 |
 | 공용 위젯 | `project/lib/shared/widgets/` | 🟢 | `PastelPillButton`/`PastelToggleRow`/`PastelCard` |
 | 빌드 검증 스크립트 | `project/tool/check_build.sh` | 🟢 | 표준 빌드/린트 체크(pub get→analyze→test→build apk) 일괄 실행 |
 | 앱 아이콘 | `project/assets/icon/icon.png` | 🟢 | 생성 도구: `project/test/tool/generate_app_icon.dart` |
