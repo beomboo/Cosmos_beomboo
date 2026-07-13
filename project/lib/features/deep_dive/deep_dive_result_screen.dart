@@ -11,7 +11,6 @@ import 'deep_dive_readings.dart';
 /// MBTI·관심사를 반영한 심층 분석 결과 화면 (1단계: 조합형 규칙 기반).
 /// 오행 × MBTI(16) × 관심사를 전부 곱해 손으로 문구를 쓰는 대신, 우세 오행 기준
 /// 카테고리 풀이(관심사로 고른 것만)에 MBTI 성향 코멘트 한 줄을 더하는 방식으로 구성한다.
-/// 참고: PROGRESS.md "심층 분석" 항목.
 class DeepDiveResultScreen extends StatelessWidget {
   const DeepDiveResultScreen({super.key, required this.birthInfo, required this.deepDiveInfo});
 
