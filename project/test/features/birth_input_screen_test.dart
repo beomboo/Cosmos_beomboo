@@ -140,35 +140,24 @@ void main() {
     expect(calculatingPushCount, 1);
   });
 
-  testWidgets('한 번 제출한 뒤 뒤로가기로 돌아와도 "사주 보러가기"를 다시 누를 수 있다', (tester) async {
-    // 위 더블탭 가드(_isSubmitting)를 추가하면서 새로 생긴 실제 버그: 제출 시
-    // Navigator.pushNamed()는 화면을 교체(replace)하는 게 아니라 그 위에 쌓기만
-    // 해서(BirthInputScreen이 스택에 그대로 남음), 사용자가 calculating 화면에서
-    // 뒤로가기로 이 화면에 돌아오면 그 인스턴스의 _isSubmitting이 true로 남아있는
-    // 채였다. 원래 코드는 이 플래그를 다시 false로 되돌리는 지점이 전혀 없어서,
-    // 한 번 제출한 뒤 뒤로 돌아오면 "사주 보러가기"를 아무리 눌러도 아무 반응 없이
-    // 영원히 먹통이 되는 실제 버그였다 — pushNamed()가 반환하는 Future가 완료되는
-    // 시점(뒤로가기로 돌아왔을 때)에 맞춰 플래그를 되돌리도록 고쳤다.
+  testWidgets('제출하면 이 화면이 스택에서 교체돼(pushReplacementNamed) 뒤로 가기로 돌아올 수 없다',
+      (tester) async {
+    // **2026-07-13 변경**: 이전에는 `Navigator.pushNamed()`를 써서 화면을 교체하는 게
+    // 아니라 그 위에 쌓기만 했다(BirthInputScreen이 스택에 그대로 남음) — 그 결과
+    // calculating 화면에서 기기 뒤로가기를 누르면 제출 직후 이 화면(같은 인스턴스,
+    // 입력값 그대로)으로 돌아갈 수 있는 실제 버그였다(2026-07-08에 발견해 그때는
+    // `_isSubmitting` 재설정으로만 대응했으나, 근본 원인인 "뒤로가기 자체가 가능하다"는
+    // 점은 남아있었음). `pushReplacementNamed()`로 바꿔 이 화면 자체를 스택에서
+    // 제거하면, calculating 화면에 도달했을 때 더 이상 뒤로 갈 곳이 없어야 한다.
     await useTallViewport(tester);
-    var calculatingPushCount = 0;
-    await tester.pumpWidget(buildApp(
-      onCalculatingRoute: (_) => calculatingPushCount++,
-    ));
+    await tester.pumpWidget(buildApp());
 
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
-    expect(calculatingPushCount, 1);
+    expect(find.text('CALCULATING_STUB'), findsOneWidget);
 
-    // calculating 스텁 화면에서 뒤로가기로 BirthInputScreen에 돌아온다.
     final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
-    navigator.pop();
-    await tester.pumpAndSettle();
-    expect(find.text('사주 보러가기 🔮'), findsOneWidget);
-
-    await tester.tap(find.text('사주 보러가기 🔮'));
-    await tester.pumpAndSettle();
-
-    expect(calculatingPushCount, 2);
+    expect(navigator.canPop(), isFalse);
   });
 
   testWidgets('"태어난 시간을 몰라요"를 체크하고 제출하면 hour·minute 모두 null로 전달된다', (tester) async {

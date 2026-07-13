@@ -134,14 +134,15 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
       // 무시 — 상세 리포트의 심층 분석에서 다시 이어받으면 된다.
     }
     if (!mounted) return;
-    // pushNamed()가 반환하는 Future는 이 화면 위에 올라간 라우트가 나중에 pop되어
-    // 이 화면으로 돌아왔을 때 비로소 완료된다 — 그 시점에 맞춰 플래그를 되돌려야,
-    // 제출 후 뒤로가기로 이 화면에 돌아왔을 때 "사주 보러가기"가 계속 먹통이 되지
-    // 않는다(한 번 true가 된 뒤로 다시 false가 될 일이 없던 실제 버그였음).
-    await Navigator.of(context).pushNamed(AppRoutes.calculating, arguments: birthInfo);
-    if (mounted) {
-      _isSubmitting = false;
-    }
+    // **2026-07-13 변경**: 이전에는 pushNamed()를 써서 이 화면이 스택에 그대로 남아있었다
+    // — calculating_screen.dart가 이미 pushReplacementNamed로 자기 자신을 결과 화면으로
+    // 교체하지만, 그 아래 이 입력 화면은 남아 있어서 계산 중 화면에서 기기 뒤로가기를
+    // 누르면 다시 이 입력 화면으로 돌아올 수 있었다(제출 직후 뒤로가기 한 번으로 입력
+    // 내용이 그대로 남은 채 재진입 가능). pushReplacementNamed로 바꿔 이 화면 자체를
+    // 스택에서 제거하면 계산 중 화면에서 뒤로가기를 눌러도 이 화면으로 돌아올 수 없다.
+    // 이 화면이 스택에서 사라지므로 아래로 다시 돌아와 _isSubmitting을 되돌릴 일이
+    // 없어졌다(제출이 진행 중인 동안 재진입을 막는 더블탭 가드 자체는 여전히 유효).
+    Navigator.of(context).pushReplacementNamed(AppRoutes.calculating, arguments: birthInfo);
   }
 
   @override
