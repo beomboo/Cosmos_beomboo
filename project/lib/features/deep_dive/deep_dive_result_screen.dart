@@ -22,6 +22,8 @@ class DeepDiveResultScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final pillars = calculateFourPillars(birthDate: birthInfo.date, birthHour: birthInfo.hour);
     final dominant = pillars.dominantOhaeng;
+    final sub = pillars.subDominantOhaeng;
+    final subCount = pillars.ohaengCount[sub] ?? 0;
     final displayName =
         birthInfo.name?.trim().isNotEmpty == true ? birthInfo.name!.trim() : '회원님';
     final mbtiComment = mbtiCommentFor(deepDiveInfo.mbti?.code);
@@ -72,7 +74,7 @@ class DeepDiveResultScreen extends StatelessWidget {
                     // 지금까지는 아이콘·제목·설명이 각각 별도 Text라 스크린 리더가 세 번
                     // 나눠 읽었다. "제목. 설명"으로 병합해 하나의 노드로 읽히게 한다.
                     child: Semantics(
-                      label: '${interest.categoryTitle}. ${readingFor(interest, dominant)}',
+                      label: '${interest.categoryTitle}. ${readingFor(interest, dominant, sub, subCount: subCount)}',
                       excludeSemantics: true,
                       container: true,
                       child: PastelCard(
@@ -91,7 +93,7 @@ class DeepDiveResultScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    readingFor(interest, dominant),
+                                    readingFor(interest, dominant, sub, subCount: subCount),
                                     style: const TextStyle(fontSize: 13, color: AppColors.inkSoft),
                                   ),
                                 ],

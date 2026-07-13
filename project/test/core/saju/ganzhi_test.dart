@@ -64,4 +64,68 @@ void main() {
       expect(pillar.label, '갑자'); // 60%10=0, 72%12=0
     });
   });
+
+  group('ohaengRelationOf', () {
+    // 결과 화면 콤보 콜아웃·카테고리 접미사(features/result/ohaeng_readings.dart)가
+    // 이 함수로 dominant/sub 관계를 판별한다 — 표 기반으로 5(dominant) × 4(sub, 나머지
+    // 전부) = 20가지 조합 전부가 정확히 하나의 관계로 분류되는지 확인한다.
+    const expected = {
+      // dominant가 순환상 바로 다음 오행을 생(生)한다: 목→화, 화→토, 토→금, 금→수, 수→목.
+      ('목', '화'): OhaengRelation.dominantGeneratesSub,
+      ('화', '토'): OhaengRelation.dominantGeneratesSub,
+      ('토', '금'): OhaengRelation.dominantGeneratesSub,
+      ('금', '수'): OhaengRelation.dominantGeneratesSub,
+      ('수', '목'): OhaengRelation.dominantGeneratesSub,
+
+      // dominant가 두 칸 뒤 오행을 극(克)한다: 목→토, 화→금, 토→수, 금→목, 수→화.
+      ('목', '토'): OhaengRelation.dominantOvercomesSub,
+      ('화', '금'): OhaengRelation.dominantOvercomesSub,
+      ('토', '수'): OhaengRelation.dominantOvercomesSub,
+      ('금', '목'): OhaengRelation.dominantOvercomesSub,
+      ('수', '화'): OhaengRelation.dominantOvercomesSub,
+
+      // sub가 dominant를 극(克)한다(위 극 관계의 반대 방향): 목→금, 화→수, 토→목, 금→화, 수→토.
+      ('목', '금'): OhaengRelation.subOvercomesDominant,
+      ('화', '수'): OhaengRelation.subOvercomesDominant,
+      ('토', '목'): OhaengRelation.subOvercomesDominant,
+      ('금', '화'): OhaengRelation.subOvercomesDominant,
+      ('수', '토'): OhaengRelation.subOvercomesDominant,
+
+      // sub가 dominant를 생(生)한다(위 생 관계의 반대 방향): 목→수, 화→목, 토→화, 금→토, 수→금.
+      ('목', '수'): OhaengRelation.subGeneratesDominant,
+      ('화', '목'): OhaengRelation.subGeneratesDominant,
+      ('토', '화'): OhaengRelation.subGeneratesDominant,
+      ('금', '토'): OhaengRelation.subGeneratesDominant,
+      ('수', '금'): OhaengRelation.subGeneratesDominant,
+    };
+
+    test('20가지 (dominant, sub) 조합 전부가 표와 정확히 일치하는 관계로 분류된다', () {
+      expect(expected.length, 20, reason: '5×4=20가지 조합이 표에 전부 있어야 한다');
+      for (final entry in expected.entries) {
+        final (dominant, sub) = entry.key;
+        expect(
+          ohaengRelationOf(dominant, sub),
+          entry.value,
+          reason: '($dominant, $sub)',
+        );
+      }
+    });
+
+    test('네 관계가 상호 배타적이다 — 각 dominant마다 sub 4개가 서로 다른 관계로 정확히 한 번씩 나뉜다', () {
+      for (final dominant in const ['목', '화', '토', '금', '수']) {
+        final subs = const ['목', '화', '토', '금', '수'].where((o) => o != dominant);
+        final relations = subs.map((sub) => ohaengRelationOf(dominant, sub)).toSet();
+        expect(relations.length, 4, reason: '$dominant 기준 4개 sub가 서로 다른 4가지 관계여야 한다');
+      }
+    });
+
+    test('dominant와 sub가 같은 오행이면 예외를 던진다', () {
+      expect(() => ohaengRelationOf('목', '목'), throwsArgumentError);
+    });
+
+    test('알 수 없는 오행이 들어오면 예외를 던진다', () {
+      expect(() => ohaengRelationOf('알수없음', '목'), throwsArgumentError);
+      expect(() => ohaengRelationOf('목', '알수없음'), throwsArgumentError);
+    });
+  });
 }

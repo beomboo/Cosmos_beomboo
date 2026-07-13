@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:cosmos_saju/core/saju/four_pillars.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_info.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_readings.dart';
@@ -19,6 +20,18 @@ void main() {
     });
   }
 
+  // deep_dive_result_screen.dart가 실제로 하는 것과 똑같이 dominant/sub/subCount를
+  // 계산해 readingFor()에 넘긴다 — readingFor의 시그니처가 (interest, ohaeng)에서
+  // (interest, dominant, sub, {subCount})로 바뀐 뒤에도 화면이 실제로 렌더링하는 문구와
+  // 정확히 같은 값을 기대하도록 각 테스트의 birthInfo로부터 직접 계산한다.
+  String reading(Interest interest, BirthInfo info) {
+    final pillars = calculateFourPillars(birthDate: info.date, birthHour: info.hour);
+    final dominant = pillars.dominantOhaeng;
+    final sub = pillars.subDominantOhaeng;
+    final subCount = pillars.ohaengCount[sub] ?? 0;
+    return readingFor(interest, dominant, sub, subCount: subCount);
+  }
+
   // 1998-08-15 14시 조합은 이미 four_pillars_test.dart에서 우세 오행이 '금'으로
   // 검증돼 있다(목:2,화:0,토:2,금:3,수:1) — 이 값을 그대로 재사용한다.
   final birthInfo = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false);
@@ -35,9 +48,9 @@ void main() {
     );
 
     expect(find.text('직장운'), findsOneWidget);
-    expect(find.text(readingFor(Interest.career, '금')), findsOneWidget);
+    expect(find.text(reading(Interest.career, birthInfo)), findsOneWidget);
     expect(find.text('연애운'), findsOneWidget);
-    expect(find.text(readingFor(Interest.love, '금')), findsOneWidget);
+    expect(find.text(reading(Interest.love, birthInfo)), findsOneWidget);
 
     // 고르지 않은 관심사(재물·건강)는 표시되지 않아야 한다.
     expect(find.text('재물운'), findsNothing);
@@ -73,7 +86,7 @@ void main() {
 
     expect(
       tester.getSemantics(find.text('연애운')),
-      matchesSemantics(label: '연애운. ${readingFor(Interest.love, '금')}'),
+      matchesSemantics(label: '연애운. ${reading(Interest.love, birthInfo)}'),
     );
 
     semantics.dispose();
@@ -229,8 +242,8 @@ void main() {
       ),
     );
 
-    expect(find.text(readingFor(Interest.career, '목')), findsOneWidget);
-    expect(find.text(readingFor(Interest.career, '금')), findsNothing);
+    expect(find.text(reading(Interest.career, noHourInfo)), findsOneWidget);
+    expect(find.text(reading(Interest.career, birthInfo)), findsNothing);
   });
 
   testWidgets('시스템 글자 크기를 크게(2배) 키워도 RenderFlex overflow가 나지 않는다', (tester) async {

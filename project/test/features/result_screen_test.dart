@@ -121,6 +121,33 @@ void main() {
     expect(findInBody('13%'), findsOneWidget); // 수
   });
 
+  testWidgets('오행 밸런스 바 차트 아래 서술 문단이 % 숫자 + 우세·2순위 오행 관계를 정확히 보여준다',
+      (WidgetTester tester) async {
+    // 2026-07-13 추가: 오행 밸런스 바 차트만으로는 %와 우세/2순위 오행의 관계(상생·상극)를
+    // 말로 풀어주지 않아, 그 아래 서술 문단(buildOhaengBalanceNarrative)을 새로 추가했다.
+    // 1998-08-15/14시 분포({목:2,화:0,토:2,금:3,수:1}, 총 8)는 금이 dominant(3개,38%),
+    // 목이 sub(2개,25%)이고 관계는 금극목(dominantOvercomesSub)이다.
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    expect(
+      findInBody(
+        '전체 8글자 중 금이 3개(38%)로 가장 많고, 목이 2개(25%)로 그다음이에요 — '
+        '금 기운이 목 기운을 다스리는 흐름이라 주도권을 쥐는 편이에요',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets(
       '2026-07-06 발견: 음력으로 입력해도 양력 변환 없이 같은 날짜로 계산돼 4기둥이 동일하다 (알려진 한계, 회귀 고정용)',
       (WidgetTester tester) async {
@@ -167,6 +194,20 @@ void main() {
     // 테스트는 dominant를 '목'으로 그냥 하드코딩해서 넘겼을 뿐, 이 reduce 로직을 거치지
     // 않았음). 1998-08-15 14시의 분포 {목:2,화:0,토:2,금:3,수:1}는 금이 유일한 최댓값이라
     // (목·토는 동률 2로 서로 안 밀리는 것까지 포함해) 최종적으로 금이 선택돼야 한다.
+    // **2026-07-13 변경**: 우세 오행(금) 단독이 아니라 2순위 오행(목, 개수 2)까지 반영한
+    // 콤보 콜아웃·카테고리 접미사(dominantComboCallout/categoryReadingsForCombo, 금극목
+    // 관계)로 문구가 바뀌었다. 접미사가 늘어난 만큼(밸런스 서술 문단도 새로 추가됨) 카테고리
+    // 카드가 기본 뷰포트(800x600) 아래로 밀려 ListView가 지연 빌드해버려 못 찾는 걸
+    // 실측으로 확인했다 — 뷰포트를 세로로 키운다.
+    final originalSize = tester.view.physicalSize;
+    final originalRatio = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(400, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalRatio;
+    });
+
     await tester.pumpWidget(
       MaterialApp(
         onGenerateRoute: (settings) => MaterialPageRoute(
@@ -179,21 +220,40 @@ void main() {
       ),
     );
 
+    const calloutText = '금(金) 기운이 강한 타입이에요 ✨\n'
+        '금 기운이 목 기운을 정리해줘서 벌여둔 일을 야무지게 마무리 짓는 힘이 있어요';
+    expect(findInBody(calloutText), findsOneWidget);
     expect(
-      findInBody('금(金) 기운이 강한 타입이에요 ✨\n원칙적이고 결단력 있어요'),
+      findInBody(
+        '눈이 높은 편이라 확실한 상대를 알아보는 시기예요. 목 기운을 잘 다스리는 편이라 중심을 잃지 않아요',
+      ),
       findsOneWidget,
-    );
-    expect(findInBody('눈이 높은 편이라 확실한 상대를 알아보는 시기예요'), findsOneWidget); // 금 연애운
-    expect(findInBody('계획적으로 관리하면 돈이 잘 모이는 편이에요'), findsOneWidget); // 금 재물운
-    expect(findInBody('호흡기·피부 컨디션을 신경 쓰면 좋아요'), findsOneWidget); // 금 건강운
-    expect(findInBody('원칙적이고 맺고 끊음이 확실한 타입이에요'), findsOneWidget); // 금 성격
+    ); // 금 연애운 + 금극목 접미사
+    expect(
+      findInBody(
+        '계획적으로 관리하면 돈이 잘 모이는 편이에요. 목 기운을 잘 다스리는 편이라 중심을 잃지 않아요',
+      ),
+      findsOneWidget,
+    ); // 금 재물운 + 접미사
+    expect(
+      findInBody(
+        '호흡기·피부 컨디션을 신경 쓰면 좋아요. 목 기운을 잘 다스리는 편이라 중심을 잃지 않아요',
+      ),
+      findsOneWidget,
+    ); // 금 건강운 + 접미사
+    expect(
+      findInBody(
+        '원칙적이고 맺고 끊음이 확실한 타입이에요. 목 기운을 잘 다스리는 편이라 중심을 잃지 않아요',
+      ),
+      findsOneWidget,
+    ); // 금 성격 + 접미사
 
     // 2026-07-06에 콜아웃 박스가 우세 오행 색(ohaengSoftColors[dominant])으로 물들도록
     // 고쳤는데, 그 뒤로도 실제 배경색 값 자체를 확인한 테스트는 없었다 — 텍스트 내용만
     // 맞고 색이 우연히 다시 accentSoft로 되돌아가도(줄 커버리지만으로는) 못 잡는다.
     final calloutContainer = tester.widget<Container>(
       find.ancestor(
-        of: findInBody('금(金) 기운이 강한 타입이에요 ✨\n원칙적이고 결단력 있어요'),
+        of: findInBody(calloutText),
         matching: find.byType(Container),
       ).first,
     );
@@ -203,19 +263,41 @@ void main() {
 
   testWidgets('우세 오행 콜아웃 문구가 나머지 4개 오행(목·화·토·수)에서도 실제 값과 정확히 일치한다',
       (WidgetTester tester) async {
-    // 위 테스트는 '금'만 확인했다 — 콜아웃 문구(`_ohaengCallout`)는 5개 오행 전부
-    // 별도 (한자·이모지·설명) 튜플을 갖는데, 나머지 4개는 지금까지 어떤 birthInfo로도
-    // 실제로 우세 오행이 되게 만들어 값으로 확인한 적이 없었다 — 오행별 영역 풀이·
-    // 직장운·MBTI 코멘트·오행 5종 의미에서 반복 발견된 것과 같은 종류의 공백. 다만
-    // 이 문구는 "$dominant($한자) 기운이 강한 타입이에요 $이모지\n$설명"처럼 오행 이름 자체가
-    // 문자열 안에 포함된 하나의 Text이므로, 그대로 값을 대조하면 오행끼리 문구가
-    // 뒤바뀌어도 자동으로 잡힌다(_OhaengMeaningCard에서 겪은 것과 달리 별도 스코핑이
-    // 필요 없음). 실제 우세 오행이 각각 되는 생년월일을 미리 찾아 각각 pumpWidget한다.
+    // 위 테스트는 '금'(+2순위 목)만 확인했다 — 콤보 콜아웃(`dominantComboCallout`)은
+    // dominant 5종 × 관계 4종 = 20가지 문구를 갖는데, 나머지 조합은 지금까지 어떤
+    // birthInfo로도 실제로 우세/2순위 오행이 되게 만들어 값으로 확인한 적이 없었다 —
+    // 오행별 영역 풀이·직장운·MBTI 코멘트·오행 5종 의미에서 반복 발견된 것과 같은
+    // 종류의 공백. 이 문구는 "$dominant($한자) 기운이 강한 타입이에요 $이모지\n$설명"처럼
+    // 오행 이름 자체가 문자열 안에 포함된 하나의 Text이므로, 그대로 값을 대조하면
+    // 오행끼리 문구가 뒤바뀌어도 자동으로 잡힌다. 실제 우세/2순위 오행 조합이 되는
+    // 생년월일을 미리 찾아(core/saju/four_pillars_test.dart 분포 계산과 같은 방식)
+    // 각각 pumpWidget한다.
     const fixtures = {
-      '목': ('1980-02-18', '木', '🌿', '새로운 걸 벌이는 힘이 넘쳐요'),
-      '화': ('1980-01-15', '火', '🔥', '표현력과 인기운이 좋아요'),
-      '토': ('1980-01-01', '土', '🪵', '안정감 있고 신뢰를 줘요'),
-      '수': ('1980-06-01', '水', '💧', '유연하고 통찰력이 뛰어나요'),
+      // (생년월일, dominant 한자, 이모지, 콤보 콜아웃 설명) — 2순위 오행·관계는 주석 참고.
+      '목': (
+        '1980-02-18',
+        '木',
+        '🌿',
+        '금 기운이 앞서가려는 마음에 살짝 브레이크를 걸어줘요. 그 덕에 무모한 결정은 줄어드는 편이에요',
+      ), // dominant=목, sub=금(3, 금극목)
+      '화': (
+        '1980-01-15',
+        '火',
+        '🔥',
+        '화 기운이 토 기운을 데워줘서 열정이 안정적인 결과로 차곡차곡 쌓여가요',
+      ), // dominant=화, sub=토(4, 화생토)
+      '토': (
+        '1980-01-01',
+        '土',
+        '🪵',
+        '목 기운이 토 기운을 흔들어서 안정만 좇던 마음에 새로운 자극이 생겨요. 변화가 나쁘지만은 않아요',
+      ), // dominant=토, sub=목(1, 목극토)
+      '수': (
+        '1980-06-01',
+        '水',
+        '💧',
+        '금 기운이 원천이 되어줘서 유연함 속에 단단한 원칙까지 갖추게 돼요',
+      ), // dominant=수, sub=금(2, 금생수)
     };
 
     for (final entry in fixtures.entries) {
@@ -283,8 +365,20 @@ void main() {
     // _CategoryCard는 _PillarCard와 같은 파일에 있지만 지금까지 병합 시맨틱스가
     // 없었다(2026-07-07 발견) — 아이콘·제목·설명이 각각 별도 Text라 스크린 리더가
     // 세 번 나눠 읽었고, 장식용 이모지까지 유니코드 이름으로 읽어 혼란스러웠다.
-    // 1998-08-15/14시 생일의 우세 오행은 '금'이라 categoryReadingsByOhaeng['금']의
-    // 첫 항목("연애운. 눈이 높은...")으로 병합됐는지 확인한다.
+    // 1998-08-15/14시 생일의 우세 오행은 '금'(2순위 '목', 금극목 관계)이라
+    // categoryReadingsForCombo('금', '목', subCount: 2)의 첫 항목("연애운. 눈이 높은...
+    // + 접미사")으로 병합됐는지 확인한다.
+    // 접미사·밸런스 서술 문단이 늘어난 만큼 카드가 기본 뷰포트(800x600) 아래로 밀려
+    // ListView가 지연 빌드해버리는 걸 실측으로 확인했다 — 뷰포트를 세로로 키운다.
+    final originalSize = tester.view.physicalSize;
+    final originalRatio = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(400, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalRatio;
+    });
+
     final semantics = tester.ensureSemantics();
 
     await tester.pumpWidget(
@@ -301,7 +395,10 @@ void main() {
 
     expect(
       tester.getSemantics(findInBody('연애운')),
-      matchesSemantics(label: '연애운. 눈이 높은 편이라 확실한 상대를 알아보는 시기예요'),
+      matchesSemantics(
+        label: '연애운. 눈이 높은 편이라 확실한 상대를 알아보는 시기예요. '
+            '목 기운을 잘 다스리는 편이라 중심을 잃지 않아요',
+      ),
     );
 
     semantics.dispose();

@@ -33,6 +33,22 @@ class FourPillars {
   /// 동률 처리 방식까지 포함해 이미 검증된 로직을 다른 화면에서 중복 구현하지 않도록 이쪽으로 옮김).
   String get dominantOhaeng =>
       ohaengCount.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+
+  /// [ohaengCount]에서 [dominantOhaeng]을 제외한 나머지 오행 중 가장 개수가 많은 오행
+  /// (동률이면 [dominantOhaeng]과 같은 규칙대로 먼저 나오는 쪽 — 목화토금수 순서).
+  /// `Map.from(ohaengCount)`는 원본의 삽입 순서(목화토금수)를 그대로 보존하고
+  /// `remove()`도 나머지 항목의 순서를 건드리지 않으므로, [dominantOhaeng]의 동률
+  /// 처리와 자연히 같은 순서 규칙이 유지된다.
+  ///
+  /// **엣지케이스**: 사주 여덟 글자가 오행 하나(또는 dominant만 빼고 나머지 전부 0)로
+  /// 쏠릴 수 있어, 그 경우 [subDominantOhaeng]의 실제 개수(`ohaengCount[subDominantOhaeng]`)가
+  /// 0일 수 있다 — 호출부는 이 오행 이름 자체보다 그 개수를 함께 확인해서 "2순위 오행이
+  /// 사실상 존재하지 않음"을 판단해야 한다(예: 결과 화면의 콤보 콜아웃은 개수가 0이면
+  /// 단일-오행 문구로 폴백한다).
+  String get subDominantOhaeng {
+    final rest = Map<String, int>.from(ohaengCount)..remove(dominantOhaeng);
+    return rest.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+  }
 }
 
 /// 생년월일시(양력 기준)로 사주팔자 네 기둥을 계산한다.

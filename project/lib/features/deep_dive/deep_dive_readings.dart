@@ -1,3 +1,4 @@
+import '../../core/saju/ganzhi.dart';
 import '../result/ohaeng_readings.dart';
 import 'deep_dive_info.dart';
 
@@ -12,12 +13,40 @@ const Map<String, String> _careerReadingByOhaeng = {
   '수': '상황 판단이 빨라 위기 속에서도 기회를 찾는 타입이에요',
 };
 
-/// [interest] 관심사에 대한 [ohaeng] 오행 풀이 한 줄. 알 수 없는 오행이면 '토' 기본값.
-String readingFor(Interest interest, String ohaeng) {
-  if (interest == Interest.career) {
-    return _careerReadingByOhaeng[ohaeng] ?? _careerReadingByOhaeng['토']!;
+/// ohaeng_readings.dart의 `_categoryComboSuffix`와 같은 관계 4종 접미사를 직장운에도
+/// 적용한다(결과 화면 콤보와 같은 방식 — dominant/sub 관계를 캐주얼한 한 문장으로 붙임).
+String _careerComboSuffix(OhaengRelation relation, String sub) {
+  switch (relation) {
+    case OhaengRelation.dominantGeneratesSub:
+      return '$sub 기운까지 힘을 보태서 이 흐름이 한층 살아나요';
+    case OhaengRelation.subGeneratesDominant:
+      return '$sub 기운이 뒤에서 든든하게 받쳐줘서 이 흐름이 오래 유지돼요';
+    case OhaengRelation.dominantOvercomesSub:
+      return '$sub 기운을 잘 다스리는 편이라 중심을 잃지 않아요';
+    case OhaengRelation.subOvercomesDominant:
+      return '$sub 기운이 브레이크가 되어줘서 과하지 않게 조절이 돼요';
   }
-  final categories = categoryReadingsByOhaeng[ohaeng] ?? categoryReadingsByOhaeng['토']!;
+}
+
+/// [interest] 관심사에 대한 [dominant](+[sub]) 오행 풀이 한 줄. 알 수 없는 오행이면 '토' 기본값.
+///
+/// [subCount]가 0이면(2순위 오행이 사실상 없음 — `FourPillars.subDominantOhaeng` doc-comment
+/// 참고) 결과 화면과 마찬가지로 dominant 단독 문구를 그대로 반환한다. 그 외에는 연애·재물·
+/// 건강(카테고리 카드 공용 접미사)과 직장운(전용 접미사) 모두 관계 4종에 대응하는 한 문장을
+/// 덧붙인다.
+String readingFor(
+  Interest interest,
+  String dominant,
+  String sub, {
+  required int subCount,
+}) {
+  if (interest == Interest.career) {
+    final base = _careerReadingByOhaeng[dominant] ?? _careerReadingByOhaeng['토']!;
+    if (subCount == 0) return base;
+    final relation = ohaengRelationOf(dominant, sub);
+    return '$base. ${_careerComboSuffix(relation, sub)}';
+  }
+  final categories = categoryReadingsForCombo(dominant, sub, subCount: subCount);
   // `Interest.categoryTitle`(deep_dive_info.dart)과 `categoryReadingsByOhaeng`의 제목
   // (ohaeng_readings.dart)은 서로 다른 파일의 문자열 리터럴이라 컴파일 타임 연결이
   // 없다 — 둘 중 하나만 바뀌면(예: 향후 "건강운"을 "건강 운"으로 오타 수정) 여기서

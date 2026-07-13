@@ -19,16 +19,52 @@ import 'ohaeng_readings.dart';
 import 'share_card.dart';
 import 'share_text.dart';
 
-/// 오행 한자 + 설명 (docs/mockups/01-pastel-cute.html "오행 컬러 시스템" 참고)
-/// 한자 값은 core/saju/ganzhi.dart의 공용 상수 `ohaengHanja`를 재사용한다(화면마다
-/// 따로 하드코딩하면 한 곳만 고쳤을 때 값이 어긋나는 회귀가 생길 수 있음).
-final _ohaengCallout = {
-  '목': (ohaengHanja['목']!, '🌿', '새로운 걸 벌이는 힘이 넘쳐요'),
-  '화': (ohaengHanja['화']!, '🔥', '표현력과 인기운이 좋아요'),
-  '토': (ohaengHanja['토']!, '🪵', '안정감 있고 신뢰를 줘요'),
-  '금': (ohaengHanja['금']!, '✨', '원칙적이고 결단력 있어요'),
-  '수': (ohaengHanja['수']!, '💧', '유연하고 통찰력이 뛰어나요'),
-};
+/// 오행 이름 뒤에 붙는 주격 조사(이/가) — 받침 유무에 따라 갈린다(목/금은 받침 있어 "이",
+/// 화/토/수는 받침 없어 "가"). [buildOhaengBalanceNarrative]가 "$dominant이(가)"처럼 어색한
+/// 표기 대신 자연스러운 한국어 문장을 만들 때 쓴다.
+const _ohaengSubjectParticle = {'목': '이', '화': '가', '토': '가', '금': '이', '수': '가'};
+
+/// 오행별 우세(dominant)+2순위(sub) 조합 관계에 대응하는 "오행 밸런스" 서술 문단 문구.
+/// 콜아웃 박스(`dominantComboCallout`)와 달리 % 숫자를 함께 보여주는 좀 더 사실 설명형
+/// 문장이라 톤을 조금 다르게 쓴다(둘 다 "~요" 캐주얼 톤은 유지).
+String _balanceRelationNarrative(OhaengRelation relation, String dominant, String sub) {
+  switch (relation) {
+    case OhaengRelation.dominantGeneratesSub:
+      return '$dominant 기운이 $sub 기운에 힘을 보태는 흐름이라 시너지가 좋아요';
+    case OhaengRelation.subGeneratesDominant:
+      return '$sub 기운이 $dominant 기운을 든든하게 받쳐주는 흐름이에요';
+    case OhaengRelation.dominantOvercomesSub:
+      return '$dominant 기운이 $sub 기운을 다스리는 흐름이라 주도권을 쥐는 편이에요';
+    case OhaengRelation.subOvercomesDominant:
+      return '$sub 기운이 $dominant 기운에 브레이크를 걸어주는 흐름이에요';
+  }
+}
+
+/// 오행 밸런스 바 차트 아래 서술 문단 — % 숫자 + 우세/2순위 오행 관계 설명을 함께 보여준다.
+/// [subCount]가 0이면(2순위 오행이 사실상 없음) 관계 설명 없이 우세 오행 숫자만 안내한다.
+String buildOhaengBalanceNarrative({
+  required String dominant,
+  required String sub,
+  required Map<String, int> ohaengCount,
+  required int total,
+}) {
+  final dominantCount = ohaengCount[dominant] ?? 0;
+  final dominantPercent = total == 0 ? 0 : (dominantCount / total * 100).round();
+  final dominantParticle = _ohaengSubjectParticle[dominant] ?? '이';
+  if (total == 0) {
+    return '태어난 시간을 포함한 오행 정보가 아직 없어요';
+  }
+  if (ohaengCount[sub] == null || ohaengCount[sub] == 0) {
+    return '전체 $total글자 중 $dominant$dominantParticle $dominantCount개($dominantPercent%)로 가장 많아요';
+  }
+  final subCount = ohaengCount[sub]!;
+  final subPercent = (subCount / total * 100).round();
+  final subParticle = _ohaengSubjectParticle[sub] ?? '이';
+  final relation = ohaengRelationOf(dominant, sub);
+  final narrative = _balanceRelationNarrative(relation, dominant, sub);
+  return '전체 $total글자 중 $dominant$dominantParticle $dominantCount개($dominantPercent%)로 가장 많고, '
+      '$sub$subParticle $subCount개($subPercent%)로 그다음이에요 — $narrative';
+}
 
 /// 사주 결과 화면 — 4기둥 명식 + 오행 밸런스 바 차트 + 영역별 풀이 + 공유.
 /// 참고: docs/mockups/01-pastel-cute.html STEP 4
@@ -60,8 +96,19 @@ class _ResultScreenState extends State<ResultScreen> {
     final ohaengCount = pillars.ohaengCount;
     final total = ohaengCount.values.fold<int>(0, (a, b) => a + b);
     final dominant = pillars.dominantOhaeng;
-    final callout = _ohaengCallout[dominant]!;
-    final categories = categoryReadingsFor(dominant);
+    final sub = pillars.subDominantOhaeng;
+    // subDominantOhaeng 자체는 항상 어떤 오행 이름을 반환하지만(FourPillars doc-comment
+    // 참고), 그 오행이 실제로 사주 8자 중 하나도 없을 수 있다(개수 0) — 그 경우
+    // "2순위 오행이 사실상 없음"으로 보고 콤보 함수들이 단일-오행 문구로 폴백한다.
+    final subCount = ohaengCount[sub] ?? 0;
+    final callout = dominantComboCallout(dominant, sub, subCount: subCount);
+    final categories = categoryReadingsForCombo(dominant, sub, subCount: subCount);
+    final balanceNarrative = buildOhaengBalanceNarrative(
+      dominant: dominant,
+      sub: sub,
+      ohaengCount: ohaengCount,
+      total: total,
+    );
     final displayName =
         birthInfo.name?.trim().isNotEmpty == true ? birthInfo.name!.trim() : '회원님';
     final metaLine = buildMetaLine(birthInfo);
@@ -156,6 +203,26 @@ class _ResultScreenState extends State<ResultScreen> {
                     ohaeng: ohaeng,
                     percent: total == 0 ? 0 : (ohaengCount[ohaeng]! / total * 100),
                   ),
+                const SizedBox(height: 10),
+                // 오행 밸런스 바 차트 아래 서술 문단 — 콜아웃 박스와 같은 톤(우세 오행
+                // 배경/글자색)을 재사용해 % 숫자 + 우세·2순위 오행 관계 설명을 함께 보여준다.
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.ohaengSoftColors[dominant] ?? AppColors.accentSoft,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    balanceNarrative,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.5,
+                      color: AppColors.ohaengTextColors[dominant] ?? AppColors.ink,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
                 // 목업(`.bars`)은 margin-bottom:14px인데 지금까지는 28px이었다
                 // (2026-07-07 대조 발견).
                 const SizedBox(height: 14),

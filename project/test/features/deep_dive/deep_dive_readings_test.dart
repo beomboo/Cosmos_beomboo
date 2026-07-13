@@ -6,30 +6,33 @@ import 'package:cosmos_saju/features/result/ohaeng_readings.dart';
 
 void main() {
   group('readingFor', () {
-    test('연애·재물·건강 관심사는 ohaeng_readings.dart의 카테고리 풀이를 그대로 재사용한다', () {
+    // 아래 그룹은 대부분 subCount: 0(2순위 오행이 사실상 없는 경우)으로 호출해, 기존
+    // 단일-오행 시그니처(readingFor(interest, ohaeng))와 동작이 완전히 같은지 확인한다 —
+    // '목'을 아무 sub로나 넘겨도(subCount: 0이면 아예 쓰이지 않으므로) 결과가 바뀌면 안 된다.
+    test('연애·재물·건강 관심사는 ohaeng_readings.dart의 카테고리 풀이를 그대로 재사용한다 (subCount 0)', () {
       for (final ohaeng in const ['목', '화', '토', '금', '수']) {
         final categories = categoryReadingsByOhaeng[ohaeng]!;
         expect(
-          readingFor(Interest.love, ohaeng),
+          readingFor(Interest.love, ohaeng, '토', subCount: 0),
           categories.firstWhere((c) => c.$2 == '연애운').$3,
         );
         expect(
-          readingFor(Interest.wealth, ohaeng),
+          readingFor(Interest.wealth, ohaeng, '토', subCount: 0),
           categories.firstWhere((c) => c.$2 == '재물운').$3,
         );
         expect(
-          readingFor(Interest.health, ohaeng),
+          readingFor(Interest.health, ohaeng, '토', subCount: 0),
           categories.firstWhere((c) => c.$2 == '건강운').$3,
         );
       }
     });
 
-    test('직장운(career)은 오행별로 5가지 모두 채워진 별도 콘텐츠를 반환한다', () {
+    test('직장운(career)은 오행별로 5가지 모두 채워진 별도 콘텐츠를 반환한다 (subCount 0)', () {
       // 기존 카테고리 풀이(연애·재물·건강·성격)에는 없던 항목이라, 5개 오행 전부
       // 빈 문자열 없이 실제 문구가 채워져 있는지 직접 확인한다.
       final seen = <String>{};
       for (final ohaeng in const ['목', '화', '토', '금', '수']) {
-        final reading = readingFor(Interest.career, ohaeng);
+        final reading = readingFor(Interest.career, ohaeng, '토', subCount: 0);
         expect(reading, isNotEmpty);
         seen.add(reading);
       }
@@ -37,7 +40,7 @@ void main() {
       expect(seen.length, 5);
     });
 
-    test('직장운(career) 5가지 문구가 실제 값과 정확히 일치한다', () {
+    test('직장운(career) 5가지 문구가 실제 값과 정확히 일치한다 (subCount 0)', () {
       // 위 테스트는 "5개 전부 비어있지 않고 서로 다르다"는 구조적 조건만 확인할 뿐,
       // 그 문구들이 오행끼리 통째로 뒤바뀌어도(예: 목과 화의 직장운 문구를 맞바꿔도)
       // 마찬가지로 "서로 다른 5개"는 참이라 이 테스트로는 못 잡는다 —
@@ -52,12 +55,19 @@ void main() {
         '수': '상황 판단이 빨라 위기 속에서도 기회를 찾는 타입이에요',
       };
       for (final entry in expected.entries) {
-        expect(readingFor(Interest.career, entry.key), entry.value, reason: '${entry.key} 직장운');
+        expect(
+          readingFor(Interest.career, entry.key, '토', subCount: 0),
+          entry.value,
+          reason: '${entry.key} 직장운',
+        );
       }
     });
 
-    test('알 수 없는 오행이 들어오면 토(土) 문구로 폴백한다', () {
-      expect(readingFor(Interest.career, '알수없음'), readingFor(Interest.career, '토'));
+    test('알 수 없는 오행이 들어오면 토(土) 문구로 폴백한다 (subCount 0)', () {
+      expect(
+        readingFor(Interest.career, '알수없음', '토', subCount: 0),
+        readingFor(Interest.career, '토', '토', subCount: 0),
+      );
     });
 
     test('연애·재물·건강의 categoryTitle은 항상 ohaeng_readings.dart 제목과 일치한다', () {
@@ -77,6 +87,46 @@ void main() {
           reason: '${interest.categoryTitle}이 categoryReadingsByOhaeng 제목 목록에 없음',
         );
       }
+    });
+
+    group('콤보(2순위 오행 반영, subCount > 0)', () {
+      // 결과 화면(ohaeng_readings_test.dart)의 categoryReadingsForCombo와 정확히 같은
+      // 접미사 문구를 연애·재물·건강에 그대로 이어붙이는지, 그리고 직장운도 자체
+      // 접미사 로직이 똑같이 적용되는지 확인한다.
+      test('연애·재물·건강은 categoryReadingsForCombo와 동일한 접미사가 붙는다', () {
+        final expectedCategories = categoryReadingsForCombo('목', '화', subCount: 2);
+        expect(
+          readingFor(Interest.love, '목', '화', subCount: 2),
+          expectedCategories.firstWhere((c) => c.$2 == '연애운').$3,
+        );
+        expect(
+          readingFor(Interest.wealth, '목', '화', subCount: 2),
+          expectedCategories.firstWhere((c) => c.$2 == '재물운').$3,
+        );
+        expect(
+          readingFor(Interest.health, '목', '화', subCount: 2),
+          expectedCategories.firstWhere((c) => c.$2 == '건강운').$3,
+        );
+      });
+
+      test('직장운도 subCount > 0이면 접미사 문장이 덧붙는다', () {
+        final base = readingFor(Interest.career, '목', '화', subCount: 0);
+        final combo = readingFor(Interest.career, '목', '화', subCount: 2);
+
+        expect(combo, startsWith(base));
+        expect(combo.length, greaterThan(base.length));
+        expect(combo, contains('화 기운'));
+      });
+
+      test('직장운 접미사는 관계(OhaengRelation) 4종에 따라 서로 다른 문구를 붙인다', () {
+        // 목(dominant) 기준 화·토·금·수(sub) 각각 관계가 다르므로(생/극/피생/피극),
+        // 4가지 접미사 문구가 전부 달라야 한다.
+        final combos = {
+          for (final sub in const ['화', '토', '금', '수'])
+            sub: readingFor(Interest.career, '목', sub, subCount: 1),
+        };
+        expect(combos.values.toSet().length, 4);
+      });
     });
   });
 

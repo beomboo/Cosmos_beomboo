@@ -71,4 +71,90 @@ void main() {
       }
     });
   });
+
+  group('dominantComboCallout', () {
+    test('subCount가 0이면 dominant 단독 콜아웃 문구로 폴백한다', () {
+      for (final dominant in const ['목', '화', '토', '금', '수']) {
+        // sub 값 자체는 subCount:0일 때 전혀 쓰이지 않아야 하므로, 아무 다른 오행이나
+        // 넘겨도 결과가 바뀌면 안 된다 — 폴백 분기가 sub를 참조하지 않는지 확인.
+        final withDummySub = const ['목', '화', '토', '금', '수'].firstWhere((o) => o != dominant);
+        expect(
+          dominantComboCallout(dominant, withDummySub, subCount: 0),
+          dominantComboCallout(dominant, dominant == '목' ? '화' : '목', subCount: 0),
+        );
+      }
+    });
+
+    test('목 우세 + 화 2순위(목생화) 콜아웃은 실제 문구와 정확히 일치한다', () {
+      final callout = dominantComboCallout('목', '화', subCount: 2);
+      expect(callout.$1, '木');
+      expect(callout.$2, '🌿');
+      expect(
+        callout.$3,
+        '화 기운이 화르르 옮겨붙어서 아이디어가 곧장 행동으로 이어져요. 시작한 일에 속도가 붙는 타입이에요',
+      );
+    });
+
+    test('금 우세 + 목 2순위(금극목) 콜아웃은 실제 문구와 정확히 일치한다', () {
+      final callout = dominantComboCallout('금', '목', subCount: 3);
+      expect(callout.$1, '金');
+      expect(
+        callout.$3,
+        '금 기운이 목 기운을 정리해줘서 벌여둔 일을 야무지게 마무리 짓는 힘이 있어요',
+      );
+    });
+
+    test('5(dominant) × 4(sub) = 20가지 조합 전부 서로 다른 문구를 반환한다', () {
+      final seen = <String>{};
+      for (final dominant in const ['목', '화', '토', '금', '수']) {
+        for (final sub in const ['목', '화', '토', '금', '수']) {
+          if (sub == dominant) continue;
+          seen.add(dominantComboCallout(dominant, sub, subCount: 1).$3);
+        }
+      }
+      expect(seen.length, 20);
+    });
+  });
+
+  group('categoryReadingsForCombo', () {
+    test('subCount가 0이면 categoryReadingsFor(dominant)와 완전히 동일하다', () {
+      for (final dominant in const ['목', '화', '토', '금', '수']) {
+        expect(
+          categoryReadingsForCombo(dominant, '토', subCount: 0),
+          categoryReadingsFor(dominant),
+        );
+      }
+    });
+
+    test('subCount가 0보다 크면 4개 카드 모두 기존 설명 뒤에 접미사가 붙는다', () {
+      final base = categoryReadingsFor('목');
+      final combo = categoryReadingsForCombo('목', '화', subCount: 2);
+
+      expect(combo.length, 4);
+      for (var i = 0; i < 4; i++) {
+        expect(combo[i].$1, base[i].$1, reason: '아이콘은 그대로 유지');
+        expect(combo[i].$2, base[i].$2, reason: '제목은 그대로 유지');
+        expect(combo[i].$3, startsWith(base[i].$3), reason: '기존 설명이 그대로 앞에 남아있어야 함');
+        expect(combo[i].$3.length, greaterThan(base[i].$3.length));
+      }
+    });
+
+    test('목 우세 + 화 2순위(목생화) 접미사는 실제 문구와 정확히 일치한다', () {
+      final combo = categoryReadingsForCombo('목', '화', subCount: 2);
+      expect(
+        combo[0].$3,
+        '적극적으로 다가가면 좋은 인연이 생기는 시기예요. 화 기운까지 힘을 보태서 이 흐름이 한층 살아나요',
+      );
+    });
+
+    test('관계 4종(생/피생/극/피극)에 대응하는 접미사 4가지는 서로 다르다', () {
+      // 목(dominant) 기준 화·수·토·금(sub)은 각각 dominantGeneratesSub·subGeneratesDominant·
+      // dominantOvercomesSub·subOvercomesDominant 네 관계에 정확히 하나씩 대응한다.
+      final suffixes = {
+        for (final sub in const ['화', '수', '토', '금'])
+          sub: categoryReadingsForCombo('목', sub, subCount: 1)[0].$3,
+      };
+      expect(suffixes.values.toSet().length, 4);
+    });
+  });
 }

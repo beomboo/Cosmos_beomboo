@@ -84,6 +84,57 @@ void main() {
       expect(result.dominantOhaeng, '화');
     });
 
+    group('subDominantOhaeng', () {
+      // 결과 화면(result_screen.dart)의 콤보 콜아웃·카테고리 접미사, 심층 분석 화면의
+      // readingFor()가 모두 이 값을 공유해서 쓴다 — dominantOhaeng과 같은 동률 처리
+      // 규칙(목화토금수 순서상 먼저 나오는 쪽)이 dominant를 뺀 나머지 4개에도 그대로
+      // 적용되는지 확인한다.
+      test('금이 유일한 최댓값(우세)이면, 남은 목·화·토·수 중 최댓값(동률이면 먼저 나오는 쪽)이 2순위다', () {
+        // 1998-08-15/14시: {목:2,화:0,토:2,금:3,수:1}, 금이 dominant. 남은 넷 중
+        // 목·토가 2로 동률 최댓값이고, 목화토금수 순서상 목이 토보다 먼저이므로 목이 2순위.
+        final result = calculateFourPillars(birthDate: DateTime(1998, 8, 15), birthHour: 14);
+        expect(result.dominantOhaeng, '금');
+        expect(result.subDominantOhaeng, '목');
+        expect(result.ohaengCount[result.subDominantOhaeng], 2);
+      });
+
+      test('1위 자리(화·토 동률)를 화가 가져가면, 남은 목·금·수(전부 0) 중 목이 2순위(동률, 목화토금수 순서)다', () {
+        // 위의 "1위 자리 자체가 동률" 테스트와 같은 1990-01-12/14시 조합
+        // ({목:0,화:4,토:4,금:0,수:0}) — dominant는 화. 화를 뺀 나머지(목:0,토:4,금:0,수:0)
+        // 에서는 토(4)가 유일한 최댓값이라 2순위는 토여야 한다.
+        final result = calculateFourPillars(birthDate: DateTime(1990, 1, 12), birthHour: 14);
+        expect(result.dominantOhaeng, '화');
+        expect(result.subDominantOhaeng, '토');
+        expect(result.ohaengCount[result.subDominantOhaeng], 4);
+      });
+
+      test('시간을 몰라 3기둥(6글자)만으로 계산해도 dominant/sub가 정확히 갈린다', () {
+        // 1998-08-15(시간 모름): {목:2,화:0,토:1,금:2,수:1}(총 6) — 목·금이 2로 동률
+        // 최댓값이라 목화토금수 순서상 목이 dominant. 목을 뺀 나머지(화:0,토:1,금:2,수:1)
+        // 중 금(2)이 유일한 최댓값이라 sub는 금이어야 한다.
+        final result = calculateFourPillars(birthDate: DateTime(1998, 8, 15));
+        expect(result.ohaengCount, {'목': 2, '화': 0, '토': 1, '금': 2, '수': 1});
+        expect(result.dominantOhaeng, '목');
+        expect(result.subDominantOhaeng, '금');
+        expect(result.ohaengCount[result.subDominantOhaeng], 2);
+      });
+
+      test('엣지케이스: 8글자 전부가 dominant 오행 하나뿐이면 subDominantOhaeng의 실제 개수는 0이다', () {
+        // subDominantOhaeng 자체는 항상 오행 이름 하나를 반환하지만, 그 오행이 사주
+        // 8자 중 하나도 없을 수 있다(FourPillars.subDominantOhaeng doc-comment 참고) —
+        // 호출부(콤보 콜아웃 등)는 이 개수를 함께 확인해서 "2순위가 사실상 없음"을
+        // 판단해야 한다. 1958-7-11/8시는 8글자 전부가 토(土)뿐인 실제 조합
+        // ({목:0,화:0,토:8,금:0,수:0}) — dominant를 뺀 나머지 넷이 전부 0으로 동률이라
+        // 목화토금수 순서상 가장 먼저인 목이 subDominantOhaeng으로 골라지지만, 실제
+        // 개수는 0이다.
+        final result = calculateFourPillars(birthDate: DateTime(1958, 7, 11), birthHour: 8);
+        expect(result.ohaengCount, {'목': 0, '화': 0, '토': 8, '금': 0, '수': 0});
+        expect(result.dominantOhaeng, '토');
+        expect(result.subDominantOhaeng, '목');
+        expect(result.ohaengCount[result.subDominantOhaeng], 0);
+      });
+    });
+
     group('시주(時柱) 경계값 — 전통 시진 경계가 정확히 반영되는지', () {
       // 시진 경계: 자시 23~01시, 축시 01~03시, 인시 03~05시 ... 해시 21~23시.
       // 시주 지지 계산(((hour+1)~/2)%12)이 실제 이 경계와 맞는지 지금까지 직접

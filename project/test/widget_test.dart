@@ -251,9 +251,12 @@ void main() {
 
       expect(find.text('회원님의 심층 분석 ✨'), findsOneWidget);
       // 관심사 4개(연애·재물·직장·건강) 전부 우세 오행(금) 기준 풀이가 실제로 보인다.
+      // 1998-08-15/14시 조합의 2순위 오행은 '목'(개수 2) — four_pillars_test.dart의
+      // 분포({목:2,화:0,토:2,금:3,수:1})에서 금을 뺀 나머지 중 목화토금수 순서상
+      // 목(2)이 토(2)와 동률이어도 먼저 나온다.
       for (final interest in Interest.values) {
         expect(find.text(interest.categoryTitle), findsOneWidget);
-        expect(find.text(readingFor(interest, '금')), findsOneWidget);
+        expect(find.text(readingFor(interest, '금', '목', subCount: 2)), findsOneWidget);
       }
       // MBTI를 입력하지 않았으니 코멘트 영역은 없다.
       for (final comment in mbtiComments.values) {
