@@ -106,4 +106,37 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('저가/폴더블 기기 수준의 더 좁은 랜드스케이프(568x320)에서도 overflow가 나지 않고 스크롤된다', (
+    tester,
+  ) async {
+    // 812x375보다도 세로 폭이 더 좁은 극단적인 랜드스케이프(예: 저가 안드로이드 기기나
+    // 폴더블 커버 화면)에서 콘텐츠가 뷰포트보다 커도 LayoutBuilder+SingleChildScrollView
+    // 조합이 오버플로우 없이 스크롤로 흡수하는지 확인한다.
+    final originalSize = tester.view.physicalSize;
+    final originalDpr = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(568, 320);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalDpr;
+    });
+
+    await tester.pumpWidget(buildApp());
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+
+    // 스크롤로 흡수된 상태라면 "시작하기" 버튼까지 스크롤해서 실제로 탭할 수 있어야 한다
+    // (오버플로우 예외만 없고 조작 불가능한 상태로 남는 회귀를 막기 위함).
+    await tester.scrollUntilVisible(
+      find.text('시작하기 →'),
+      100,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.tap(find.text('시작하기 →'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('BIRTH_INPUT_STUB'), findsOneWidget);
+  });
 }
