@@ -151,6 +151,18 @@ class _ResultScreenState extends State<ResultScreen> {
                   '※ 절기 계산 없이 근사치로 계산한 간이 결과예요',
                   style: TextStyle(color: AppColors.inkSoft, fontSize: 11),
                 ),
+                // 입력 온보딩 설계(docs/research/운세/입력_온보딩_설계.md)의 권장안 —
+                // 시주를 모르면 3개 기둥으로 계산한 사실과 함께 재입력을 유도하는 넛지
+                // 문구를 보여준다. AppBar에 이미 "다시 입력하기" 아이콘이 있어 여기서는
+                // 별도 탭 가능한 CTA 없이 안내 문구만 둔다(중복 진입점 방지).
+                if (pillars.hour == null) ...[
+                  const SizedBox(height: 4),
+                  const Text(
+                    '태어난 시간을 몰라 시주 없이 3개 기둥(년주·월주·일주)으로 계산했어요. '
+                    '태어난 시간을 알면 더 정확한 결과를 볼 수 있어요',
+                    style: TextStyle(color: AppColors.inkSoft, fontSize: 11),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 // 목업(`.callout`)은 배경/글자색이 고정된 accentSoft/ink가 아니라, 그 화면의
                 // 우세 오행 색으로 물든다(데모가 목(木)이 우세라 wood-soft 배경으로 보였을

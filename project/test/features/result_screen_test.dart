@@ -20,6 +20,11 @@ void main() {
         matching: find.text(text),
       );
 
+  Finder findInBodyContaining(String text) => find.descendant(
+        of: find.byKey(const Key('resultScrollView')),
+        matching: find.textContaining(text),
+      );
+
   testWidgets('결과 화면이 4기둥과 오행 밸런스를 보여준다', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -552,6 +557,40 @@ void main() {
     );
 
     expect(findInBody('모름'), findsOneWidget);
+  });
+
+  testWidgets('시간을 몰라 시주가 없을 때만 재입력 유도 넛지 문구가 보이고, 시간을 알면 보이지 않는다',
+      (WidgetTester tester) async {
+    // docs/research/운세/입력_온보딩_설계.md 권장안 반영: "모름" 선택 시 시주만 제외한
+    // 3주를 보여주고 재입력을 유도하는 넛지 문구를 붙인다 — hour가 있을 때는 이 문구가
+    // 전혀 없어야 한다(AppBar의 "다시 입력하기" 아이콘과 중복 진입점이 되지 않도록
+    // 여기서는 탭 가능한 CTA 없이 안내 문구만 둔다).
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: null, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+    expect(findInBodyContaining('태어난 시간을 알면 더 정확한 결과를 볼 수 있어요'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+    expect(findInBodyContaining('태어난 시간을 알면 더 정확한 결과를 볼 수 있어요'), findsNothing);
   });
 
   testWidgets('이름이 있으면 헤더에 실제 이름이 표시된다', (WidgetTester tester) async {
