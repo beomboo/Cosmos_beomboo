@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/core/saju/four_pillars.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_info.dart';
@@ -308,5 +309,134 @@ void main() {
 
     final listView = tester.widget<ListView>(find.byKey(const Key('deepDiveResultScrollView')));
     expect(listView.padding, const EdgeInsets.fromLTRB(20, 14, 20, 24));
+  });
+
+  // 2026-07-15: 공유하기 기능이 추가됐는데 지금까지 이 화면에는 공유 버튼 노출 조건
+  // (canShare)·그라데이션·실패 시 폴백(_handleShare) 중 어느 것도 값으로 검증된 적이
+  // 없었다 — result_screen_test.dart의 동등 항목(145~180, 530~639줄)과 짝을 맞춘다.
+  group('공유하기', () {
+    testWidgets('MBTI도 관심사도 없으면(canShare=false) 공유 버튼이 아예 없다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DeepDiveResultScreen(
+            birthInfo: birthInfo,
+            deepDiveInfo: const DeepDiveInfo(),
+          ),
+        ),
+      );
+
+      expect(find.text('📸 공유하기'), findsNothing);
+    });
+
+    testWidgets('관심사가 없어도 MBTI만 입력했으면 공유 버튼이 보인다', (tester) async {
+      await useTallViewport(tester);
+      const mbti = Mbti(ei: MbtiEi.i, sn: MbtiSn.n, tf: MbtiTf.t, jp: MbtiJp.j);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DeepDiveResultScreen(
+            birthInfo: birthInfo,
+            deepDiveInfo: const DeepDiveInfo(mbti: mbti, interests: {}),
+          ),
+        ),
+      );
+
+      expect(findInDeepDiveResult('📸 공유하기'), findsOneWidget);
+    });
+
+    testWidgets('MBTI가 없어도 관심사를 하나라도 골랐으면 공유 버튼이 보인다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DeepDiveResultScreen(
+            birthInfo: birthInfo,
+            deepDiveInfo: const DeepDiveInfo(interests: {Interest.health}),
+          ),
+        ),
+      );
+
+      expect(findInDeepDiveResult('📸 공유하기'), findsOneWidget);
+    });
+
+    testWidgets('"공유하기" 버튼이 목업대로 accent→metal 그라데이션 배경을 쓴다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DeepDiveResultScreen(
+            birthInfo: birthInfo,
+            deepDiveInfo: const DeepDiveInfo(interests: {Interest.love}),
+          ),
+        ),
+      );
+
+      final shareButtonContainer = tester.widget<Container>(
+        find.ancestor(
+          of: find.widgetWithText(ElevatedButton, '📸 공유하기'),
+          matching: find.byType(Container),
+        ).first,
+      );
+      final gradient = (shareButtonContainer.decoration! as BoxDecoration).gradient! as LinearGradient;
+      expect(gradient.colors, [AppColors.accent, AppColors.metal]);
+    });
+
+    testWidgets('"공유하기"를 눌렀을 때 공유 시트가 실패하면 스낵바로 알려준다', (tester) async {
+      // result_screen_test.dart의 동명 테스트와 같은 이유(실제 위젯 테스트 환경에는
+      // share_plus 플랫폼 채널 목이 없어 MissingPluginException이 나며, 이게 바로
+      // "공유 시트 자체 실패" 상황과 동일해 실제로 재현·검증이 가능하다) — 이 화면의
+      // _handleShare는 지금까지 한 번도 실행된 적이 없었다.
+      await useTallViewport(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DeepDiveResultScreen(
+            birthInfo: birthInfo,
+            deepDiveInfo: const DeepDiveInfo(interests: {Interest.love}),
+          ),
+        ),
+      );
+
+      await tester.runAsync(() async {
+        await tester.tap(find.text('📸 공유하기'));
+        await tester.pump();
+        await Future<void>.delayed(const Duration(milliseconds: 1500));
+      });
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1000));
+
+      expect(
+        find.text('공유하는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('공유 카드 이미지 캡처 자체가 실패해도(레이아웃 전 등) 텍스트만으로 폴백한다', (tester) async {
+      // result_screen_test.dart의 동명 테스트와 같은 트릭 — paint 단계 전에
+      // (`EnginePhase.layout`) 버튼의 onPressed를 직접 호출하면 `boundary.debugNeedsPaint`가
+      // 아직 true라 이미지 캡처를 건너뛰고 텍스트 전용 분기를 타게 된다.
+      await useTallViewport(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DeepDiveResultScreen(
+            birthInfo: birthInfo,
+            deepDiveInfo: const DeepDiveInfo(interests: {Interest.love}),
+          ),
+        ),
+        phase: EnginePhase.layout,
+      );
+
+      final button =
+          tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '📸 공유하기'));
+
+      await tester.runAsync(() async {
+        button.onPressed!();
+        await Future<void>.delayed(const Duration(milliseconds: 1500));
+      });
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1000));
+
+      expect(
+        find.text('공유하는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.'),
+        findsOneWidget,
+      );
+    });
   });
 }
