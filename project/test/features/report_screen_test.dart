@@ -528,4 +528,22 @@ void main() {
     expect(find.text('경'), findsOneWidget);
     expect(find.text('갑'), findsOneWidget);
   });
+
+  testWidgets('리스트 컨테이너 여백이 목업 공통 토큰(20/14/20/18)과 정확히 일치한다', (tester) async {
+    // 2026-07-14 대조 발견: 다른 화면들(result_screen.dart, deep_dive_input_screen.dart 등)은
+    // 이미 목업 `.screen-body`(padding:14px 20px 18px) 값으로 맞춰졌는데 이 화면만
+    // 옛 값(24/8/24/32)이 남아 있었다 — 수치 자체를 잠그는 테스트가 없어 다음에 실수로
+    // 옛 값으로 되돌아가도 못 잡는 공백이 있었다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportScreen(
+          birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+        ),
+      ),
+    );
+
+    final listView = tester.widget<ListView>(find.byType(ListView));
+    expect(listView.padding, const EdgeInsets.fromLTRB(20, 14, 20, 18));
+  });
 }

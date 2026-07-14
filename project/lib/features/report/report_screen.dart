@@ -46,7 +46,9 @@ class ReportScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('상세 리포트')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+          // 목업(`.screen-body{padding:14px 20px 18px}`)과 다른 화면들(result_screen.dart
+          // 등)은 이미 맞췄는데 이 화면만 옛 값(24/8/24/32)이 남아 있었다(2026-07-14 대조 발견).
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
           children: [
             // 결과 화면에서 넘어왔을 때, 지금 보고 있는 리포트가 누구 걸 얼마나 자세히
             // 보는 건지 문맥이 끊기지 않도록 결과 화면과 같은 헤더를 재사용한다.
