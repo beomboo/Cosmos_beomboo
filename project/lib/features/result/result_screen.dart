@@ -171,7 +171,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 // 배경 위에서 WCAG AA를 만족하도록 설계돼 있어 그대로 재사용 가능.
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
                   decoration: BoxDecoration(
                     color: AppColors.ohaengSoftColors[dominant] ?? AppColors.accentSoft,
                     borderRadius: BorderRadius.circular(16),
@@ -179,9 +179,10 @@ class _ResultScreenState extends State<ResultScreen> {
                   child: Text(
                     '$dominant(${callout.$1}) 기운이 강한 타입이에요 ${callout.$2}\n${callout.$3}',
                     style: TextStyle(
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w700,
                       color: AppColors.ohaengTextColors[dominant] ?? AppColors.ink,
-                      height: 1.4,
+                      height: 1.55,
                     ),
                   ),
                 ),

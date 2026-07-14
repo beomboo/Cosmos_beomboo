@@ -93,7 +93,7 @@ class ShareCard extends StatelessWidget {
             // accentSoft/ink 고정 대신 우세 오행 색을 쓴다(2026-07-06 대조 발견).
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
               decoration: BoxDecoration(
                 color: AppColors.ohaengSoftColors[dominant] ?? AppColors.accentSoft,
                 borderRadius: BorderRadius.circular(16),
@@ -101,9 +101,10 @@ class ShareCard extends StatelessWidget {
               child: Text(
                 '$dominant($calloutHanja) 기운이 강한 타입이에요 $calloutEmoji\n$calloutText',
                 style: TextStyle(
+                  fontSize: 12.5,
                   fontWeight: FontWeight.w700,
                   color: AppColors.ohaengTextColors[dominant] ?? AppColors.ink,
-                  height: 1.4,
+                  height: 1.55,
                 ),
               ),
             ),
