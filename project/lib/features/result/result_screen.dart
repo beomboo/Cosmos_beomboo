@@ -631,10 +631,13 @@ class _CategoryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(icon, style: const TextStyle(fontSize: 20)),
-            const SizedBox(height: 6),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink)),
-            const SizedBox(height: 4),
+            Text(icon, style: const TextStyle(fontSize: 15)),
+            const SizedBox(height: 5),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.ink),
+            ),
+            const SizedBox(height: 2),
             // 목업(`.cat-card .d`)은 10.5px/font-weight 600인데 지금까지는 12px에
             // 기본 굵기였다(2026-07-07 대조 발견).
             Text(
