@@ -114,7 +114,7 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
       appBar: AppBar(title: const Text('조금 더 깊이 볼까요?')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
           children: [
             const Text(
               '관심 있는 영역을 골라주세요',

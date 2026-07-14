@@ -32,7 +32,8 @@ class DeepDiveResultScreen extends StatelessWidget {
       body: SafeArea(
         child: ListView(
           key: const Key('deepDiveResultScrollView'),
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+          // 하단에 별도 CTA가 없어 리스트 끝 여백을 다른 화면(18)보다 조금 더 둔다.
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
           children: [
             Text(
               '$displayName의 심층 분석 ✨',
