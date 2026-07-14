@@ -361,6 +361,78 @@ void main() {
     expect(calloutDecoration.color, AppColors.ohaengSoftColors['금']);
   });
 
+  testWidgets('메인 콜아웃 박스가 목업 값대로 padding(15/13)·글자 크기(12.5)·줄 간격(1.55)을 유지한다',
+      (WidgetTester tester) async {
+    // 2026-07-15 목업(.callout) 정밀 대조 수정: padding이 EdgeInsets.all(20) 균일값에서
+    // symmetric(horizontal:15, vertical:13)으로, 텍스트에 fontSize 12.5·height 1.55가
+    // 새로 명시됐다 — 이 값들 자체를 확인하는 테스트가 지금까지 없어서, 누군가 실수로
+    // 원래 값(all(20)/height 1.4/fontSize 미지정)으로 되돌려도 잡아낼 방법이 없었다.
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    // 1998-08-15 14시 → 우세 오행 '금'(2순위 '목', 금극목 관계) 콜아웃 문구.
+    const calloutText = '금(金) 기운이 강한 타입이에요 ✨\n'
+        '금 기운이 목 기운을 정리해줘서 벌여둔 일을 야무지게 마무리 짓는 힘이 있어요';
+
+    final calloutContainer = tester.widget<Container>(
+      find.ancestor(
+        of: findInBody(calloutText),
+        matching: find.byType(Container),
+      ).first,
+    );
+    expect(calloutContainer.padding, const EdgeInsets.symmetric(horizontal: 15, vertical: 13));
+
+    final calloutTextStyle = tester.widget<Text>(findInBody(calloutText)).style!;
+    expect(calloutTextStyle.fontSize, 12.5);
+    expect(calloutTextStyle.height, 1.55);
+  });
+
+  testWidgets('카테고리 카드(연애·재물·건강·성격) 아이콘·제목 글자 크기가 목업 값(15px/11px)과 일치한다',
+      (WidgetTester tester) async {
+    // 2026-07-15 목업(.cat-card) 정밀 대조 수정: 아이콘 fontSize 20→15, 제목에 fontSize
+    // 11 신규 명시 — 카드 시맨틱스(제목+설명 병합 문구)는 이미 검증돼 있었지만 정작
+    // 시각적 글자 크기 자체는 한 번도 값으로 확인된 적이 없었다.
+    // 접미사·밸런스 서술 문단이 늘어난 만큼 카드가 기본 뷰포트(800x600) 아래로 밀려
+    // ListView가 지연 빌드해버리는 걸 다른 카테고리 카드 테스트에서와 같은 이유로
+    // 뷰포트를 세로로 키운다.
+    final originalSize = tester.view.physicalSize;
+    final originalRatio = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(400, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalRatio;
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    // 1998-08-15 14시 → 우세 오행 '금'의 연애운 카드는 아이콘 '💘', 제목 '연애운'.
+    final iconText = tester.widget<Text>(findInBody('💘'));
+    expect(iconText.style!.fontSize, 15);
+
+    final titleText = tester.widget<Text>(findInBody('연애운'));
+    expect(titleText.style!.fontSize, 11);
+  });
+
   testWidgets('우세 오행 콜아웃 문구가 나머지 4개 오행(목·화·토·수)에서도 실제 값과 정확히 일치한다',
       (WidgetTester tester) async {
     // 위 테스트는 '금'(+2순위 목)만 확인했다 — 콤보 콜아웃(`dominantComboCallout`)은

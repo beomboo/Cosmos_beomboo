@@ -180,6 +180,49 @@ void main() {
     expect(calloutText.style!.color, AppColors.ohaengTextColors['금']);
   });
 
+  testWidgets('콜아웃 박스가 목업 값대로 padding(15/13)·글자 크기(12.5)·줄 간격(1.55)을 유지한다',
+      (tester) async {
+    // 2026-07-15 목업(.callout) 정밀 대조 수정이 result_screen.dart와 함께 이 공유 카드의
+    // 콜아웃 박스에도 적용됐다(padding all(16)→symmetric(15,13), fontSize 12.5·height
+    // 1.55 신규 명시) — result_screen_test.dart와 마찬가지로 이 값 자체를 확인하는
+    // 테스트가 없어 회귀를 못 잡는 공백이었다.
+    final pillars = calculateFourPillars(birthDate: DateTime(1998, 8, 15), birthHour: 14);
+    final ohaengCount = pillars.ohaengCount;
+    final total = ohaengCount.values.fold<int>(0, (a, b) => a + b);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShareCard(
+            displayName: '민지',
+            metaLine: '1998.08.15 · 오후 2시生 · 양력',
+            pillars: pillars,
+            dominant: '금',
+            calloutHanja: '金',
+            calloutEmoji: '✨',
+            calloutText: '원칙적이고 결단력 있어요',
+            ohaengCount: ohaengCount,
+            total: total,
+          ),
+        ),
+      ),
+    );
+
+    const calloutText = '금(金) 기운이 강한 타입이에요 ✨\n원칙적이고 결단력 있어요';
+
+    final calloutContainer = tester.widget<Container>(
+      find.ancestor(
+        of: find.text(calloutText),
+        matching: find.byType(Container),
+      ).first,
+    );
+    expect(calloutContainer.padding, const EdgeInsets.symmetric(horizontal: 15, vertical: 13));
+
+    final calloutTextStyle = tester.widget<Text>(find.text(calloutText)).style!;
+    expect(calloutTextStyle.fontSize, 12.5);
+    expect(calloutTextStyle.height, 1.55);
+  });
+
   testWidgets('시주를 모르면(hour: null) 시주 칩이 "모름"으로 표시된다', (tester) async {
     // 2026-07-08 발견한 커버리지 공백: 목업(01-pastel-cute.html)의 "다음으로 다듬을
     // 지점" 1번 항목("시간 모름 체크 시 시주 카드가 어떻게 바뀌는지")은 result_screen.dart/
