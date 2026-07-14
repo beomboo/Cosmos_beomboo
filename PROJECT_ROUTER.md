@@ -23,7 +23,7 @@
 | 명식 계산 중 화면 | `project/lib/features/calculating/` | 🟢 | 계산 중 애니메이션. 궤도(달+이모지)는 온보딩 마스코트와 같은 장식용이라 `ExcludeSemantics` 처리, 로딩 문구는 `Semantics(liveRegion: true)`로 갱신 안내 |
 | 사주 결과 화면 | `project/lib/features/result/` | 🟢 | 4기둥·오행 밸런스(우세+2순위 오행 상생상극 콤보 콜아웃·카테고리 접미사, `ohaeng_readings.dart`의 공용 함수 `ohaengComboSuffix`—심층 분석 직장운과 공유·서술 문단)·공유 카드. 시주(`pillars.hour`)를 모르면 절기 디스클레이머 아래에 3주 계산 사실+재입력 유도 넛지 문구(AppBar "다시 입력하기"와 중복 안 되게 안내 텍스트만) 표시 |
 | 상세 리포트 화면 | `project/lib/features/report/` | 🟢 | 오행별 상세 해석. 시주를 모르면 `_pillarRow` 안내 문구 뒤에 재입력 유도 넛지 문구 덧붙임 |
-| 심층 분석(MBTI·관심사) | `project/lib/features/deep_dive/` | 🟢 | 관심사 선택 + 심층 분석 결과. 직장운 콤보 접미사는 결과 화면과 같은 공용 함수(`ohaengComboSuffix`) 재사용 |
+| 심층 분석(MBTI·관심사) | `project/lib/features/deep_dive/` | 🟢 | 관심사 선택 + 심층 분석 결과. 직장운 콤보 접미사는 결과 화면과 같은 공용 함수(`ohaengComboSuffix`) 재사용. 관심사 입력 화면의 안내 문구+칩 Wrap도 `PastelToggleRow`와 같은 그룹 시맨틱스(`Semantics(container: true, label: '관심 있는 영역 선택')`) 적용 |
 | 십신(十神) 콘텐츠 확장 | 아직 없음 — 만든다면 `project/lib/features/deep_dive/` 또는 `project/lib/features/ten_gods/` | ⚪ | 사람 결정 대기, 자동화 루프 임의 착수 금지 |
 | 사주 계산 로직 | `project/lib/core/saju/` | 🟡 | `ganzhi.dart`(오행 한자 공용 상수 `ohaengHanja`, 오행 상생상극 관계 판별 `ohaengRelationOf`/`OhaengRelation` 포함)+`four_pillars.dart`(`dominantOhaeng`/`subDominantOhaeng`). 절기 근사·자시 관법·진태양시·음력 변환 등 정확도 이슈는 사람 결정 대기 |
 | 공용 위젯 | `project/lib/shared/widgets/` | 🟢 | `PastelPillButton`/`PastelToggleRow`/`PastelCard` |

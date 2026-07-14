@@ -51,6 +51,35 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets(
+      '안내 문구+관심사 칩 Wrap 그룹에 스크린 리더용 그룹 라벨이 정확히 1개 붙고, 개별 칩의 selected 상태는 그대로 유지된다',
+      (tester) async {
+    // pastel_toggle_row_test.dart의 "semanticLabel을 주면 그룹 라벨이 추가되고..." 테스트와
+    // 같은 이유(2026-07-13 발견) — deep_dive_input_screen.dart만 유일하게 안내 Text+칩
+    // Wrap 구간에 그룹 시맨틱스가 빠져 있었다. explore-by-touch로 안내 문구를 건너뛰고
+    // 칩으로 곧장 이동해도 이 영역이 무엇을 고르는 그룹인지 알 수 있는지 확인한다.
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+    await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+
+    expect(
+      find.bySemanticsLabel('관심 있는 영역 선택'),
+      findsOneWidget,
+      reason: '안내 Text+칩 Wrap 그룹 전체를 아우르는 그룹 라벨 노드가 하나 있어야 한다',
+    );
+
+    // 그룹 라벨이 추가됐다고 해서 각 칩의 개별 selected/button 상태가 사라지면 안 된다
+    // (excludeSemantics를 주면 안 되는 이유) — 기존 칩 상태 검증과 동일하게 확인한다.
+    for (final label in const ['💘 연애운', '💰 재물운', '💼 직장운', '🌱 건강운']) {
+      expect(
+        tester.getSemantics(find.text(label)).flagsCollection.isSelected,
+        Tristate.isTrue,
+      );
+    }
+
+    semantics.dispose();
+  });
+
   testWidgets('관심사 칩을 탭하면 선택이 해제된다', (tester) async {
     final semantics = tester.ensureSemantics();
     await useTallViewport(tester);

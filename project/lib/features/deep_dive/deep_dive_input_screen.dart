@@ -116,22 +116,45 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
           children: [
-            const Text(
-              '관심 있는 영역을 골라주세요',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.inkSoft),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final interest in Interest.values)
-                  _InterestChip(
-                    interest: interest,
-                    selected: _interests.contains(interest),
-                    onTap: () => _toggleInterest(interest),
+            // pastel_toggle_row.dart의 semanticLabel과 같은 이유(2026-07-13 발견) — 안내
+            // Text가 칩 Wrap 바로 앞에 있어도, 스크린 리더 사용자가 순서대로 읽지 않고
+            // (explore-by-touch 등) 칩으로 곧장 이동하면 이 안내를 놓칠 수 있다. 그룹의
+            // container Semantics 자체에는 excludeSemantics를 안 줘서 각 칩의
+            // selected/button 개별 상태는 그대로 유지한다 — 그룹 라벨과 개별 칩 상태를
+            // 둘 다 들려주기 위함(pastel_toggle_row.dart 82~89행과 동일한 방식).
+            Semantics(
+              container: true,
+              label: '관심 있는 영역 선택',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 안내 Text 자체는 액션이 없는 순수 라벨이라 excludeSemantics 없이 그냥
+                  // 두면 Flutter가 이 노드를 부모(그룹) 노드로 병합해버려, 위 그룹
+                  // label과 이 Text의 자동 라벨이 한 노드 안에 줄바꿈으로 이어 붙어
+                  // "관심 있는 영역 선택\n관심 있는 영역을 골라주세요"처럼 같은 안내를
+                  // 두 번 들려주게 된다(실측 확인) — 이 Text가 전달하려던 내용은 이미
+                  // 위 그룹 label에 담겨 있으므로 ExcludeSemantics로 중복 병합만 막는다.
+                  const ExcludeSemantics(
+                    child: Text(
+                      '관심 있는 영역을 골라주세요',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.inkSoft),
+                    ),
                   ),
-              ],
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final interest in Interest.values)
+                        _InterestChip(
+                          interest: interest,
+                          selected: _interests.contains(interest),
+                          onTap: () => _toggleInterest(interest),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
             SizedBox(
