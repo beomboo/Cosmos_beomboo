@@ -25,6 +25,101 @@ void main() {
         matching: find.textContaining(text),
       );
 
+  group('buildOhaengBalanceNarrative', () {
+    // 2026-07-14 추가: `flutter test --coverage` 실측 결과 2순위 오행이 사실상 없을 때
+    // (`ohaengCount[sub]`가 null이거나 0)의 단독 폴백 문구 분기가 위젯 테스트 어디서도
+    // 실행된 적이 없었다 — four_pillars.dart의 subDominantOhaeng 독스트링에 명시된 대로
+    // 사주 8글자가 오행 하나로 완전히 쏠리는 경우 실제로 발생 가능한 정상 시나리오라
+    // 위젯 트리 없이 함수를 직접 호출해 커버한다.
+
+    test('total이 0이면 dominant/sub/ohaengCount 값과 무관하게 안내 문구를 반환한다', () {
+      expect(
+        buildOhaengBalanceNarrative(
+          dominant: '목',
+          sub: '화',
+          ohaengCount: const {'목': 0, '화': 0, '토': 0, '금': 0, '수': 0},
+          total: 0,
+        ),
+        '태어난 시간을 포함한 오행 정보가 아직 없어요',
+      );
+    });
+
+    test('ohaengCount에 sub 키 자체가 없으면(null) 우세 오행 단독 폴백 문구를 반환한다', () {
+      expect(
+        buildOhaengBalanceNarrative(
+          dominant: '금',
+          sub: '수',
+          ohaengCount: const {'금': 8},
+          total: 8,
+        ),
+        '전체 8글자 중 금이 8개(100%)로 가장 많아요',
+      );
+    });
+
+    test('ohaengCount에 sub 키는 있지만 값이 0이어도 같은 단독 폴백 문구를 반환한다', () {
+      expect(
+        buildOhaengBalanceNarrative(
+          dominant: '화',
+          sub: '수',
+          ohaengCount: const {'목': 0, '화': 8, '토': 0, '금': 0, '수': 0},
+          total: 8,
+        ),
+        '전체 8글자 중 화가 8개(100%)로 가장 많아요',
+      );
+    });
+
+    test('받침 있는 오행(목·금)은 단독 폴백 문구에서도 조사 "이"가 붙는다', () {
+      expect(
+        buildOhaengBalanceNarrative(
+          dominant: '목',
+          sub: '수',
+          ohaengCount: const {'목': 8},
+          total: 8,
+        ),
+        '전체 8글자 중 목이 8개(100%)로 가장 많아요',
+      );
+      expect(
+        buildOhaengBalanceNarrative(
+          dominant: '금',
+          sub: '수',
+          ohaengCount: const {'금': 8},
+          total: 8,
+        ),
+        '전체 8글자 중 금이 8개(100%)로 가장 많아요',
+      );
+    });
+
+    test('받침 없는 오행(화·토·수)은 단독 폴백 문구에서도 조사 "가"가 붙는다', () {
+      expect(
+        buildOhaengBalanceNarrative(
+          dominant: '화',
+          sub: '금',
+          ohaengCount: const {'화': 8},
+          total: 8,
+        ),
+        '전체 8글자 중 화가 8개(100%)로 가장 많아요',
+      );
+      expect(
+        buildOhaengBalanceNarrative(
+          dominant: '토',
+          sub: '금',
+          ohaengCount: const {'토': 8},
+          total: 8,
+        ),
+        '전체 8글자 중 토가 8개(100%)로 가장 많아요',
+      );
+      expect(
+        buildOhaengBalanceNarrative(
+          dominant: '수',
+          sub: '금',
+          ohaengCount: const {'수': 8},
+          total: 8,
+        ),
+        '전체 8글자 중 수가 8개(100%)로 가장 많아요',
+      );
+    });
+  });
+
   testWidgets('결과 화면이 4기둥과 오행 밸런스를 보여준다', (WidgetTester tester) async {
     await tester.pumpWidget(
       MaterialApp(
