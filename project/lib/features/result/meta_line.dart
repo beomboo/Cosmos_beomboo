@@ -25,3 +25,10 @@ String buildMetaLine(BirthInfo info) {
       info.minute != null ? ' ${info.minute!.toString().padLeft(2, '0')}분' : '';
   return '$date · $period $hour12시$minuteSuffix生 · $calendarLabel$genderSuffix$placeSuffix';
 }
+
+/// 화면 헤더에 표시할 이름을 정한다 — 이름이 비어있거나 공백뿐이면 '회원님'으로
+/// 폴백한다. `result_screen.dart`, `report_screen.dart`, `deep_dive_result_screen.dart`
+/// 세 화면이 같은 규칙을 공유한다.
+String displayNameFor(BirthInfo info) {
+  return info.name?.trim().isNotEmpty == true ? info.name!.trim() : '회원님';
+}

@@ -109,8 +109,7 @@ class _ResultScreenState extends State<ResultScreen> {
       ohaengCount: ohaengCount,
       total: total,
     );
-    final displayName =
-        birthInfo.name?.trim().isNotEmpty == true ? birthInfo.name!.trim() : '회원님';
+    final displayName = displayNameFor(birthInfo);
     final metaLine = buildMetaLine(birthInfo);
 
     return Scaffold(

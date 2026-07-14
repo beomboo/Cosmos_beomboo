@@ -39,8 +39,7 @@ class ReportScreen extends StatelessWidget {
         BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false);
 
     final pillars = calculateFourPillars(birthDate: info.date, birthHour: info.hour);
-    final displayName =
-        info.name?.trim().isNotEmpty == true ? info.name!.trim() : '회원님';
+    final displayName = displayNameFor(info);
 
     return Scaffold(
       appBar: AppBar(title: const Text('상세 리포트')),

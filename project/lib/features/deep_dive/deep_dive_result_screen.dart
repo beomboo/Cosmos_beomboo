@@ -23,8 +23,7 @@ class DeepDiveResultScreen extends StatelessWidget {
     final dominant = pillars.dominantOhaeng;
     final sub = pillars.subDominantOhaeng;
     final subCount = pillars.ohaengCount[sub] ?? 0;
-    final displayName =
-        birthInfo.name?.trim().isNotEmpty == true ? birthInfo.name!.trim() : '회원님';
+    final displayName = displayNameFor(birthInfo);
     final mbtiComment = mbtiCommentFor(deepDiveInfo.mbti?.code);
 
     return Scaffold(

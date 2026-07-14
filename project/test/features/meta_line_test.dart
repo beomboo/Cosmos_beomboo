@@ -80,4 +80,24 @@ void main() {
       expect(buildMetaLine(info), '2000.01.01 · 오전 12시生 · 양력');
     });
   });
+
+  group('displayNameFor', () {
+    test('이름이 있으면 trim한 이름을 그대로 반환한다', () {
+      final info = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false, name: '민지');
+
+      expect(displayNameFor(info), '민지');
+    });
+
+    test('이름이 null이면 "회원님"으로 폴백한다', () {
+      final info = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false);
+
+      expect(displayNameFor(info), '회원님');
+    });
+
+    test('이름이 공백뿐이면 "회원님"으로 폴백한다', () {
+      final info = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false, name: '   ');
+
+      expect(displayNameFor(info), '회원님');
+    });
+  });
 }
