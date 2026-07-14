@@ -204,7 +204,8 @@ void main() {
       // dominantOvercomesSub와 subOvercomesDominant의 접미사 문구가 통째로 서로
       // 바뀌어도 "4가지가 서로 다르다"는 여전히 참이라 못 잡는다 — ohaengRelationOf로
       // 실제 관계를 구해 관계별 기대 접미사와 20가지 (dominant, sub) 조합 전부를
-      // 대조한다(ohaeng_readings.dart의 _categoryComboSuffix 원본과 그대로 일치해야 함).
+      // 대조한다(ohaeng_readings.dart의 공용 함수 ohaengComboSuffix 원본과 그대로
+      // 일치해야 함 — deep_dive_readings.dart의 직장운도 같은 함수를 재사용한다).
       String expectedSuffix(OhaengRelation relation, String sub) {
         switch (relation) {
           case OhaengRelation.dominantGeneratesSub:

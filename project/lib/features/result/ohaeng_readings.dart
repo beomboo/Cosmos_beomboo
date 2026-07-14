@@ -115,9 +115,11 @@ final Map<String, Map<String, (String hanja, String emoji, String text)>> _combo
   return _singleOhaengCallout[dominant] ?? _singleOhaengCallout['토']!;
 }
 
-/// 관계 4종([OhaengRelation])에 대응하는 카테고리 카드 공용 접미사. dominant/sub 오행
-/// 이름만 문자열로 채워 넣어 기존 카드 4개(연애·재물·건강·성격) 설명 뒤에 이어붙인다.
-String _categoryComboSuffix(OhaengRelation relation, String sub) {
+/// 관계 4종([OhaengRelation])에 대응하는 공용 접미사. dominant/sub 오행 이름만 문자열로
+/// 채워 넣어 문장 뒤에 이어붙이는 범용 함수다. 이 파일 안에서는 카테고리 카드 4개(연애·재물·
+/// 건강·성격) 설명 뒤에, `deep_dive_readings.dart`에서는 심층 분석 직장운 설명 뒤에 각각
+/// 이어붙이는 식으로 두 곳에서 공유해서 쓴다.
+String ohaengComboSuffix(OhaengRelation relation, String sub) {
   switch (relation) {
     case OhaengRelation.dominantGeneratesSub:
       return '$sub 기운까지 힘을 보태서 이 흐름이 한층 살아나요';
@@ -145,7 +147,7 @@ List<(String icon, String title, String desc)> categoryReadingsForCombo(
   if (subCount == 0) return base;
 
   final relation = ohaengRelationOf(dominant, sub);
-  final suffix = _categoryComboSuffix(relation, sub);
+  final suffix = ohaengComboSuffix(relation, sub);
   return [
     for (final (icon, title, desc) in base) (icon, title, '$desc. $suffix'),
   ];

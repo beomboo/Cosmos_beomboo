@@ -131,12 +131,12 @@ void main() {
 
       test('직장운 접미사가 20가지 (dominant, sub) 조합 전부에서 관계(OhaengRelation)와 정확히 일치한다 (스왑 방지)',
           () {
-        // ohaeng_readings.dart의 _categoryComboSuffix와 별개로 이 파일에 독립적으로
-        // 존재하는 _careerComboSuffix도 같은 스왑 취약점을 가진다 — 바로 위 테스트(목
-        // 기준 4가지 유일성)만으로는 예를 들어 dominantOvercomesSub와
-        // subOvercomesDominant의 문구가 통째로 서로 바뀌어도 "4가지가 서로 다르다"는
-        // 여전히 참이라 못 잡는다. ohaengRelationOf로 실제 관계를 구해 20가지 조합
-        // 전부를 관계별 기대 접미사와 대조한다.
+        // 직장운은 ohaeng_readings.dart의 공용 함수 ohaengComboSuffix를 그대로
+        // 재사용하므로(deep_dive_readings.dart 참고) 같은 스왑 취약점을 이 파일에서도
+        // 독립적으로 검증해둔다 — 바로 위 테스트(목 기준 4가지 유일성)만으로는 예를
+        // 들어 dominantOvercomesSub와 subOvercomesDominant의 문구가 통째로 서로
+        // 바뀌어도 "4가지가 서로 다르다"는 여전히 참이라 못 잡는다. ohaengRelationOf로
+        // 실제 관계를 구해 20가지 조합 전부를 관계별 기대 접미사와 대조한다.
         String expectedSuffix(OhaengRelation relation, String sub) {
           switch (relation) {
             case OhaengRelation.dominantGeneratesSub:
