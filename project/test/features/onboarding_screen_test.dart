@@ -84,4 +84,26 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('랜드스케이프처럼 세로 폭이 좁은 뷰포트에서도 RenderFlex overflow가 나지 않는다', (
+    tester,
+  ) async {
+    // 실제 랜드스케이프 기기 뷰포트(예: 812x375)에서 고정 Column(Spacer 2개 포함)이
+    // "RenderFlex overflowed by 62 pixels" 예외를 냈다(2026-07-14 발견). 온보딩은
+    // 앱의 첫 진입 화면이라 기기가 이미 가로 방향이면 사용자가 바로 이 오버플로우
+    // 경고를 보게 된다 — 스크롤 가능하도록 고친 뒤에도 재발하지 않는지 고정한다.
+    final originalSize = tester.view.physicalSize;
+    final originalDpr = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(812, 375);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalDpr;
+    });
+
+    await tester.pumpWidget(buildApp());
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
 }
