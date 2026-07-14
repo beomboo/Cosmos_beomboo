@@ -155,12 +155,16 @@ void main() {
 
   testWidgets('이름이 없으면 헤더에 "회원님"으로 표시된다', (tester) async {
     // 같은 폴백 로직(`birthInfo.name?.trim().isNotEmpty == true ? ... : '회원님'`)을
-    // result_screen.dart/report_screen.dart도 각자 복제해 쓰는데, 이 화면은 "이름이
+    // result_screen.dart/report_screen.dart도 각자 복제해 썼었는데, 이 화면은 "이름이
     // 있는" 경우만 테스트돼 있었고 이름이 없거나 공백뿐인 경우는 확인한 적이 없었다
     // (2026-07-06 발견 당시엔 이 화면만의 공백이었으나, 2026-07-08에 확인해보니
     // 정작 이 로직이 처음 만들어진 원본인 result_screen.dart 쪽도 null/공백뿐인
     // 경우를 전용으로 검증하는 테스트가 없었음을 발견해 그쪽에도 같은 테스트를
-    // 추가했다 — 위 "사주 결과 화면"/"상세 리포트 화면" 행 참고).
+    // 추가했다 — 위 "사주 결과 화면"/"상세 리포트 화면" 행 참고). 2026-07-14에는 세
+    // 화면의 복제 삼항식이 `meta_line.dart`의 공용 함수 `displayNameFor()`로
+    // 통합됐고(`meta_line_test.dart`에 전용 유닛 테스트도 추가됨), 이 화면은
+    // `displayNameFor()`를 호출한다 — 이 테스트는 이제 그 폴백이 화면 헤더에
+    // 실제로 반영되는지 확인하는 통합 테스트 성격이다.
     await useTallViewport(tester);
     await tester.pumpWidget(
       MaterialApp(

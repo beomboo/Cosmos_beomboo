@@ -707,13 +707,17 @@ void main() {
   });
 
   testWidgets('이름이 없거나 공백뿐이면 헤더에 "회원님"으로 표시된다', (WidgetTester tester) async {
-    // report_screen.dart/deep_dive_result_screen.dart도 이 화면과 똑같은 이름 폴백
-    // (`name?.trim().isNotEmpty == true ? ... : '회원님'`)을 각자 복제해 갖고 있고,
-    // 그쪽 테스트들은 이미 null/공백뿐인 이름 둘 다 값으로 검증돼 있었다(그중
-    // deep_dive_result_screen_test.dart의 주석은 심지어 "result_screen_test.dart는
-    // 이미 검증해뒀다"고 적어뒀을 정도) — 그런데 정작 이 로직이 처음 만들어진 원본
-    // 화면인 이 파일에는 "이름이 있는" 경우만 테스트돼 있었을 뿐, null/공백뿐인
-    // 경우를 값으로 확인하는 전용 테스트가 없었던 실제 공백이었다.
+    // report_screen.dart/deep_dive_result_screen.dart도 이 화면과 똑같은 이름 폴백을
+    // 쓰는데(2026-07-14 `meta_line.dart`의 공용 함수 `displayNameFor()`로 통합됨 —
+    // 예전엔 세 화면이 `name?.trim().isNotEmpty == true ? ... : '회원님'` 삼항식을
+    // 각자 복제해 갖고 있었다), 그쪽 테스트들은 이미 null/공백뿐인 이름 둘 다 값으로
+    // 검증돼 있었다(그중 deep_dive_result_screen_test.dart의 주석은 심지어
+    // "result_screen_test.dart는 이미 검증해뒀다"고 적어뒀을 정도) — 그런데 정작 이
+    // 로직이 처음 만들어진 원본 화면인 이 파일에는 "이름이 있는" 경우만 테스트돼
+    // 있었을 뿐, null/공백뿐인 경우를 값으로 확인하는 전용 테스트가 없었던 실제
+    // 공백이었다. 지금은 세 화면 모두 `displayNameFor()`를 호출하므로 이 테스트가
+    // 사실상 공용 함수를 검증하는 셈이지만, 화면 헤더에 실제로 반영되는지는 위젯
+    // 테스트로 별도 확인할 가치가 있어 남겨둔다.
     await tester.pumpWidget(
       MaterialApp(
         onGenerateRoute: (settings) => MaterialPageRoute(
