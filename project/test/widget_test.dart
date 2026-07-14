@@ -249,18 +249,31 @@ void main() {
       await tester.tap(find.text('심층 분석 보기'));
       await tester.pumpAndSettle();
 
-      expect(find.text('회원님의 심층 분석 ✨'), findsOneWidget);
+      // 2026-07-15: 심층 분석 결과 화면에 공유 카드(DeepDiveShareCard)가 추가되면서,
+      // 화면 밖(화면에는 안 보임)에 같은 텍스트를 가진 캡처용 위젯이 함께 존재하게
+      // 됐다 — result_screen_test.dart의 findInResult와 같은 이유로, 실제로 보이는
+      // 스크롤 뷰(deepDiveResultScrollView) 안으로 finder 범위를 좁힌다.
+      Finder findInDeepDiveResult(String text) => find.descendant(
+            of: find.byKey(const Key('deepDiveResultScrollView')),
+            matching: find.text(text),
+          );
+      Finder findContainingInDeepDiveResult(String text) => find.descendant(
+            of: find.byKey(const Key('deepDiveResultScrollView')),
+            matching: find.textContaining(text),
+          );
+
+      expect(findInDeepDiveResult('회원님의 심층 분석 ✨'), findsOneWidget);
       // 관심사 4개(연애·재물·직장·건강) 전부 우세 오행(금) 기준 풀이가 실제로 보인다.
       // 1998-08-15/14시 조합의 2순위 오행은 '목'(개수 2) — four_pillars_test.dart의
       // 분포({목:2,화:0,토:2,금:3,수:1})에서 금을 뺀 나머지 중 목화토금수 순서상
       // 목(2)이 토(2)와 동률이어도 먼저 나온다.
       for (final interest in Interest.values) {
-        expect(find.text(interest.categoryTitle), findsOneWidget);
-        expect(find.text(readingFor(interest, '금', '목', subCount: 2)), findsOneWidget);
+        expect(findInDeepDiveResult(interest.categoryTitle), findsOneWidget);
+        expect(findInDeepDiveResult(readingFor(interest, '금', '목', subCount: 2)), findsOneWidget);
       }
       // MBTI를 입력하지 않았으니 코멘트 영역은 없다.
       for (final comment in mbtiComments.values) {
-        expect(find.textContaining(comment), findsNothing);
+        expect(findContainingInDeepDiveResult(comment), findsNothing);
       }
     },
   );
@@ -313,8 +326,16 @@ void main() {
       await tester.tap(find.text('심층 분석 보기'));
       await tester.pumpAndSettle();
 
-      // 기본값(E·S·T·J)에서 I·N만 바꿨으니 "INTJ"로 반영돼야 한다.
-      expect(find.textContaining('INTJ'), findsOneWidget);
+      // 기본값(E·S·T·J)에서 I·N만 바꿨으니 "INTJ"로 반영돼야 한다. 위 테스트와 같은
+      // 이유(2026-07-15, 공유 카드 추가로 화면 밖에 같은 텍스트가 하나 더 생김)로
+      // 실제로 보이는 스크롤 뷰 안으로 finder 범위를 좁힌다.
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('deepDiveResultScrollView')),
+          matching: find.textContaining('INTJ'),
+        ),
+        findsOneWidget,
+      );
     },
   );
 }

@@ -20,6 +20,19 @@ void main() {
     });
   }
 
+  // 2026-07-15: 공유하기 기능이 추가되면서 화면 밖(사용자 눈에는 안 보임)에 같은
+  // 텍스트를 가진 캡처용 DeepDiveShareCard가 함께 존재할 수 있게 됐다 —
+  // result_screen_test.dart의 findInResult와 같은 이유로, 실제로 보이는 스크롤 뷰
+  // (deepDiveResultScrollView) 안으로 finder 범위를 좁혀 중복 매칭을 피한다.
+  Finder findInDeepDiveResult(String text) => find.descendant(
+        of: find.byKey(const Key('deepDiveResultScrollView')),
+        matching: find.text(text),
+      );
+  Finder findContainingInDeepDiveResult(String text) => find.descendant(
+        of: find.byKey(const Key('deepDiveResultScrollView')),
+        matching: find.textContaining(text),
+      );
+
   // deep_dive_result_screen.dart가 실제로 하는 것과 똑같이 dominant/sub/subCount를
   // 계산해 readingFor()에 넘긴다 — readingFor의 시그니처가 (interest, ohaeng)에서
   // (interest, dominant, sub, {subCount})로 바뀐 뒤에도 화면이 실제로 렌더링하는 문구와
@@ -47,14 +60,14 @@ void main() {
       ),
     );
 
-    expect(find.text('직장운'), findsOneWidget);
-    expect(find.text(reading(Interest.career, birthInfo)), findsOneWidget);
-    expect(find.text('연애운'), findsOneWidget);
-    expect(find.text(reading(Interest.love, birthInfo)), findsOneWidget);
+    expect(findInDeepDiveResult('직장운'), findsOneWidget);
+    expect(findInDeepDiveResult(reading(Interest.career, birthInfo)), findsOneWidget);
+    expect(findInDeepDiveResult('연애운'), findsOneWidget);
+    expect(findInDeepDiveResult(reading(Interest.love, birthInfo)), findsOneWidget);
 
     // 고르지 않은 관심사(재물·건강)는 표시되지 않아야 한다.
-    expect(find.text('재물운'), findsNothing);
-    expect(find.text('건강운'), findsNothing);
+    expect(findInDeepDiveResult('재물운'), findsNothing);
+    expect(findInDeepDiveResult('건강운'), findsNothing);
 
     // build()는 `deepDiveInfo.interests`(Set, 순서 보장 없음)를 직접 순회하는 대신
     // `for (final interest in Interest.values) if (...contains(interest))`로 항상
@@ -64,8 +77,8 @@ void main() {
     // Interest.values와 반대 순서(직장→연애)로 Set에 넣어뒀으므로, 만약 코드가
     // Set을 직접 순회하도록 퇴보하면(모든 기존 존재/부재 assert는 그대로 통과하는
     // 채로) 이 순서만 뒤집혀 조용히 깨질 수 있다.
-    final loveTop = tester.getTopLeft(find.text('연애운')).dy;
-    final careerTop = tester.getTopLeft(find.text('직장운')).dy;
+    final loveTop = tester.getTopLeft(findInDeepDiveResult('연애운')).dy;
+    final careerTop = tester.getTopLeft(findInDeepDiveResult('직장운')).dy;
     expect(loveTop, lessThan(careerTop), reason: 'Set 삽입 순서(직장→연애)와 무관하게 연애운이 위에 와야 한다');
   });
 
@@ -85,7 +98,7 @@ void main() {
     );
 
     expect(
-      tester.getSemantics(find.text('연애운')),
+      tester.getSemantics(findInDeepDiveResult('연애운')),
       matchesSemantics(label: '연애운. ${reading(Interest.love, birthInfo)}'),
     );
 
@@ -119,8 +132,8 @@ void main() {
       ),
     );
 
-    expect(find.textContaining('INTJ'), findsOneWidget);
-    expect(find.textContaining(mbtiComments['INTJ']!), findsOneWidget);
+    expect(findContainingInDeepDiveResult('INTJ'), findsOneWidget);
+    expect(findContainingInDeepDiveResult(mbtiComments['INTJ']!), findsOneWidget);
   });
 
   testWidgets('MBTI를 입력하지 않았으면 MBTI 코멘트 영역이 아예 없다', (tester) async {
@@ -150,7 +163,7 @@ void main() {
       ),
     );
 
-    expect(find.text('민지의 심층 분석 ✨'), findsOneWidget);
+    expect(findInDeepDiveResult('민지의 심층 분석 ✨'), findsOneWidget);
   });
 
   testWidgets('이름이 없으면 헤더에 "회원님"으로 표시된다', (tester) async {
@@ -175,8 +188,8 @@ void main() {
       ),
     );
 
-    expect(find.text('회원님의 심층 분석 ✨'), findsOneWidget);
-    expect(find.text('   의 심층 분석 ✨'), findsNothing);
+    expect(findInDeepDiveResult('회원님의 심층 분석 ✨'), findsOneWidget);
+    expect(findInDeepDiveResult('   의 심층 분석 ✨'), findsNothing);
   });
 
   testWidgets('메타 라인(날짜·시간·성별·출생지)이 실제 buildMetaLine 값 그대로 화면에 보인다', (tester) async {
@@ -201,8 +214,8 @@ void main() {
       ),
     );
 
-    expect(find.text(buildMetaLine(infoWithAll)), findsOneWidget);
-    expect(find.text('1998.08.15 · 오후 2시生 · 양력 · 여성 · 서울특별시'), findsOneWidget);
+    expect(findInDeepDiveResult(buildMetaLine(infoWithAll)), findsOneWidget);
+    expect(findInDeepDiveResult('1998.08.15 · 오후 2시生 · 양력 · 여성 · 서울특별시'), findsOneWidget);
   });
 
   testWidgets('음력으로 입력했으면 메타 라인에 "음력"으로 표시된다', (tester) async {
@@ -222,7 +235,7 @@ void main() {
       ),
     );
 
-    expect(find.text('1998.08.15 · 오후 2시生 · 음력'), findsOneWidget);
+    expect(findInDeepDiveResult('1998.08.15 · 오후 2시生 · 음력'), findsOneWidget);
   });
 
   testWidgets('태어난 시간을 몰라도(시주 없이) 3기둥만으로 우세 오행 풀이가 정확히 반영된다',
@@ -246,8 +259,8 @@ void main() {
       ),
     );
 
-    expect(find.text(reading(Interest.career, noHourInfo)), findsOneWidget);
-    expect(find.text(reading(Interest.career, birthInfo)), findsNothing);
+    expect(findInDeepDiveResult(reading(Interest.career, noHourInfo)), findsOneWidget);
+    expect(findInDeepDiveResult(reading(Interest.career, birthInfo)), findsNothing);
   });
 
   testWidgets('시스템 글자 크기를 크게(2배) 키워도 RenderFlex overflow가 나지 않는다', (tester) async {

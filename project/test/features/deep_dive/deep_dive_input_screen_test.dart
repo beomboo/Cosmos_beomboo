@@ -127,7 +127,16 @@ void main() {
     await tester.tap(find.text('심층 분석 보기'));
     await tester.pumpAndSettle();
 
-    expect(find.text('1998.08.15 · 오후 2시生 · 양력'), findsOneWidget);
+    // 2026-07-15: 심층 분석 결과 화면에 공유 카드(DeepDiveShareCard)가 추가되면서,
+    // 화면 밖(사용자 눈에는 안 보임)에 같은 텍스트를 가진 캡처용 위젯이 함께 존재할 수
+    // 있다 — 실제로 보이는 스크롤 뷰(deepDiveResultScrollView) 안으로 범위를 좁힌다.
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('deepDiveResultScrollView')),
+        matching: find.text('1998.08.15 · 오후 2시生 · 양력'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('"심층 분석 보기"를 빠르게 두 번 연속 눌러도 결과 화면으로 한 번만 이동한다', (tester) async {
@@ -214,7 +223,15 @@ void main() {
     await tester.tap(find.text('심층 분석 보기'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('INTJ'), findsOneWidget);
+    // 위 테스트와 같은 이유(2026-07-15, 공유 카드 추가로 화면 밖에 같은 텍스트가 하나
+    // 더 생김)로 실제로 보이는 스크롤 뷰 안으로 범위를 좁힌다.
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('deepDiveResultScrollView')),
+        matching: find.textContaining('INTJ'),
+      ),
+      findsOneWidget,
+    );
 
     final saved = await DeepDiveInfoStore.load();
     expect(saved!.mbti?.code, 'INTJ');
