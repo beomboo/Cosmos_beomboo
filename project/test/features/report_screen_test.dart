@@ -298,6 +298,34 @@ void main() {
     expect(find.text('💘 연애운: 은근한 매력으로 다가오는 인연이 있어요'), findsOneWidget); // 수
   });
 
+  testWidgets('오행별 오늘의 풀이 모음 항목의 스크린 리더 라벨에는 장식용 이모지가 빠져 있다', (tester) async {
+    // reading.$1(💘/💰/🌱/🎭)은 시각적 장식용 이모지일 뿐인데, 이 섹션만 같은 파일의
+    // _pillarRow/_OhaengMeaningCard(위 테스트들 참고)와 달리 Semantics 병합 처리가
+    // 안 돼 있어 스크린 리더가 이모지를 유니코드 이름으로 그대로 읽어 혼란을 줬다
+    // (2026-07-14 발견). 시각적 텍스트(이모지 포함)는 위 테스트에서 이미 확인했으므로,
+    // 여기서는 라벨에서 이모지가 빠졌는지만 확인한다.
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportScreen(
+          birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getSemantics(find.text('💘 연애운: 적극적으로 다가가면 좋은 인연이 생기는 시기예요')),
+      matchesSemantics(label: '연애운: 적극적으로 다가가면 좋은 인연이 생기는 시기예요'),
+    );
+    expect(
+      tester.getSemantics(find.text('💰 재물운: 무리한 투자보다 꾸준한 저축이 유리해요')),
+      matchesSemantics(label: '재물운: 무리한 투자보다 꾸준한 저축이 유리해요'),
+    );
+
+    semantics.dispose();
+  });
+
   testWidgets('이름과 메타 라인이 결과 화면과 같은 형식으로 헤더에 표시된다', (tester) async {
     await useTallViewport(tester);
     await tester.pumpWidget(

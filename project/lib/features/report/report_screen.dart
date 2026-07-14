@@ -302,9 +302,19 @@ class _AllReadingsSection extends StatelessWidget {
           for (final reading in readings)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Text(
-                '${reading.$1} ${reading.$2}: ${reading.$3}',
-                style: const TextStyle(fontSize: 12, color: AppColors.inkSoft),
+              // reading.$1은 순수 장식용 이모지(💘/💰/🌱/🎭)라 스크린 리더가 그대로
+              // 읽으면 유니코드 이름으로 낭독돼 혼란을 준다 — 같은 파일의
+              // _OhaengMeaningCard(위 참고)와 같은 방식으로 라벨에서는 이모지를 빼고
+              // 시각적 표시는 이모지를 그대로 둔다. 항목 여러 개가 한 Column 안에
+              // 나란히 있어 container:true로 이웃 항목과 안 섞이게 한다.
+              child: Semantics(
+                label: '${reading.$2}: ${reading.$3}',
+                excludeSemantics: true,
+                container: true,
+                child: Text(
+                  '${reading.$1} ${reading.$2}: ${reading.$3}',
+                  style: const TextStyle(fontSize: 12, color: AppColors.inkSoft),
+                ),
               ),
             ),
         ],
