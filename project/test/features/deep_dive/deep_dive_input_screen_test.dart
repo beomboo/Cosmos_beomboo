@@ -448,6 +448,18 @@ void main() {
     final node = tester.getSemantics(find.text('💘 연애운'));
     expect(node.label, '연애운');
   });
+
+  testWidgets('리스트 컨테이너 여백이 목업 공통 토큰(20/14/20/18, birth_input_screen.dart와 동일)과 정확히 일치한다',
+      (tester) async {
+    // 2026-07-14 커밋(975c132)에서 이 화면의 옛 여백(24/8/24/24)을 목업
+    // `.screen-body`(padding:14px 20px 18px) 값으로 맞췄다 — 수치 자체를 잠그는
+    // 테스트가 없어 다음에 실수로 옛 값으로 되돌아가도 못 잡는 공백이 있었다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+
+    final listView = tester.widget<ListView>(find.byType(ListView));
+    expect(listView.padding, const EdgeInsets.fromLTRB(20, 14, 20, 18));
+  });
 }
 
 /// push된 라우트를 그대로 기록하는 관찰자 — `Navigator.push()`가 몇 번 호출됐는지
