@@ -172,8 +172,12 @@ class _PillarBreakdownTable extends StatelessWidget {
 
   Widget _pillarRow(String label, GanzhiPillar? pillar) {
     if (pillar == null) {
+      // 입력 온보딩 설계(docs/research/운세/입력_온보딩_설계.md)의 권장안 — 시주를
+      // 계산하지 않았다는 안내 뒤에 재입력을 유도하는 넛지 문구를 덧붙인다. 이 화면엔
+      // 재입력 경로가 따로 없어(결과 화면의 "다시 입력하기"만 존재) 문구만 추가한다.
       return Semantics(
-        label: '$label. 태어난 시간을 몰라 계산하지 않았어요.',
+        label: '$label. 태어난 시간을 몰라 계산하지 않았어요. '
+            '태어난 시간을 알면 더 정확한 결과를 볼 수 있어요.',
         excludeSemantics: true,
         // 이 표는 년/월/일/시 4개 행이 한 Column 안에 나란히 있어, container 없이는
         // 이웃 행의 시맨틱스와 하나로 합쳐진다 — 행마다 독립된 노드가 되도록 한다.
@@ -182,7 +186,10 @@ class _PillarBreakdownTable extends StatelessWidget {
           children: [
             SizedBox(width: 44, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.inkSoft))),
             const Expanded(
-              child: Text('태어난 시간을 몰라 시주는 계산하지 않았어요', style: TextStyle(color: AppColors.inkSoft, fontSize: 12)),
+              child: Text(
+                '태어난 시간을 몰라 시주는 계산하지 않았어요. 태어난 시간을 알면 더 정확한 결과를 볼 수 있어요',
+                style: TextStyle(color: AppColors.inkSoft, fontSize: 12),
+              ),
             ),
           ],
         ),

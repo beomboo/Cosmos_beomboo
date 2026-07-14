@@ -159,7 +159,9 @@ void main() {
 
     expect(
       tester.getSemantics(find.text('시주')),
-      matchesSemantics(label: '시주. 태어난 시간을 몰라 계산하지 않았어요.'),
+      matchesSemantics(
+        label: '시주. 태어난 시간을 몰라 계산하지 않았어요. 태어난 시간을 알면 더 정확한 결과를 볼 수 있어요.',
+      ),
     );
 
     semantics.dispose();
@@ -402,6 +404,30 @@ void main() {
     );
 
     expect(find.textContaining('태어난 시간을 몰라'), findsOneWidget);
+  });
+
+  testWidgets('시간을 몰라 시주가 없을 때만 재입력 유도 넛지 문구가 보이고, 시간을 알면 보이지 않는다', (tester) async {
+    // docs/research/운세/입력_온보딩_설계.md 권장안 반영: "모름" 선택 시 3주만 보여주고
+    // 재입력을 유도하는 넛지 문구를 붙인다 — hour가 있을 때는 이 문구가 전혀 없어야 한다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportScreen(
+          birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: null, isLunar: false),
+        ),
+      ),
+    );
+    expect(find.textContaining('더 정확한 결과를 볼 수 있어요'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportScreen(
+          birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+        ),
+      ),
+    );
+    expect(find.textContaining('더 정확한 결과를 볼 수 있어요'), findsNothing);
   });
 
   testWidgets('결과 화면의 "상세 리포트 보기" 버튼을 누르면 상세 리포트 화면으로 이동한다', (tester) async {
