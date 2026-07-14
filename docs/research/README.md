@@ -33,7 +33,7 @@
 
 ## Agent-Reach 채널 현황
 
-`agent-reach doctor`가 🟢로 보고하는 건 "설정/바이너리 설치됨"일 뿐 실제 호출 성공을 보장하지 않는다. OpenCLI 백엔드 채널(Twitter/X·Reddit·Facebook·Instagram·B站·샤오홍슈)은 사람이 상시 켜둔 Chrome+OpenCLI 확장이 필요해, 무인 자동화 세션에서는 세션마다 성공 여부가 다르다. **매번 안정적으로 호출 가능한 채널은 GitHub(`gh`)·전역 시맨틱 검색(Exa)·임의 웹페이지(Jina Reader)·YouTube(yt-dlp)·RSS뿐**이다.
+`agent-reach doctor`가 🟢로 보고하는 건 "설정/바이너리 설치됨"일 뿐 실제 호출 성공을 보장하지 않는다. OpenCLI 백엔드 채널(Twitter/X·Reddit·Facebook·Instagram·B站·샤오홍슈) 중 로그인 세션(`[cookie]`)이 필요한 것들은 사람이 상시 켜둔 Chrome+OpenCLI 확장이 필요해, 무인 자동화 세션에서는 세션마다 성공 여부가 다르다. **매번 안정적으로 호출 가능한 채널은 GitHub(`gh`)·전역 시맨틱 검색(Exa)·임의 웹페이지(Jina Reader)·YouTube(yt-dlp)·RSS·V2EX(공개 API)뿐**이다(2026-07-15 재검증으로 V2EX 추가).
 
 | 채널 | 실측 상태 | 비고 |
 |---|---|---|
@@ -42,11 +42,11 @@
 | 임의 웹페이지 | ✅ 안정적(구조상) | Jina Reader, 브라우저 불필요 |
 | YouTube | ✅ 안정적(구조상) | yt-dlp, 브라우저 불필요 |
 | RSS/Atom | ✅ 안정적(구조상) | feedparser, 브라우저 의존 없음 |
-| V2EX | 미검증(작동 가능성 높음) | 공개 API, 브라우저 의존 없음 |
+| V2EX | ✅ 안정적(2026-07-15 실측 확인) | 공개 API(`hot`/`latest`/`topic`/`replies`/`nodes`), 브라우저 불필요. 단 풀텍스트 검색 명령이 없어 Exa 웹 검색(`site:v2ex.com`)과 병행 필요. 상세 사례는 [`운세/SNS_콘텐츠_전략.md`](운세/SNS_콘텐츠_전략.md) 참고 |
 | Twitter/X, Reddit | ❌ 세션마다 다름 | OpenCLI, `BROWSER_CONNECT` 오류로 실패한 이력 다수 |
 | Instagram | ⚠️ 세션마다 다름 | OpenCLI, 성공한 세션도 있었음(점신 계정 분석 등) — 매번 새로 시도해볼 가치 있음 |
-| Facebook, B站, 샤오홍슈 | 미검증(같은 이유로 실패 예상) | OpenCLI |
+| Facebook, B站, 샤오홍슈 | ❌ 재시도 실패 확정(2026-07-15) | OpenCLI, `opencli doctor`가 `[FAIL] Browser Bridge extension not connected`로 진단 — `whoami`/검색 시도 시 `BROWSER_CONNECT` 오류(Facebook) 또는 무응답(B站·샤오홍슈, 강제 종료). 브라우저 확장이 상시 연결된 사람 세션이 아니면 무인 세션에서는 원천적으로 호출 불가 |
 | 쉐추(雪球) | 🟡 경고 | 로그인 쿠키 필요 |
 | LinkedIn, 샤오위저우 | ⚪ 비활성 | 미설치/`ffmpeg` 필요 |
 
-**지침**: SNS 실 게시물이 필요하면 OpenCLI 채널을 먼저 시도해보되, `BROWSER_CONNECT` 오류가 나면 즉시 포기하고 Exa 웹 검색으로 대체한다.
+**지침**: SNS 실 게시물이 필요하면 OpenCLI 채널을 먼저 시도해보되, `BROWSER_CONNECT` 오류가 나면 즉시 포기하고 Exa 웹 검색으로 대체한다. V2EX는 브라우저 없이 호출 가능하므로 우선 시도할 가치가 있지만, 키워드 검색이 필요하면 Exa 웹 검색으로 글타래를 먼저 찾은 뒤 `opencli v2ex topic <id>`로 본문을 조회하는 방식을 쓴다.
