@@ -225,4 +225,65 @@ void main() {
     await tester.pump();
     expect(find.text('홈'), findsOneWidget);
   });
+
+  testWidgets('궤도 이모지는 온보딩 마스코트처럼 장식용이라 시맨틱스 트리에서 조회되지 않는다', (tester) async {
+    // 온보딩 마스코트(onboarding_screen.dart)와 같은 이유로 ExcludeSemantics로 감쌌는지
+    // 확인한다. 위젯 트리에는 여전히 '🌿' Text가 있지만(find.text로는 찾을 수 있음),
+    // 시맨틱스 트리에는 아예 노드가 만들어지지 않아야 한다.
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) {
+          if (settings.name == AppRoutes.result) {
+            return MaterialPageRoute(
+              builder: (_) => const Scaffold(body: Text('RESULT_STUB')),
+              settings: settings,
+            );
+          }
+          return MaterialPageRoute(builder: (_) => const CalculatingScreen());
+        },
+        initialRoute: '/',
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('🌿'), findsOneWidget);
+    expect(find.bySemanticsLabel('🌿'), findsNothing);
+
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump();
+
+    semantics.dispose();
+  });
+
+  testWidgets('로딩 문구는 liveRegion으로 감싸져 있어 스크린 리더가 갱신을 자동으로 안내한다', (tester) async {
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) {
+          if (settings.name == AppRoutes.result) {
+            return MaterialPageRoute(
+              builder: (_) => const Scaffold(body: Text('RESULT_STUB')),
+              settings: settings,
+            );
+          }
+          return MaterialPageRoute(builder: (_) => const CalculatingScreen());
+        },
+        initialRoute: '/',
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      tester.getSemantics(find.text('사주팔자를 계산하고 있어요...')),
+      matchesSemantics(label: '사주팔자를 계산하고 있어요...', isLiveRegion: true),
+    );
+
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump();
+
+    semantics.dispose();
+  });
 }

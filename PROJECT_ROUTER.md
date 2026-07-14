@@ -20,7 +20,7 @@
 | 생년월일시 저장소 | `project/lib/core/storage/` | 🟢 | `BirthInfoStore`/`DeepDiveInfoStore` (SharedPreferences) |
 | 온보딩 화면 | `project/lib/features/onboarding/` | 🟢 | 최초 진입 화면 |
 | 생년월일시 정보 입력 화면 | `project/lib/features/birth_input/` | 🟢 | 생년월일시·성별·MBTI 입력. 제출 시 `pushReplacementNamed`로 계산 중 화면으로 넘어가 스택에서 제거됨(뒤로가기로 재진입 불가) |
-| 명식 계산 중 화면 | `project/lib/features/calculating/` | 🟢 | 계산 중 애니메이션 |
+| 명식 계산 중 화면 | `project/lib/features/calculating/` | 🟢 | 계산 중 애니메이션. 궤도(달+이모지)는 온보딩 마스코트와 같은 장식용이라 `ExcludeSemantics` 처리, 로딩 문구는 `Semantics(liveRegion: true)`로 갱신 안내 |
 | 사주 결과 화면 | `project/lib/features/result/` | 🟢 | 4기둥·오행 밸런스(우세+2순위 오행 상생상극 콤보 콜아웃·카테고리 접미사, `ohaeng_readings.dart`의 공용 함수 `ohaengComboSuffix`—심층 분석 직장운과 공유·서술 문단)·공유 카드. 시주(`pillars.hour`)를 모르면 절기 디스클레이머 아래에 3주 계산 사실+재입력 유도 넛지 문구(AppBar "다시 입력하기"와 중복 안 되게 안내 텍스트만) 표시 |
 | 상세 리포트 화면 | `project/lib/features/report/` | 🟢 | 오행별 상세 해석. 시주를 모르면 `_pillarRow` 안내 문구 뒤에 재입력 유도 넛지 문구 덧붙임 |
 | 심층 분석(MBTI·관심사) | `project/lib/features/deep_dive/` | 🟢 | 관심사 선택 + 심층 분석 결과. 직장운 콤보 접미사는 결과 화면과 같은 공용 함수(`ohaengComboSuffix`) 재사용 |

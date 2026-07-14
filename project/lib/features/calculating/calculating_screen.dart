@@ -90,58 +90,68 @@ class _CalculatingScreenState extends State<CalculatingScreen>
               // 안 맞아 의도적 확대로 보기 어려움: 궤도 200/120=1.67배, 달 72/64=1.13배,
               // 궤도 반경 90/58=1.55배로 제각각), 아래 달 크기·궤도 반경·이모지 크기도
               // 함께 목업 값 그대로 맞춘다.
-              SizedBox(
-                width: 120,
-                height: 120,
-                child: AnimatedBuilder(
-                  animation: _orbitController,
-                  builder: (context, _) {
-                    return Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // 목업(docs/mockups/01-pastel-cute.html)의 `.orbit .moon`은 단색
-                        // 원이 아니라 흰색→earthSoft→earth로 이어지는 방사형 그라데이션에
-                        // accentSoft 톤의 은은한 링 섀도가 둘러싼 "달" 모양인데, 지금까지는
-                        // 단색 accentSoft 원으로만 구현돼 있었다(2026-07-06 대조 발견).
-                        Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              center: const Alignment(-0.36, -0.4),
-                              colors: [Colors.white, AppColors.earthSoft, AppColors.earth],
-                              stops: const [0.0, 0.55, 1.0],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.accentSoft.withValues(alpha: 0.7),
-                                spreadRadius: 10,
+              // 달 그라데이션 + 궤도 이모지는 온보딩 마스코트(onboarding_screen.dart)와
+              // 같은 순수 장식용 애니메이션이라, 스크린 리더가 이모지 3개를 의미 없이
+              // 하나씩 읽지 않도록 시맨틱 트리에서 제외한다.
+              ExcludeSemantics(
+                child: SizedBox(
+                  width: 120,
+                  height: 120,
+                  child: AnimatedBuilder(
+                    animation: _orbitController,
+                    builder: (context, _) {
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // 목업(docs/mockups/01-pastel-cute.html)의 `.orbit .moon`은 단색
+                          // 원이 아니라 흰색→earthSoft→earth로 이어지는 방사형 그라데이션에
+                          // accentSoft 톤의 은은한 링 섀도가 둘러싼 "달" 모양인데, 지금까지는
+                          // 단색 accentSoft 원으로만 구현돼 있었다(2026-07-06 대조 발견).
+                          Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                center: const Alignment(-0.36, -0.4),
+                                colors: [Colors.white, AppColors.earthSoft, AppColors.earth],
+                                stops: const [0.0, 0.55, 1.0],
                               ),
-                            ],
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.accentSoft.withValues(alpha: 0.7),
+                                  spreadRadius: 10,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        for (var i = 0; i < _orbitEmojis.length; i++)
-                          _orbitingEmoji(
-                            emoji: _orbitEmojis[i],
-                            angle: _orbitController.value * 2 * math.pi +
-                                (i * 2 * math.pi / _orbitEmojis.length),
-                          ),
-                      ],
-                    );
-                  },
+                          for (var i = 0; i < _orbitEmojis.length; i++)
+                            _orbitingEmoji(
+                              emoji: _orbitEmojis[i],
+                              angle: _orbitController.value * 2 * math.pi +
+                                  (i * 2 * math.pi / _orbitEmojis.length),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
               // 목업(`.loading .screen-body`)은 자식 사이에 균일한 gap:22px를 쓰는데,
               // 지금까지는 32/20/12px로 제각각이었다(2026-07-07 대조 발견) — 이하 세 곳
               // 모두 22로 통일.
               const SizedBox(height: 22),
-              Text(
-                _loadingMessages[_messageIndex],
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink,
+              // 1.8초마다 바뀌는 로딩 문구라, 스크린 리더 사용자가 갱신 내용을 자동으로
+              // 안내받을 수 있도록 liveRegion으로 감싼다.
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  _loadingMessages[_messageIndex],
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                  ),
                 ),
               ),
               const SizedBox(height: 22),
