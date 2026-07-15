@@ -341,7 +341,10 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: _submit,
-                child: const Text('사주 보러가기 🔮'),
+                child: const Text(
+                  '사주 보러가기 🔮',
+                  semanticsLabel: '사주 보러가기',
+                ),
               ),
             ),
           ],
