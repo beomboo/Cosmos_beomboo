@@ -4,6 +4,7 @@ import '../../app/router.dart';
 import '../../app/theme/app_colors.dart';
 import '../../core/storage/birth_info_store.dart';
 import '../../core/storage/deep_dive_info_store.dart';
+import '../../shared/widgets/pastel_checkbox_row.dart';
 import '../../shared/widgets/pastel_pill_button.dart';
 import '../../shared/widgets/pastel_toggle_row.dart';
 import '../deep_dive/deep_dive_info.dart';
@@ -237,18 +238,10 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
             const SizedBox(height: 8),
             // CheckboxListTile을 써서 체크박스뿐 아니라 "태어난 시간을 몰라요" 글자를 눌러도
             // 반응하게 한다 (터치 영역이 넓어져 접근성/사용성 모두 개선됨).
-            CheckboxListTile(
+            PastelCheckboxRow(
+              label: '태어난 시간을 몰라요',
               value: _timeUnknown,
               onChanged: (v) => setState(() => _timeUnknown = v ?? false),
-              activeColor: AppColors.accent,
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              // 목업(`.check-row`)은 12px인데 지금까지 기본 크기였다(2026-07-06 대조 발견).
-              title: const Text(
-                '태어난 시간을 몰라요',
-                style: TextStyle(color: AppColors.inkSoft, fontWeight: FontWeight.w600, fontSize: 12),
-              ),
             ),
             const SizedBox(height: 14),
             _FieldLabel('성별'),
@@ -280,17 +273,10 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
             const SizedBox(height: 14),
             // MBTI 입력 — deep_dive_input_screen.dart에 있던 것을 그대로 옮겨왔다
             // (2026-07-07, 사용자 요청). 모르면 체크하지 않아도 되는 선택 항목.
-            CheckboxListTile(
+            PastelCheckboxRow(
+              label: 'MBTI를 알고 있어요',
               value: _knowsMbti,
               onChanged: (v) => setState(() => _knowsMbti = v ?? false),
-              activeColor: AppColors.accent,
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              title: const Text(
-                'MBTI를 알고 있어요',
-                style: TextStyle(color: AppColors.inkSoft, fontWeight: FontWeight.w600, fontSize: 12),
-              ),
             ),
             if (_knowsMbti) ...[
               const SizedBox(height: 8),
