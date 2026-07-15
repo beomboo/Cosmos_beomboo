@@ -51,12 +51,19 @@ class ReportScreen extends StatelessWidget {
           children: [
             // 결과 화면에서 넘어왔을 때, 지금 보고 있는 리포트가 누구 걸 얼마나 자세히
             // 보는 건지 문맥이 끊기지 않도록 결과 화면과 같은 헤더를 재사용한다.
-            Text(
-              '$displayName의 상세 리포트',
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                color: AppColors.ink,
-                fontSize: 20,
+            // TalkBack/VoiceOver의 헤딩 단위 탐색(제목만 골라 건너뛰기)을 지원하려면
+            // 섹션 제목에 header 플래그가 필요하다 — 지금까지는 앱 전체에 이 플래그가
+            // 한 곳도 없었다(2026-07-16 접근성 감사 발견). 자식 Text가 만드는 자동
+            // 라벨을 그대로 병합해 쓰므로 별도 label은 지정하지 않는다.
+            Semantics(
+              header: true,
+              child: Text(
+                '$displayName의 상세 리포트',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.ink,
+                  fontSize: 20,
+                ),
               ),
             ),
             const SizedBox(height: 4),
@@ -65,9 +72,13 @@ class ReportScreen extends StatelessWidget {
               style: const TextStyle(color: AppColors.inkSoft, fontSize: 13),
             ),
             const SizedBox(height: 20),
-            const Text(
-              '명식 한 글자씩 뜯어보기',
-              style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 16),
+            // 헤딩 단위 탐색 지원(2026-07-16 접근성 감사 발견, 위 페이지 제목과 같은 이유).
+            Semantics(
+              header: true,
+              child: const Text(
+                '명식 한 글자씩 뜯어보기',
+                style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 16),
+              ),
             ),
             const SizedBox(height: 4),
             const Text(
@@ -89,17 +100,25 @@ class ReportScreen extends StatelessWidget {
               style: TextStyle(color: AppColors.inkSoft, fontSize: 11, height: 1.5),
             ),
             const SizedBox(height: 32),
-            const Text(
-              '오행 五行 완전 정복',
-              style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 16),
+            // 헤딩 단위 탐색 지원(2026-07-16 접근성 감사 발견, 위 페이지 제목과 같은 이유).
+            Semantics(
+              header: true,
+              child: const Text(
+                '오행 五行 완전 정복',
+                style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 16),
+              ),
             ),
             const SizedBox(height: 12),
             for (final ohaeng in const ['목', '화', '토', '금', '수'])
               _OhaengMeaningCard(ohaeng: ohaeng),
             const SizedBox(height: 32),
-            const Text(
-              '오행별 오늘의 풀이 모음',
-              style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 16),
+            // 헤딩 단위 탐색 지원(2026-07-16 접근성 감사 발견, 위 페이지 제목과 같은 이유).
+            Semantics(
+              header: true,
+              child: const Text(
+                '오행별 오늘의 풀이 모음',
+                style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 16),
+              ),
             ),
             const SizedBox(height: 4),
             const Text(
