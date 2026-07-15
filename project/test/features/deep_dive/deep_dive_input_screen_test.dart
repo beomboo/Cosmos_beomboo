@@ -392,6 +392,94 @@ void main() {
     expect(saved!.mbti?.code, 'INTJ');
   });
 
+  testWidgets(
+      '저장된 값을 불러오다가 플랫폼 채널 오류가 나도 크래시하지 않고 기본값으로 제출까지 정상 진행된다',
+      (tester) async {
+    // widget_test.dart의 `_FailingGetAllStore`와 같은 이유로, `_loadSaved()`의
+    // `try { await DeepDiveInfoStore.load(); } catch (_) { saved = null; }`가 실제로
+    // 예외를 삼키는지(즉 `_loadFuture`가 에러로 완료되지 않는지) 지금까지 이 화면에서는
+    // 한 번도 확인한 적이 없었다 — `_saveAndContinue()`의 `await _loadFuture;`를 감싼
+    // try/catch가 "혹시 모를 예외"라고 방어하는 지점이 실제로 발동하는 경로인지도 함께
+    // 확인한다.
+    final originalStore = SharedPreferencesStorePlatform.instance;
+    SharedPreferencesStorePlatform.instance = _FailingGetAllStore();
+    addTearDown(() => SharedPreferencesStorePlatform.instance = originalStore);
+
+    await useTallViewport(tester);
+    await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tester.pumpAndSettle();
+
+    // 로드 실패는 조용히 흡수돼 기본값(전체 선택)이 그대로 유지돼야 한다.
+    for (final label in const ['💘 연애운', '💰 재물운', '💼 직장운', '🌱 건강운']) {
+      expect(find.text(label), findsOneWidget);
+    }
+
+    await tester.tap(find.text('심층 분석 보기'));
+    await tester.pumpAndSettle();
+
+    // 로드 실패든 아니든 제출 자체는 정상적으로 결과 화면까지 이어져야 하고, 테스트
+    // 프레임워크가 잡아내는 미처리 예외가 없어야 한다(로드 실패가 조용히 전파돼
+    // 화면이 멈추거나 크래시하면 안 된다).
+    expect(tester.takeException(), isNull);
+    expect(find.byType(DeepDiveResultScreen), findsOneWidget);
+  });
+
+  testWidgets(
+      '"심층 분석 보기"를 누른 뒤 로드가 끝나기 전에 화면이 사라지면(빠른 뒤로가기), 이미 저장돼 있던 값을 훼손하지 않고 조용히 멈춘다',
+      (tester) async {
+    // 위 "MBTI가 유실되지 않는다" 테스트와 같은 뿌리의 버그지만 트리거 경로가 다르다:
+    // `_saveAndContinue()`가 `await _loadFuture`로 로드 완료를 기다리는 도중 사용자가
+    // 화면을 완전히 벗어나면(위젯 자체가 dispose됨), `_loadSaved()`는 dispose 이후
+    // setState를 건너뛰어(72행 `!mounted` 체크) `_mbti`가 여전히 초기값(null)인 채로
+    // 멈춘다 — 이때 `_saveAndContinue()`의 106행 `if (!mounted) return;` 가드가 없으면
+    // 그 null `_mbti`로 `DeepDiveInfoStore.save()`가 그대로 호출돼, birth_input에서
+    // 이미 저장해둔 MBTI·관심사가 화면이 사라진 뒤에도 조용히 null/기본값으로
+    // 덮어써지는 또 다른 경로의 데이터 유실이 생길 수 있다.
+    final loadGate = Completer<void>();
+    final store = _GatedLoadStore(
+      {
+        'flutter.deep_dive_info.mbti_ei': 'i',
+        'flutter.deep_dive_info.mbti_sn': 'n',
+        'flutter.deep_dive_info.mbti_tf': 't',
+        'flutter.deep_dive_info.mbti_jp': 'j',
+        'flutter.deep_dive_info.interests': ['health'],
+      },
+      loadGate.future,
+    );
+    final originalStore = SharedPreferencesStorePlatform.instance;
+    SharedPreferencesStorePlatform.instance = store;
+    addTearDown(() => SharedPreferencesStorePlatform.instance = originalStore);
+
+    await useTallViewport(tester);
+    await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tester.pump();
+
+    // 로드가 아직 안 끝난 시점에 제출을 누른다 — _saveAndContinue가 _loadFuture를
+    // 기다리기 시작한다.
+    final button =
+        tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '심층 분석 보기'));
+    button.onPressed!();
+    await tester.pump();
+
+    // 저장/화면 전환이 끝나기 전에 사용자가 화면을 완전히 벗어난다(빠른 뒤로가기를
+    // 흉내 — 위젯 트리를 완전히 교체해 State.dispose()를 강제로 유발한다. 위 "관심사
+    // 4개를 전부 해제하고..." 테스트와 같은 방식).
+    await tester.pumpWidget(const SizedBox.shrink());
+
+    // 그제서야 로드가 끝나도록 놓아준다 — 이 시점에 화면은 이미 dispose된 뒤다.
+    loadGate.complete();
+    await tester.pumpAndSettle();
+
+    // 크래시(예: dispose된 context로 Navigator.push 시도) 없이 조용히 멈춰야 한다.
+    expect(tester.takeException(), isNull);
+
+    // 화면이 사라지기 전에 이미 저장돼 있던 값(INTJ·건강운만)이 그대로 남아있어야
+    // 한다 — null MBTI·기본값(전체 선택) 관심사로 덮어써지면 안 된다.
+    final saved = await DeepDiveInfoStore.load();
+    expect(saved!.mbti?.code, 'INTJ');
+    expect(saved.interests, {Interest.health});
+  });
+
   testWidgets('제출하면 선택한 관심사·MBTI가 저장되어 다음에 열 때 이어서 보인다', (tester) async {
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
@@ -591,4 +679,15 @@ class _GatedLoadStore extends InMemorySharedPreferencesStore {
     await gate;
     return super.getAll();
   }
+}
+
+/// widget_test.dart의 `_FailingGetAllStore`와 같은 이유(플랫폼 채널 오류 흉내) — 이 화면
+/// 전용으로 하나 더 두는 이유는, birth_input과 달리 이 화면은 로드 실패 시 저장을
+/// 막지 않고 기본값으로 계속 진행해야 하는 화면별 요구사항을 별도로 확인하기 위함이다.
+class _FailingGetAllStore extends InMemorySharedPreferencesStore {
+  _FailingGetAllStore() : super.empty();
+
+  @override
+  Future<Map<String, Object>> getAll() =>
+      throw Exception('시뮬레이션된 플랫폼 채널 오류');
 }
