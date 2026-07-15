@@ -134,6 +134,7 @@ class ReportScreen extends StatelessWidget {
                 ),
                 child: const Text(
                   'MBTI·관심사로 심층 분석 받기 →',
+                  semanticsLabel: 'MBTI·관심사로 심층 분석 받기',
                   style: TextStyle(color: AppColors.inkSoft, fontWeight: FontWeight.w600),
                 ),
               ),
