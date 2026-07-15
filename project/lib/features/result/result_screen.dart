@@ -133,12 +133,19 @@ class _ResultScreenState extends State<ResultScreen> {
                 // 목업(`.result-head h2`)은 font-size:15.5px인데 지금까지는 22px이었다
                 // (2026-07-16 대조 발견 — 헤더 블록은 2026-07-05 최초 구현 이후 한 번도
                 // 대조된 적이 없었음).
-                Text(
-                  '$displayName의 사주팔자 ✨',
-                  style: const TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.ink,
+                // TalkBack/VoiceOver의 헤딩 단위 탐색(제목만 골라 건너뛰기)을 지원하려면
+                // 섹션 제목에 header 플래그가 필요하다 — 지금까지는 앱 전체에 이 플래그가
+                // 한 곳도 없었다(2026-07-16 접근성 감사 발견). 자식 Text가 만드는 자동
+                // 라벨을 그대로 병합해 쓰므로 별도 label은 지정하지 않는다.
+                Semantics(
+                  header: true,
+                  child: Text(
+                    '$displayName의 사주팔자 ✨',
+                    style: const TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.ink,
+                    ),
                   ),
                 ),
                 // 목업(`.result-head h2`)은 margin:0 0 3px인데 지금까지는 4px이었다
@@ -212,11 +219,15 @@ class _ResultScreenState extends State<ResultScreen> {
                 // 목업(`.pillars`)은 margin-bottom:14px인데 지금까지는 28px이었다
                 // (2026-07-07 대조 발견).
                 const SizedBox(height: 14),
-                const Text(
-                  '오행 밸런스',
-                  // 목업(`.bars h3`)은 font-size:11px/color:var(--app-ink-soft)인데
-                  // 지금까지는 본문 헤드라인만큼 진한 15px/ink였다(2026-07-15 대조 발견).
-                  style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.inkSoft, fontSize: 11),
+                // 헤딩 단위 탐색 지원(2026-07-16 접근성 감사 발견, 위 페이지 제목과 같은 이유).
+                Semantics(
+                  header: true,
+                  child: const Text(
+                    '오행 밸런스',
+                    // 목업(`.bars h3`)은 font-size:11px/color:var(--app-ink-soft)인데
+                    // 지금까지는 본문 헤드라인만큼 진한 15px/ink였다(2026-07-15 대조 발견).
+                    style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.inkSoft, fontSize: 11),
+                  ),
                 ),
                 // 목업(`.bars h3`)은 margin:0 0 8px인데 지금까지는 12px이었다
                 // (2026-07-07 대조 발견).
@@ -249,11 +260,15 @@ class _ResultScreenState extends State<ResultScreen> {
                 // 목업(`.bars`)은 margin-bottom:14px인데 지금까지는 28px이었다
                 // (2026-07-07 대조 발견).
                 const SizedBox(height: 14),
-                const Text(
-                  '오늘 궁금한 것부터',
-                  // 목업(`.cards h3`)은 font-size:11px/color:var(--app-ink-soft)인데
-                  // 지금까지는 본문 헤드라인만큼 진한 15px/ink였다(2026-07-15 대조 발견).
-                  style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.inkSoft, fontSize: 11),
+                // 헤딩 단위 탐색 지원(2026-07-16 접근성 감사 발견, 위 페이지 제목과 같은 이유).
+                Semantics(
+                  header: true,
+                  child: const Text(
+                    '오늘 궁금한 것부터',
+                    // 목업(`.cards h3`)은 font-size:11px/color:var(--app-ink-soft)인데
+                    // 지금까지는 본문 헤드라인만큼 진한 15px/ink였다(2026-07-15 대조 발견).
+                    style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.inkSoft, fontSize: 11),
+                  ),
                 ),
                 // 목업(`.cards h3`)은 margin:0 0 8px인데 지금까지는 12px이었다
                 // (2026-07-07 대조 발견).
