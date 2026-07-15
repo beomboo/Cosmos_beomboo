@@ -80,6 +80,12 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
     }
   }
 
+  // 자시(23시~01시, four_pillars.dart의 `midnight` 관법 주석과 동일한 경계) 출생자는
+  // 일주 계산 방식이 앱마다 갈릴 수 있다는 리서치 결과(docs/research/운세/입력_온보딩_설계.md)에
+  // 따라 안내 문구만 추가한다 — 계산 로직(관법)은 건드리지 않는다. "23시~01시" 두 시간은
+  // 23:00~23:59와 00:00~00:59로 구성되므로 hour가 23 또는 0일 때만 해당한다.
+  bool get _isJasiRange => _birthTime.hour == 23 || _birthTime.hour == 0;
+
   String get _formattedDate =>
       '${_birthDate.year}.${_birthDate.month.toString().padLeft(2, '0')}.${_birthDate.day.toString().padLeft(2, '0')}';
 
@@ -232,6 +238,16 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
                 onTap: _timeUnknown ? null : _pickTime,
               ),
             ),
+            // 자시 경계 안내 — 시간을 모른다고 체크했으면 어차피 시주를 계산하지 않으므로
+            // 이 안내는 의미가 없어 숨긴다. "자시" 같은 한자어 대신 순화된 표현으로 안내.
+            if (_isJasiRange && !_timeUnknown) ...[
+              const SizedBox(height: 6),
+              const Text(
+                '밤 11시~새벽 1시 사이는 앱마다 계산 방식이 조금씩 달라요. '
+                '병원 기록상 시간이 있다면 다시 확인해보세요.',
+                style: TextStyle(color: AppColors.inkSoft, fontSize: 11, fontWeight: FontWeight.w700),
+              ),
+            ],
             const SizedBox(height: 8),
             // CheckboxListTile을 써서 체크박스뿐 아니라 "태어난 시간을 몰라요" 글자를 눌러도
             // 반응하게 한다 (터치 영역이 넓어져 접근성/사용성 모두 개선됨).

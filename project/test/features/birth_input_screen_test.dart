@@ -715,6 +715,69 @@ void main() {
     expect(saved!.mbti?.code, 'INFP');
   });
 
+  // 2026-07-15: 리서치(docs/research/운세/입력_온보딩_설계.md)가 짚은 23시~01시(자시)
+  // 경계 안내 문구 — 계산 로직(관법)은 그대로 두고 정보성 안내만 노출한다.
+  Future<void> setTimeViaTextInput(WidgetTester tester, {required String hour, required String minute, required bool pm}) async {
+    await tester.tap(find.text('오후 2시 30분'));
+    await tester.pumpAndSettle();
+    // 다이얼 대신 텍스트 입력 모드로 바꿔 정확한 시:분을 직접 입력한다(23:00/00:30처럼
+    // 다이얼 제스처로는 안정적으로 재현하기 어려운 값들을 결정적으로 넣기 위함).
+    await tester.tap(find.byIcon(Icons.keyboard_outlined));
+    await tester.pumpAndSettle();
+    // 이 화면 자체에 이미 이름/출생지 TextField 두 개가 있어(피커가 열려도 그 아래
+    // 화면은 그대로 마운트돼 있음), find.byType(TextField)의 인덱스 0·1은 그 두
+    // 필드를 가리킨다 — 시간 피커의 시:분 입력 필드는 2·3번째로 뒤에 붙는다
+    // (실측 확인: TextField 총 4개, 이름·출생지·시·분 순).
+    await tester.enterText(find.byType(TextField).at(2), hour);
+    await tester.enterText(find.byType(TextField).at(3), minute);
+    await tester.tap(find.text(pm ? '오후' : '오전'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('확인'));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('밤 11시대(23시)를 고르면 자시 경계 안내 문구가 보인다', (tester) async {
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsNothing);
+
+    await setTimeViaTextInput(tester, hour: '11', minute: '00', pm: true);
+
+    expect(find.text('오후 11시 00분'), findsOneWidget);
+    expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsOneWidget);
+  });
+
+  testWidgets('새벽 0시대(자정 이후)를 고르면 자시 경계 안내 문구가 보인다', (tester) async {
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    await setTimeViaTextInput(tester, hour: '12', minute: '30', pm: false);
+
+    expect(find.text('오전 12시 30분'), findsOneWidget);
+    expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsOneWidget);
+  });
+
+  testWidgets('기본 시간(오후 2시 30분)에서는 자시 경계 안내 문구가 보이지 않는다', (tester) async {
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsNothing);
+  });
+
+  testWidgets('자시 시간대를 고른 뒤 "태어난 시간을 몰라요"를 체크하면 안내 문구가 사라진다', (tester) async {
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    await setTimeViaTextInput(tester, hour: '11', minute: '00', pm: true);
+    expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsOneWidget);
+
+    await tester.tap(find.text('태어난 시간을 몰라요'));
+    await tester.pump();
+
+    expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsNothing);
+  });
+
   testWidgets('이미 심층 분석에서 좁혀둔 관심사가 있으면 제출해도 전체 선택으로 되돌아가지 않는다',
       (tester) async {
     // 2026-07-08 버그 수정: 사주 결과 화면은 이 화면이 스택 아래에 그대로 남아 있어
