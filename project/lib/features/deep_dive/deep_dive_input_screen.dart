@@ -44,10 +44,19 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
   /// 더 이상 덮어쓰지 않도록 막는다.
   bool _userInteracted = false;
 
+  /// **2026-07-15 버그 수정**: `initState()`가 `_loadSaved()`를 fire-and-forget으로
+  /// 던지기만 하고 기다리지 않아서, birth_input_screen.dart에서 이미 골라둔 MBTI가
+  /// `SharedPreferences`에서 아직 읽히기 전에 사용자가 곧바로 "심층 분석 보기"를
+  /// 누르면 `_mbti`의 초기값(`null`)이 그대로 저장돼 MBTI가 조용히 유실되는 실제
+  /// 버그였다(이 화면엔 MBTI를 보여주는 UI가 없어 사용자가 눈치챌 방법도 없었다).
+  /// `_saveAndContinue()`가 저장 직전 이 Future를 기다리게 해서 로드가 끝난 뒤의
+  /// `_mbti` 값을 저장하도록 막는다.
+  late final Future<void> _loadFuture = _loadSaved();
+
   @override
   void initState() {
     super.initState();
-    _loadSaved();
+    _loadFuture;
   }
 
   /// 이전에 저장된 선택이 있으면 불러와 반영한다. 저장된 적이 한 번도 없으면(첫 방문)
@@ -82,6 +91,19 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
   Future<void> _saveAndContinue(BuildContext context, BirthInfo birthInfo) async {
     if (_isSubmitting) return;
     _isSubmitting = true;
+
+    // 로드가 끝나기 전에 눌려도(위 `_loadFuture` 주석 참고) `_mbti`가 초기값(null)인
+    // 채로 저장되지 않도록, 저장을 구성하기 전에 로드 완료를 먼저 기다린다. 로드가
+    // 이미 끝나 있었다면 즉시 반환되므로 체감 지연은 없다. 로드 완료 시점에 이미
+    // 화면을 벗어났다면(`mounted`가 false) 그 이후 사용자 조작은 불가능하므로
+    // `_userInteracted`와 무관하게 안전하다.
+    try {
+      await _loadFuture;
+    } catch (_) {
+      // _loadSaved()가 이미 자체적으로 실패를 흡수하지만, 혹시 모를 예외도 저장/화면
+      // 전환을 막지 않는다.
+    }
+    if (!mounted) return;
 
     final deepDiveInfo = DeepDiveInfo(mbti: _mbti, interests: _interests);
     try {

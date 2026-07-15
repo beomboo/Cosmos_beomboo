@@ -339,6 +339,59 @@ void main() {
     );
   });
 
+  testWidgets(
+      '2026-07-15 버그 수정: 로드가 끝나기 전에 곧바로 "심층 분석 보기"를 눌러도 birth_input에서 '
+      '저장해둔 MBTI가 유실되지 않는다', (tester) async {
+    // initState()가 _loadSaved()를 기다리지 않고(fire-and-forget) 반환하는데,
+    // birth_input_screen.dart에서 이미 저장해둔 MBTI가 SharedPreferences에서 아직
+    // 읽히기 전에 사용자가 곧바로 제출하면 _mbti의 초기값(null)이 그대로 저장돼
+    // MBTI가 조용히 사라지는 실제 버그였다 — 이 화면엔 MBTI를 보여주는 UI가 없어
+    // 사용자가 눈치챌 방법도 없었다. 위 "저장된 관심사를 불러오는 도중..." 테스트와
+    // 같은 방식으로 _GatedLoadStore로 로드 완료 시점을 직접 통제해, 로드가 끝나기
+    // 전에 제출을 시도해도 그 제출이 로드 완료를 기다렸다가 반영하는지 확인한다.
+    final loadGate = Completer<void>();
+    final store = _GatedLoadStore(
+      {
+        'flutter.deep_dive_info.mbti_ei': 'i',
+        'flutter.deep_dive_info.mbti_sn': 'n',
+        'flutter.deep_dive_info.mbti_tf': 't',
+        'flutter.deep_dive_info.mbti_jp': 'j',
+        'flutter.deep_dive_info.interests': ['health', 'love', 'wealth', 'work'],
+      },
+      loadGate.future,
+    );
+    final originalStore = SharedPreferencesStorePlatform.instance;
+    SharedPreferencesStorePlatform.instance = store;
+    addTearDown(() => SharedPreferencesStorePlatform.instance = originalStore);
+
+    await useTallViewport(tester);
+    await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tester.pump();
+
+    // 로드가 아직 loadGate에 막혀 안 끝난 시점에 곧바로 제출 버튼을 누른다.
+    final button =
+        tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '심층 분석 보기'));
+    button.onPressed!();
+    await tester.pump();
+
+    // 이제서야 로드가 끝나도록 놓아준다 — 수정 전이었다면 이 시점 이전에 이미
+    // null MBTI로 저장이 끝나버렸을 것이다.
+    loadGate.complete();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DeepDiveResultScreen), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('deepDiveResultScrollView')),
+        matching: find.textContaining('INTJ'),
+      ),
+      findsOneWidget,
+    );
+
+    final saved = await DeepDiveInfoStore.load();
+    expect(saved!.mbti?.code, 'INTJ');
+  });
+
   testWidgets('제출하면 선택한 관심사·MBTI가 저장되어 다음에 열 때 이어서 보인다', (tester) async {
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
