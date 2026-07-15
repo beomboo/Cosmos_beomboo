@@ -482,7 +482,9 @@ class _PillarCard extends StatelessWidget {
                 pillar?.label ?? '모름',
                 style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 15),
               ),
-              const SizedBox(height: 6),
+              // 목업(`.pillar-card .label`)은 margin-top:4px인데 지금까지는 6px이었다
+              // (2026-07-16 대조 발견).
+              const SizedBox(height: 4),
               // 목업(`.pillar-card .label`)은 9.5px/font-weight 700인데 지금까지는
               // 11px에 기본 굵기였다(2026-07-07 대조 발견).
               Text(

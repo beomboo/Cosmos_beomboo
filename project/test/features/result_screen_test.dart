@@ -170,6 +170,31 @@ void main() {
     expect(metaText.style!.fontWeight, FontWeight.w600, reason: '메타 라인 fontWeight');
   });
 
+  testWidgets('_PillarCard 한자와 라벨 사이 간격이 목업 값(4px)과 일치한다', (WidgetTester tester) async {
+    // 2026-07-16 목업(.pillar-card .label margin-top:4px) 정밀 대조 수정: 지금까지는
+    // SizedBox(height: 6)이었다 — 이 값 자체를 확인하는 테스트가 지금까지 없었다.
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    // 4기둥 카드 안 한자("무인") 바로 다음 SizedBox가 height:4여야 한다. 여러 SizedBox
+    // 후보가 있으니, "무인" Text의 부모 Column 자식 목록에서 두 번째 위치(한자 Text
+    // 다음)를 확인한다.
+    final column = tester.widget<Column>(
+      find.ancestor(of: findInBody('무인'), matching: find.byType(Column)).first,
+    );
+    final sizedBox = column.children[1] as SizedBox;
+    expect(sizedBox.height, 4, reason: '_PillarCard 한자↔라벨 간격');
+  });
+
   testWidgets('"공유하기" 버튼이 목업대로 accent→metal 그라데이션 배경을 쓴다', (WidgetTester tester) async {
     // 2026-07-06에 이 버튼을 단색 accent에서 accent→metal 그라데이션으로 고쳤는데,
     // 그 뒤로도 실제 그라데이션 색상 값을 확인하는 테스트는 없었다 — 버튼 문구·onPressed
