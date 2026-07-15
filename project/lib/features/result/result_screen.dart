@@ -573,42 +573,50 @@ class _OhaengBarRow extends StatelessWidget {
     // 공용 `ohaengHanja` 상수를 그대로 재사용한다(색상/집계 등 실제 로직은 한글
     // `ohaeng`를 그대로 씀).
     final hanja = ohaengHanja[ohaeng] ?? ohaeng;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 20,
-            child: Text(hanja, style: TextStyle(fontWeight: FontWeight.w800, color: color)),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                value: percent / 100,
-                minHeight: 10,
-                backgroundColor: AppColors.border,
-                valueColor: AlwaysStoppedAnimation(color),
+    return Semantics(
+      // 스크린 리더는 한자(木/火/土/金/水)를 발음할 수 없어, 화면에는 한자를
+      // 보여주면서도 시맨틱스 라벨은 실제로 읽을 수 있는 한글 오행명(목/화/토/금/수)을
+      // 쓴다 — _PillarCard/_CategoryCard와 같은 병합 패턴(2026-07-15 접근성 발견).
+      label: '$ohaeng 비중 ${percent.round()}%',
+      excludeSemantics: true,
+      container: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              child: Text(hanja, style: TextStyle(fontWeight: FontWeight.w800, color: color)),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: percent / 100,
+                  minHeight: 10,
+                  backgroundColor: AppColors.border,
+                  valueColor: AlwaysStoppedAnimation(color),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 40,
-            child: Text(
-              '${percent.round()}%',
-              textAlign: TextAlign.end,
-              // 목업(`.bar-row .pct`)은 10px/font-weight 700인데 지금까지는 12px에
-              // 기본 굵기였다(2026-07-07 대조 발견).
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: AppColors.inkSoft,
+            const SizedBox(width: 8),
+            SizedBox(
+              width: 40,
+              child: Text(
+                '${percent.round()}%',
+                textAlign: TextAlign.end,
+                // 목업(`.bar-row .pct`)은 10px/font-weight 700인데 지금까지는 12px에
+                // 기본 굵기였다(2026-07-07 대조 발견).
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.inkSoft,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

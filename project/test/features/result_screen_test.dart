@@ -532,6 +532,42 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('오행 밸런스 바 각 행도 스크린 리더에 "오행명 비중 %"로 병합된 시맨틱스를 제공한다',
+      (WidgetTester tester) async {
+    // 2026-07-15 접근성 발견: _OhaengBarRow는 화면에는 한자(木/火/土/金/水) 태그를
+    // 보여주는데, 스크린 리더는 한자를 발음할 수 없어 그대로 두면 "목, 화, 토, 금,
+    // 수"라는 실제 뜻을 전혀 알려주지 못했다 — _PillarCard/_CategoryCard와 같은
+    // 병합 패턴으로 한글 오행명 라벨을 확인한다.
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    // ohaengCount 분포 {목:2, 화:0, 토:2, 금:3, 수:1}(총 8) → 25%/0%/25%/38%/13%
+    // (위 "4기둥 명식과 오행 밸런스 퍼센트가..." 테스트와 같은 조합). 화면에는 오행이
+    // 한자(金/水)로 표시되지만, 시맨틱스 라벨은 발음 가능한 한글(금/수)이어야 하므로
+    // 각 행의 유일한 값인 퍼센트 텍스트로 노드를 찾는다(38%는 금, 13%는 수 하나뿐).
+    expect(
+      tester.getSemantics(findInBody('38%')),
+      matchesSemantics(label: '금 비중 38%'),
+    );
+    expect(
+      tester.getSemantics(findInBody('13%')),
+      matchesSemantics(label: '수 비중 13%'),
+    );
+
+    semantics.dispose();
+  });
+
   testWidgets('화면 밖 공유용 카드는 위젯 트리에는 남아있지만 스크린 리더 시맨틱스에서는 제외된다',
       (WidgetTester tester) async {
     // 2026-07-15 접근성 발견: ShareCard는 Positioned(left: -4000)로 화면 밖에 배치돼
