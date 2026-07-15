@@ -204,6 +204,58 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+      '시스템 폰트 확대 배율 2.0~3.0에서도 명식 breakdown 라벨이 실제로 잘리지 않고 '
+      '온전한 크기로 그려진다(FittedBox 구조 존재만이 아니라 실제 렌더링 검증)',
+      (tester) async {
+    // 위 "예외가 나지 않는다" 테스트는 이름 그대로 예외 유무만 본다 — FittedBox를
+    // 걷어내도(RenderParagraph가 폭은 스스로 44px에 맞춰 잘라내고 예외를 던지지
+    // 않으므로) 절대 실패하지 않는 눈속임 테스트였다(재검증 발견). 진짜 구별
+    // 기준은 "글자가 실제로 잘렸는가"다 — FittedBox는 자식에게 무제한 제약을 준 뒤
+    // 그 결과(제약 없는 자연 크기)를 축소 변환으로 보여주므로, 텍스트 위젯 자신의
+    // 로컬 렌더 크기(tester.getSize, 변환 적용 전)는 항상 TextPainter로 직접 계산한
+    // "제약 없는 자연 크기"와 같아야 한다. FittedBox가 없으면 44px 폭 제약 때문에
+    // 자연 크기보다 작게(=잘려서) 렌더링된다.
+    for (final scale in const [2.0, 3.0]) {
+      await useTallViewport(tester);
+      await tester.pumpWidget(
+        MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+          child: MaterialApp(
+            home: ReportScreen(
+              birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      for (final label in const ['년주', '월주', '일주', '시주']) {
+        final finder = find.text(label);
+        final textWidget = tester.widget<Text>(finder);
+        final naturalPainter = TextPainter(
+          text: TextSpan(text: textWidget.data, style: textWidget.style),
+          textDirection: TextDirection.ltr,
+          textScaler: TextScaler.linear(scale),
+        )..layout();
+        final naturalSize = naturalPainter.size;
+        final renderedSize = tester.getSize(finder);
+        expect(
+          renderedSize.width,
+          greaterThanOrEqualTo(naturalSize.width - 0.5),
+          reason: '배율 $scale, "$label" 라벨이 가로로 잘림 — '
+              '실제 렌더 폭=${renderedSize.width}, 제약 없는 자연 폭=${naturalSize.width}',
+        );
+        expect(
+          renderedSize.height,
+          greaterThanOrEqualTo(naturalSize.height - 0.5),
+          reason: '배율 $scale, "$label" 라벨이 세로로 잘림 — '
+              '실제 렌더 높이=${renderedSize.height}, 제약 없는 자연 높이=${naturalSize.height}',
+        );
+      }
+    }
+  });
+
   testWidgets('시간을 모르면 시주 breakdown 행도 하나의 안내 문장으로 병합된다', (tester) async {
     final semantics = tester.ensureSemantics();
     await useTallViewport(tester);
@@ -299,6 +351,68 @@ void main() {
         matching: find.byType(FittedBox),
       );
       expect(fittedBoxAncestor, findsOneWidget, reason: '"$hanja" 배지가 FittedBox로 감싸져 있어야 함');
+    }
+  });
+
+  testWidgets(
+      '시스템 폰트 확대 배율 2.0~3.0에서도 오행 5종 의미 카드 배지 한자가 '
+      '실제로 잘리지 않고 온전한 크기로 그려진다(FittedBox 구조 존재만이 아니라 실제 렌더링 검증)',
+      (tester) async {
+    // 위 FittedBox 구조 존재 확인 테스트의 한계: 배지는 Container(width:40,height:40,
+    // alignment:center)라 가로·세로 모두 최대 40으로 막혀 있어, FittedBox 없이도
+    // RenderParagraph가 가로·세로를 각각 독립적으로 40 이하로 잘라 보고한다 — 즉
+    // "렌더 크기가 40x40 박스 안에 담기는지"만 재면 clipping도 항상 <=40으로 보여
+    // FittedBox 유무와 무관하게 항상 통과해버린다(재검증 중 발견한 진짜 함정).
+    // 진짜 구별 기준은 "글자가 실제로 잘렸는가"다 — FittedBox는 자식에게 무제한
+    // 제약을 준 뒤 그 결과(자연 크기)를 축소 변환으로 보여주므로, 텍스트 위젯 자신의
+    // 로컬 렌더 크기(tester.getSize, 변환 적용 전)는 항상 "제약 없이 계산한 자연
+    // 크기"와 같아야 한다. FittedBox가 없으면 자연 크기가 40을 넘는 배율에서
+    // 로컬 렌더 크기가 자연 크기보다 작게(=잘려서) 나온다.
+    final originalSize = tester.view.physicalSize;
+    final originalRatio = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(400, 9000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalRatio;
+    });
+
+    for (final scale in const [2.0, 3.0]) {
+      await tester.pumpWidget(
+        MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+          child: MaterialApp(
+            home: ReportScreen(
+              birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      for (final hanja in const ['木', '火', '土', '金', '水']) {
+        final finder = find.text(hanja).first;
+        final textWidget = tester.widget<Text>(finder);
+        final naturalPainter = TextPainter(
+          text: TextSpan(text: textWidget.data, style: textWidget.style),
+          textDirection: TextDirection.ltr,
+          textScaler: TextScaler.linear(scale),
+        )..layout();
+        final naturalSize = naturalPainter.size;
+        final renderedSize = tester.getSize(finder);
+        expect(
+          renderedSize.width,
+          greaterThanOrEqualTo(naturalSize.width - 0.5),
+          reason: '배율 $scale, "$hanja" 배지 글자가 가로로 잘림 — '
+              '실제 렌더 폭=${renderedSize.width}, 제약 없는 자연 폭=${naturalSize.width}',
+        );
+        expect(
+          renderedSize.height,
+          greaterThanOrEqualTo(naturalSize.height - 0.5),
+          reason: '배율 $scale, "$hanja" 배지 글자가 세로로 잘림 — '
+              '실제 렌더 높이=${renderedSize.height}, 제약 없는 자연 높이=${naturalSize.height}',
+        );
+      }
     }
   });
 

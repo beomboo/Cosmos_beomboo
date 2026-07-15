@@ -735,6 +735,79 @@ void main() {
     }
   });
 
+  testWidgets(
+      '시스템 폰트 확대 배율 2.0~3.0에서도 오행 한자 태그·퍼센트 텍스트가 실제로 잘리지 않고 '
+      '온전한 크기로 그려진다(FittedBox 구조 존재만이 아니라 실제 렌더링 검증)',
+      (WidgetTester tester) async {
+    // 2026-07-15 접근성 감사 발견 + 재검증(오버나이트 QA): 위 테스트는 FittedBox
+    // "구조가 존재하는지"만 확인한다 — 그런데 FittedBox를 넣고도 fit을 잘못
+    // 쓰거나 엉뚱한 곳에 넣는 실수는 구조 존재 확인만으로는 못 잡는다. 진짜 구별
+    // 기준은 "글자가 실제로 잘렸는가"다 — FittedBox는 자식에게 무제한 제약을 준 뒤
+    // 그 결과(제약 없는 자연 크기)를 축소 변환으로 보여주므로, 텍스트 위젯 자신의
+    // 로컬 렌더 크기(tester.getSize, 변환 적용 전)는 항상 TextPainter로 직접 계산한
+    // "제약 없는 자연 크기"와 같아야 한다. FittedBox가 없으면 고정폭 제약 때문에
+    // 자연 크기보다 작게(=잘려서) 렌더링된다.
+    final originalSize = tester.view.physicalSize;
+    final originalRatio = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(400, 3000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalRatio;
+    });
+
+    for (final scale in const [2.0, 3.0]) {
+      await tester.pumpWidget(
+        MediaQuery(
+          data: MediaQueryData(textScaler: TextScaler.linear(scale)),
+          child: MaterialApp(
+            onGenerateRoute: (settings) => MaterialPageRoute(
+              builder: (_) => const ResultScreen(),
+              settings: RouteSettings(
+                arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+              ),
+            ),
+            initialRoute: '/',
+          ),
+        ),
+      );
+      await tester.pump();
+
+      void expectNotClipped(Finder finder, String label) {
+        final textWidget = tester.widget<Text>(finder);
+        final naturalPainter = TextPainter(
+          text: TextSpan(text: textWidget.data, style: textWidget.style),
+          textDirection: TextDirection.ltr,
+          textScaler: TextScaler.linear(scale),
+        )..layout();
+        final naturalSize = naturalPainter.size;
+        final renderedSize = tester.getSize(finder);
+        expect(
+          renderedSize.width,
+          greaterThanOrEqualTo(naturalSize.width - 0.5),
+          reason: '배율 $scale, "$label"이 가로로 잘림 — '
+              '실제 렌더 폭=${renderedSize.width}, 제약 없는 자연 폭=${naturalSize.width}',
+        );
+        expect(
+          renderedSize.height,
+          greaterThanOrEqualTo(naturalSize.height - 0.5),
+          reason: '배율 $scale, "$label"이 세로로 잘림 — '
+              '실제 렌더 높이=${renderedSize.height}, 제약 없는 자연 높이=${naturalSize.height}',
+        );
+      }
+
+      // 한자 태그(SizedBox width:14).
+      for (final hanja in const ['木', '火', '土', '金', '水']) {
+        expectNotClipped(findInBody(hanja), hanja);
+      }
+
+      // 퍼센트 텍스트(SizedBox width:40).
+      for (final percent in const ['25%', '0%', '38%', '13%']) {
+        expectNotClipped(findInBody(percent).first, percent);
+      }
+    }
+  });
+
   testWidgets('오행 밸런스 바 두께(minHeight)가 목업 값(8px)과 일치한다', (WidgetTester tester) async {
     // 2026-07-15 목업(.bar-track) 정밀 대조 수정: height가 10px에서 8px로 좁아졌다 —
     // 이 값 자체를 확인하는 테스트가 지금까지 없었다.
