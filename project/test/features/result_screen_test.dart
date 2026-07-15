@@ -142,6 +142,34 @@ void main() {
     expect(findInBody('※ 절기 계산 없이 근사치로 계산한 간이 결과예요'), findsOneWidget);
   });
 
+  testWidgets('헤더 타이틀·메타 라인 글자 크기가 목업 값(15.5px/10.5px)과 일치한다', (WidgetTester tester) async {
+    // 2026-07-16 목업(.result-head h2/.result-head .meta) 정밀 대조 수정: 헤더 블록은
+    // 2026-07-05 최초 구현 이후 한 번도 대조된 적이 없어 타이틀이 22px(목업 15.5px),
+    // 메타 라인이 13px에 굵기 미지정(목업 10.5px/font-weight:600)이었다 — 이 값들
+    // 자체를 확인하는 테스트가 지금까지 없었다.
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    final titleText = tester.widget<Text>(findInBody('회원님의 사주팔자 ✨'));
+    expect(titleText.style!.fontSize, 15.5, reason: '헤더 타이틀 fontSize');
+    expect(titleText.style!.fontWeight, FontWeight.w800, reason: '헤더 타이틀 fontWeight');
+
+    final metaText = tester.widget<Text>(
+      findInBodyContaining('1998.08.15'),
+    );
+    expect(metaText.style!.fontSize, 10.5, reason: '메타 라인 fontSize');
+    expect(metaText.style!.fontWeight, FontWeight.w600, reason: '메타 라인 fontWeight');
+  });
+
   testWidgets('"공유하기" 버튼이 목업대로 accent→metal 그라데이션 배경을 쓴다', (WidgetTester tester) async {
     // 2026-07-06에 이 버튼을 단색 accent에서 accent→metal 그라데이션으로 고쳤는데,
     // 그 뒤로도 실제 그라데이션 색상 값을 확인하는 테스트는 없었다 — 버튼 문구·onPressed

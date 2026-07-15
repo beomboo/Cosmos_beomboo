@@ -130,18 +130,29 @@ class _ResultScreenState extends State<ResultScreen> {
               // 아래 18px)을 그대로 쓰는데 지금까지는 24/8/24/32였다(2026-07-07 대조 발견).
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
               children: [
+                // 목업(`.result-head h2`)은 font-size:15.5px인데 지금까지는 22px이었다
+                // (2026-07-16 대조 발견 — 헤더 블록은 2026-07-05 최초 구현 이후 한 번도
+                // 대조된 적이 없었음).
                 Text(
                   '$displayName의 사주팔자 ✨',
                   style: const TextStyle(
-                    fontSize: 22,
+                    fontSize: 15.5,
                     fontWeight: FontWeight.w800,
                     color: AppColors.ink,
                   ),
                 ),
-                const SizedBox(height: 4),
+                // 목업(`.result-head h2`)은 margin:0 0 3px인데 지금까지는 4px이었다
+                // (2026-07-16 대조 발견).
+                const SizedBox(height: 3),
+                // 목업(`.result-head .meta`)은 font-size:10.5px/font-weight:600인데
+                // 지금까지는 13px에 굵기 지정이 아예 없었다(2026-07-16 대조 발견).
                 Text(
                   metaLine,
-                  style: const TextStyle(color: AppColors.inkSoft, fontSize: 13),
+                  style: const TextStyle(
+                    color: AppColors.inkSoft,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 const Text(
