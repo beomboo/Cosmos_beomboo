@@ -164,7 +164,10 @@ class _DeepDiveResultScreenState extends State<DeepDiveResultScreen> {
                           mbtiComment: mbtiComment,
                           items: selectedItems,
                         ),
-                        child: const Text('📸 공유하기'),
+                        child: const Text(
+                          '📸 공유하기',
+                          semanticsLabel: '공유하기',
+                        ),
                       ),
                     ),
                   ),
