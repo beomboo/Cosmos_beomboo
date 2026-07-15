@@ -1,6 +1,7 @@
 import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -520,6 +521,54 @@ void main() {
     final unknownTimeNode = tester.getSemantics(find.text('시간 모름'));
     expect(unknownTimeNode.label, '태어난 시간 모름');
     expect(unknownTimeNode.flagsCollection.isEnabled, Tristate.isFalse);
+
+    semantics.dispose();
+  });
+
+  testWidgets('스크린 리더의 탭 액션(SemanticsAction.tap)을 직접 실행해도 날짜/시간 피커가 실제로 열린다',
+      (tester) async {
+    // 위 라벨 확인 테스트는 outer Semantics의 label/button 플래그만 봤을 뿐, 실제로
+    // 스크린 리더가 보내는 SemanticsAction.tap이 _pickDate/_pickTime까지 이어져 피커를
+    // 여는지는 검증하지 않았다 — tester.tap()은 실제 히트테스트로 안쪽 PastelPillButton의
+    // InkWell을 직접 두드리기 때문에, 바깥 Semantics의 onTap 재선언을 실수로 빠뜨려도
+    // (excludeSemantics만 있고 onTap이 없으면 병합 노드에 탭 액션 자체가 사라져도)
+    // tester.tap() 기반 테스트는 이 회귀를 못 잡는다 — performAction으로 실제 액션 실행까지
+    // 확인한다.
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    final dateNode = tester.getSemantics(find.text('1998.08.15'));
+    expect(dateNode.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+
+    // ignore: deprecated_member_use
+    tester.binding.pipelineOwner.semanticsOwner!.performAction(dateNode.id, SemanticsAction.tap);
+    await tester.pumpAndSettle();
+
+    // showDatePicker가 실제로 열렸다면 "확인" 버튼이 보여야 한다.
+    expect(find.text('확인'), findsOneWidget);
+    await tester.tap(find.text('취소'));
+    await tester.pumpAndSettle();
+
+    final timeNode = tester.getSemantics(find.text('오후 2시 30분'));
+    expect(timeNode.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+
+    // ignore: deprecated_member_use
+    tester.binding.pipelineOwner.semanticsOwner!.performAction(timeNode.id, SemanticsAction.tap);
+    await tester.pumpAndSettle();
+
+    // showTimePicker가 실제로 열렸다면 "확인" 버튼이 보여야 한다.
+    expect(find.text('확인'), findsOneWidget);
+    await tester.tap(find.text('취소'));
+    await tester.pumpAndSettle();
+
+    // "태어난 시간을 몰라요" 체크 후에는 시간 pill의 탭 액션 자체가 사라져야 한다
+    // (enabled:false일 때 스크린 리더 액션으로도 피커가 열리면 안 된다).
+    await tester.tap(find.text('태어난 시간을 몰라요'));
+    await tester.pump();
+
+    final unknownTimeNode = tester.getSemantics(find.text('시간 모름'));
+    expect(unknownTimeNode.getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
 
     semantics.dispose();
   });

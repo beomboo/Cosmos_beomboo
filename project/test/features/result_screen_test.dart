@@ -568,6 +568,57 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('오행 밸런스 바 5행 전부가 서로 라벨이 뒤바뀌어도(콘텐츠 스왑) 잡아낼 수 있다',
+      (WidgetTester tester) async {
+    // 위 테스트는 38%/13%처럼 값이 유일한 두 행만 확인했다 — 목(2)/토(2)처럼 개수가
+    // 같은 오행끼리는 퍼센트 텍스트만으로 찾으면 어느 노드가 어느 오행인지 구분이 안 돼,
+    // 예를 들어 목/토 행의 라벨이 서로 뒤바뀌어도(둘 다 "25%"라 값 자체는 똑같이 보임)
+    // 퍼센트 기반 조회로는 절대 못 잡는다. 화면에 한자(木/火/土/金/水)는 오행별로
+    // 유일하게 하나씩만 나타나므로, 이 한자 Text를 앵커로 삼아 그 행의 병합 시맨틱스
+    // 라벨을 확인하면 값이 겹치는 행도 포함해 5행 전부를 검증할 수 있다.
+    //
+    // 1970-01-02 13시 생일은 ohaengCount {목:0, 화:2, 토:3, 금:1, 수:2}(총 8)로 목≠토라,
+    // 기존 조합(1998-08-15)에서는 못 갈랐던 목/토 쌍을 이 조합으로 보강한다(화/수는 둘 다
+    // 25%로 겹치지만, 한자 앵커 방식은 값이 겹쳐도 상관없다).
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1970, 1, 2), hour: 13, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    const expectedLabelByHanja = {
+      '木': '목 비중 0%',
+      '火': '화 비중 25%',
+      '土': '토 비중 38%',
+      '金': '금 비중 13%',
+      '水': '수 비중 25%',
+    };
+
+    for (final entry in expectedLabelByHanja.entries) {
+      final rowSemantics = find.ancestor(
+        of: findInBody(entry.key),
+        matching: find.byWidgetPredicate(
+          (widget) => widget is Semantics && widget.properties.label?.contains('비중') == true,
+        ),
+      );
+      expect(
+        tester.widget<Semantics>(rowSemantics).properties.label,
+        entry.value,
+        reason: '한자 ${entry.key} 행의 병합 시맨틱스 라벨',
+      );
+    }
+
+    semantics.dispose();
+  });
+
   testWidgets('화면 밖 공유용 카드는 위젯 트리에는 남아있지만 스크린 리더 시맨틱스에서는 제외된다',
       (WidgetTester tester) async {
     // 2026-07-15 접근성 발견: ShareCard는 Positioned(left: -4000)로 화면 밖에 배치돼
