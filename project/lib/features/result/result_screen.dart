@@ -524,10 +524,17 @@ class _OhaengBarRow extends StatelessWidget {
               // width:20(폰트 크기 미지정)이었다(2026-07-15 대조 발견).
               width: 14,
               child: Center(
-                child: Text(
-                  hanja,
-                  style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 11),
-                  textAlign: TextAlign.center,
+                // 시스템 폰트 확대(접근성 큰 텍스트) 시 고정폭 14px 안에서 한자 1글자가
+                // 조용히 잘리는 문제(2026-07-15 접근성 감사 발견) — FittedBox로 감싸
+                // 배율이 커지면 박스 폭에 맞춰 축소되게 한다. 기본 배율(1.0)에서는
+                // 원래 크기(11px) 그대로라 시각적으로 달라지지 않는다.
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    hanja,
+                    style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 11),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             ),
@@ -548,15 +555,22 @@ class _OhaengBarRow extends StatelessWidget {
             const SizedBox(width: 8),
             SizedBox(
               width: 40,
-              child: Text(
-                '${percent.round()}%',
-                textAlign: TextAlign.end,
-                // 목업(`.bar-row .pct`)은 10px/font-weight 700인데 지금까지는 12px에
-                // 기본 굵기였다(2026-07-07 대조 발견).
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.inkSoft,
+              // 고정폭 40px 안의 퍼센트 텍스트도 시스템 폰트 확대 시 조용히 잘릴 수 있어
+              // FittedBox로 감싼다(2026-07-15 접근성 감사 발견) — 기본 배율에서는
+              // 그대로 오른쪽 정렬된 10px 텍스트로 보인다.
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text(
+                  '${percent.round()}%',
+                  textAlign: TextAlign.end,
+                  // 목업(`.bar-row .pct`)은 10px/font-weight 700인데 지금까지는 12px에
+                  // 기본 굵기였다(2026-07-07 대조 발견).
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.inkSoft,
+                  ),
                 ),
               ),
             ),

@@ -696,6 +696,45 @@ void main() {
     }
   });
 
+  testWidgets('오행 밸런스 바의 한자 태그·퍼센트 텍스트가 FittedBox로 감싸져 폰트 확대 시 잘리지 않는다',
+      (WidgetTester tester) async {
+    // 2026-07-15 접근성 감사 발견: 한자 태그(SizedBox width:14)와 퍼센트 텍스트
+    // (SizedBox width:40)는 고정폭인데, 시스템 폰트 확대 배율이 커지면
+    // Container/SizedBox 특성상 예외 없이 조용히 잘린다 — 기존 `takeException()`
+    // 방식 테스트로는 이 조용한 잘림을 못 잡는다. FittedBox로 감싸 고쳤는데, 이
+    // 구조 자체가 남아있는지(누군가 실수로 FittedBox를 걷어내도) 확인한다.
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    for (final hanja in const ['木', '火', '土', '金', '水']) {
+      final fittedBoxAncestor = find.ancestor(
+        of: findInBody(hanja),
+        matching: find.byType(FittedBox),
+      );
+      expect(fittedBoxAncestor, findsOneWidget, reason: '"$hanja" 태그가 FittedBox로 감싸져 있어야 함');
+    }
+
+    // ohaengCount 분포 {목:2, 화:0, 토:2, 금:3, 수:1}(총 8) → 25%/0%/25%/38%/13%
+    // (위 한자 태그 테스트와 같은 조합). 퍼센트 텍스트 5개 전부 FittedBox로
+    // 감싸져 있는지 확인한다.
+    for (final percent in const ['25%', '0%', '38%', '13%']) {
+      final fittedBoxAncestor = find.ancestor(
+        of: findInBody(percent).first,
+        matching: find.byType(FittedBox),
+      );
+      expect(fittedBoxAncestor, findsOneWidget, reason: '"$percent" 텍스트가 FittedBox로 감싸져 있어야 함');
+    }
+  });
+
   testWidgets('오행 밸런스 바 두께(minHeight)가 목업 값(8px)과 일치한다', (WidgetTester tester) async {
     // 2026-07-15 목업(.bar-track) 정밀 대조 수정: height가 10px에서 8px로 좁아졌다 —
     // 이 값 자체를 확인하는 테스트가 지금까지 없었다.
