@@ -491,6 +491,39 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('태어난 날짜/시간 pill은 버튼 역할을 유지한 채 필드 맥락이 붙은 라벨 하나만 읽힌다 (중복 없음)',
+      (tester) async {
+    // 2026-07-15 접근성 발견: PastelPillButton 자체 라벨은 값만("1998.08.15")
+    // 담고 있어, 바로 위 _FieldLabel을 건너뛰고 스크린 리더가 이 버튼에 도달하면
+    // 무슨 필드인지 맥락이 없었다. 바깥 Semantics로 "태어난 날짜/시간" 맥락을
+    // 라벨에 더하되, 단순히 Semantics를 한 겹 더 씌우기만 하면 값이 "태어난 날짜
+    // 1998.08.15\n1998.08.15"처럼 중복으로 이어붙는다는 걸 실측으로 확인했다 —
+    // excludeSemantics + button/onTap 재선언으로 라벨을 완전히 교체하면서도
+    // 버튼 역할·탭 액션은 그대로 유지되는지 검증한다.
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    final dateNode = tester.getSemantics(find.text('1998.08.15'));
+    expect(dateNode.label, '태어난 날짜 1998.08.15');
+    expect(dateNode.flagsCollection.isButton, isTrue);
+
+    final timeNode = tester.getSemantics(find.text('오후 2시 30분'));
+    expect(timeNode.label, '태어난 시간 오후 2시 30분');
+    expect(timeNode.flagsCollection.isButton, isTrue);
+
+    // "태어난 시간을 몰라요"를 체크하면 시간 pill이 탭 불가 상태(enabled: false)로
+    // 바뀌고, 라벨도 "모름"으로 교체돼야 한다.
+    await tester.tap(find.text('태어난 시간을 몰라요'));
+    await tester.pump();
+
+    final unknownTimeNode = tester.getSemantics(find.text('시간 모름'));
+    expect(unknownTimeNode.label, '태어난 시간 모름');
+    expect(unknownTimeNode.flagsCollection.isEnabled, Tristate.isFalse);
+
+    semantics.dispose();
+  });
+
   testWidgets('시스템 글자 크기를 크게(2배) 키워도 RenderFlex overflow가 나지 않는다', (tester) async {
     // result_screen.dart(카테고리 그리드)·share_card.dart에서 실제로 겪었던 고정
     // 높이+큰 글자 조합 RenderFlex overflow가 이 화면에도 있는지 지금까지 확인한
