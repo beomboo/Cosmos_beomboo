@@ -7,6 +7,7 @@ import '../../core/saju/ganzhi.dart';
 import '../../core/storage/birth_info_store.dart';
 import '../../core/storage/deep_dive_info_store.dart';
 import '../../shared/share/share_capture.dart';
+import '../../shared/widgets/gradient_share_button.dart';
 import '../../shared/widgets/offscreen_share_capture.dart';
 import '../../shared/widgets/pastel_card.dart';
 import '../birth_input/birth_info.dart';
@@ -287,44 +288,19 @@ class _ResultScreenState extends State<ResultScreen> {
                 // (2026-07-07 대조 발견).
                 const SizedBox(height: 14),
                 // 목업(docs/mockups/01-pastel-cute.html)의 "공유하기" 버튼(`.share-btn`)은
-                // 다른 CTA 버튼과 달리 단색이 아니라 accent→metal 그라데이션을 쓴다 — 다른
-                // 버튼과 시각적으로 구분되는 이 화면의 유일한 그라데이션 버튼이라 놓치기
-                // 쉬웠음(2026-07-06 대조 발견). ElevatedButton 자체는 backgroundColor를
-                // 못 그라데이션으로 못 받아 Container로 감싸 배경을 대신 그린다.
-                SizedBox(
-                  width: double.infinity,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [AppColors.accent, AppColors.metal],
-                      ),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        elevation: 0,
-                        foregroundColor: AppColors.accentInk,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                      ),
-                      onPressed: () => _handleShare(
-                        birthInfo: birthInfo,
-                        pillars: pillars,
-                        dominant: dominant,
-                        callout: callout,
-                        ohaengCount: ohaengCount,
-                        total: total,
-                        displayName: displayName,
-                        metaLine: metaLine,
-                      ),
-                      child: const Text(
-                        '📸 공유하기',
-                        semanticsLabel: '공유하기',
-                      ),
-                    ),
+                // 다른 CTA 버튼과 달리 단색이 아니라 accent→metal 그라데이션을 쓴다 —
+                // 심층 분석 결과 화면과 완전히 동일한 구조라 공용 위젯(GradientShareButton)으로
+                // 통합했다(2026-07-15 리팩터).
+                GradientShareButton(
+                  onPressed: () => _handleShare(
+                    birthInfo: birthInfo,
+                    pillars: pillars,
+                    dominant: dominant,
+                    callout: callout,
+                    ohaengCount: ohaengCount,
+                    total: total,
+                    displayName: displayName,
+                    metaLine: metaLine,
                   ),
                 ),
                 // 목업(`.share-btn`)은 margin-bottom:8px인데 지금까지는 12px이었다

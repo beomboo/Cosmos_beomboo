@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme/app_colors.dart';
 import '../../core/saju/four_pillars.dart';
 import '../../shared/share/share_capture.dart';
+import '../../shared/widgets/gradient_share_button.dart';
 import '../../shared/widgets/offscreen_share_capture.dart';
 import '../../shared/widgets/pastel_card.dart';
 import '../birth_input/birth_info.dart';
@@ -135,40 +136,15 @@ class _DeepDiveResultScreenState extends State<DeepDiveResultScreen> {
                       ),
                 if (canShare) ...[
                   const SizedBox(height: 4),
-                  // result_screen.dart의 공유 버튼과 같은 이유(목업 `.share-btn`은
-                  // accent→metal 그라데이션을 쓰는 이 화면의 유일한 그라데이션 버튼)로
-                  // 같은 스타일을 그대로 재사용한다.
-                  SizedBox(
-                    width: double.infinity,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [AppColors.accent, AppColors.metal],
-                        ),
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          elevation: 0,
-                          foregroundColor: AppColors.accentInk,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                        ),
-                        onPressed: () => _handleShare(
-                          birthInfo: birthInfo,
-                          displayName: displayName,
-                          mbtiCode: deepDiveInfo.mbti?.code,
-                          mbtiComment: mbtiComment,
-                          items: selectedItems,
-                        ),
-                        child: const Text(
-                          '📸 공유하기',
-                          semanticsLabel: '공유하기',
-                        ),
-                      ),
+                  // result_screen.dart의 공유 버튼과 완전히 동일한 구조라 공용 위젯
+                  // (GradientShareButton)으로 통합했다(2026-07-15 리팩터).
+                  GradientShareButton(
+                    onPressed: () => _handleShare(
+                      birthInfo: birthInfo,
+                      displayName: displayName,
+                      mbtiCode: deepDiveInfo.mbti?.code,
+                      mbtiComment: mbtiComment,
+                      items: selectedItems,
                     ),
                   ),
                 ],
