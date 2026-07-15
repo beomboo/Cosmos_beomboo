@@ -664,6 +664,129 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('오행 밸런스 바 한자 태그가 목업 값대로 SizedBox(width:14)/fontSize 11/가운데 정렬로 렌더링된다',
+      (WidgetTester tester) async {
+    // 2026-07-15 목업(.bar-row .tag) 정밀 대조 수정: 태그 width가 20(폰트 크기
+    // 미지정)에서 14로 좁아지고 fontSize 11이 새로 명시됐다(Center로 감싸 가운데
+    // 정렬도 추가) — 이 값들 자체를 확인하는 테스트가 지금까지 없어서, 누군가 실수로
+    // 원래 값(width 20/fontSize 미지정)으로 되돌려도 잡아낼 방법이 없었다.
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    // 한자 태그를 감싸는 SizedBox(width:14)가 오행 5행 전부에 있는지 확인한다.
+    final tagBoxes = tester.widgetList<SizedBox>(
+      find.byWidgetPredicate((widget) => widget is SizedBox && widget.width == 14),
+    );
+    expect(tagBoxes.length, 5);
+
+    // 한자 태그 자체(가운데 정렬 + fontSize 11)도 5개(목/화/토/금/수) 전부 확인한다.
+    for (final hanja in const ['木', '火', '土', '金', '水']) {
+      final tagText = tester.widget<Text>(findInBody(hanja));
+      expect(tagText.style!.fontSize, 11, reason: '$hanja 태그 fontSize');
+      expect(tagText.textAlign, TextAlign.center, reason: '$hanja 태그 textAlign');
+    }
+  });
+
+  testWidgets('오행 밸런스 바 두께(minHeight)가 목업 값(8px)과 일치한다', (WidgetTester tester) async {
+    // 2026-07-15 목업(.bar-track) 정밀 대조 수정: height가 10px에서 8px로 좁아졌다 —
+    // 이 값 자체를 확인하는 테스트가 지금까지 없었다.
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    // 화면 밖 공유용 ShareCard도 자체 오행 바(minHeight 7, 이 화면 값과 다름)를
+    // 가지고 있어(share_card.dart), 범위를 resultScrollView 안으로 좁히지 않으면
+    // 서로 다른 값이 섞여 개수·값 검증이 어긋난다.
+    final bars = tester.widgetList<LinearProgressIndicator>(
+      find.descendant(
+        of: find.byKey(const Key('resultScrollView')),
+        matching: find.byType(LinearProgressIndicator),
+      ),
+    );
+    expect(bars.length, 5);
+    for (final bar in bars) {
+      expect(bar.minHeight, 8);
+    }
+  });
+
+  testWidgets('오행 밸런스 바 행 사이 간격이 목업 값(margin-bottom 5px, padding vertical 2.5)과 일치한다',
+      (WidgetTester tester) async {
+    // 2026-07-15 목업(.bar-row) 정밀 대조 수정: margin-bottom:5px를 위아래 대칭
+    // 패딩으로 구현하다 보니 vertical:4(행 사이 실제 간격 8px)였던 걸 vertical:2.5
+    // (행 사이 실제 간격 5px)로 좁혔다 — 이 값 자체를 확인하는 테스트가 지금까지 없었다.
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    final rowPaddings = tester.widgetList<Padding>(
+      find.byWidgetPredicate(
+        (widget) => widget is Padding && widget.padding == const EdgeInsets.symmetric(vertical: 2.5),
+      ),
+    );
+    expect(rowPaddings.length, 5);
+  });
+
+  testWidgets('"오행 밸런스"/"오늘 궁금한 것부터" 소제목이 목업 eyebrow 라벨 톤(fontSize 11/inkSoft)으로 렌더링된다',
+      (WidgetTester tester) async {
+    // 2026-07-15 목업(.bars h3/.cards h3) 정밀 대조 수정: 두 소제목이 본문 헤드라인만큼
+    // 진한 fontSize 15/AppColors.ink였던 걸 목업 스펙인 fontSize 11/AppColors.inkSoft로
+    // 바꿨다 — 이 값 자체를 확인하는 테스트가 지금까지 없었다. "오늘 궁금한 것부터"는
+    // 화면 아래쪽이라 기본 뷰포트로는 지연 빌드돼 못 찾으므로 뷰포트를 세로로 키운다.
+    final originalSize = tester.view.physicalSize;
+    final originalRatio = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(400, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalRatio;
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    final balanceTitle = tester.widget<Text>(findInBody('오행 밸런스'));
+    expect(balanceTitle.style!.fontSize, 11, reason: '오행 밸런스 소제목 fontSize');
+    expect(balanceTitle.style!.color, AppColors.inkSoft, reason: '오행 밸런스 소제목 color');
+
+    final cardsTitle = tester.widget<Text>(findInBody('오늘 궁금한 것부터'));
+    expect(cardsTitle.style!.fontSize, 11, reason: '오늘 궁금한 것부터 소제목 fontSize');
+    expect(cardsTitle.style!.color, AppColors.inkSoft, reason: '오늘 궁금한 것부터 소제목 color');
+  });
+
   testWidgets('화면 밖 공유용 카드는 위젯 트리에는 남아있지만 스크린 리더 시맨틱스에서는 제외된다',
       (WidgetTester tester) async {
     // 2026-07-15 접근성 발견: ShareCard는 Positioned(left: -4000)로 화면 밖에 배치돼
