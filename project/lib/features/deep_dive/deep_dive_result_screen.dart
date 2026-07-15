@@ -1,12 +1,9 @@
-import 'dart:typed_data';
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../app/theme/app_colors.dart';
 import '../../core/saju/four_pillars.dart';
+import '../../shared/share/share_capture.dart';
+import '../../shared/widgets/offscreen_share_capture.dart';
 import '../../shared/widgets/pastel_card.dart';
 import '../birth_input/birth_info.dart';
 import '../result/meta_line.dart';
@@ -175,26 +172,17 @@ class _DeepDiveResultScreenState extends State<DeepDiveResultScreen> {
               ],
             ),
             if (canShare)
-              // 화면 밖(왼쪽 멀리)에 배치해 사용자 눈에는 보이지 않지만,
-              // RepaintBoundary는 여전히 레이아웃·페인트되므로 캡처는 가능하다.
-              // Positioned는 페인트·히트테스트만 제외할 뿐 시맨틱스 트리에는 그대로
-              // 남아있어, 스크린 리더가 방금 읽은 내용을 라벨 없이 중복해서 다시
-              // 읽어주는 문제가 있었다 — ExcludeSemantics로 이 서브트리 전체를
-              // 시맨틱스에서 제외한다(2026-07-15 접근성 발견, result_screen.dart와 동일 패턴).
-              Positioned(
-                left: -4000,
-                top: 0,
-                child: ExcludeSemantics(
-                  child: RepaintBoundary(
-                    key: _shareCardKey,
-                    child: DeepDiveShareCard(
-                      displayName: displayName,
-                      metaLine: metaLine,
-                      mbtiCode: deepDiveInfo.mbti?.code,
-                      mbtiComment: mbtiComment,
-                      items: selectedItems,
-                    ),
-                  ),
+              // 오프스크린 캡처 래퍼(Positioned+ExcludeSemantics+RepaintBoundary)는
+              // `shared/widgets/offscreen_share_capture.dart`의 공용 위젯으로
+              // 옮겨졌다(result_screen.dart와 동일 패턴).
+              OffscreenShareCapture(
+                repaintBoundaryKey: _shareCardKey,
+                child: DeepDiveShareCard(
+                  displayName: displayName,
+                  metaLine: metaLine,
+                  mbtiCode: deepDiveInfo.mbti?.code,
+                  mbtiComment: mbtiComment,
+                  items: selectedItems,
                 ),
               ),
           ],
@@ -203,9 +191,9 @@ class _DeepDiveResultScreenState extends State<DeepDiveResultScreen> {
     );
   }
 
-  /// 공유용 카드를 이미지로 캡처해 텍스트와 함께 공유한다. result_screen.dart의
-  /// `_handleShare`와 같은 패턴 — 캡처가 실패하면(레이아웃 전이거나 플랫폼 문제 등)
-  /// 텍스트만이라도 공유한다.
+  /// 공유용 카드를 이미지로 캡처해 텍스트와 함께 공유한다. 캡처/공유/실패 안내 로직
+  /// 자체는 `shared/share/share_capture.dart`의 공용 함수(`shareCapturedCard`, result_screen.dart와
+  /// 공유)로 옮겨졌고, 이 화면은 텍스트 빌드(`buildDeepDiveShareText`)와 공유 메타만 맡는다.
   Future<void> _handleShare({
     required BirthInfo birthInfo,
     required String displayName,
@@ -220,50 +208,12 @@ class _DeepDiveResultScreenState extends State<DeepDiveResultScreen> {
       items: items,
     );
 
-    final box = context.findRenderObject() as RenderBox?;
-    final sharePositionOrigin =
-        box != null ? (box.localToGlobal(Offset.zero) & box.size) : null;
-
-    Uint8List? imageBytes;
-    try {
-      final boundary =
-          _shareCardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary != null && !boundary.debugNeedsPaint) {
-        final image = await boundary.toImage(pixelRatio: 3);
-        final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-        imageBytes = byteData?.buffer.asUint8List();
-      }
-    } catch (_) {
-      // 캡처 실패 시 아래에서 텍스트만 공유한다.
-      imageBytes = null;
-    }
-
-    // 공유 시트 자체가 실패하는 경우(플랫폼 채널 오류 등)에도 버튼이 아무 반응 없이
-    // 조용히 실패하는 것처럼 보이지 않도록, 실패를 사용자에게 스낵바로 알려준다.
-    try {
-      if (imageBytes != null) {
-        await SharePlus.instance.share(
-          ShareParams(
-            text: text,
-            subject: '나의 심층 분석',
-            files: [XFile.fromData(imageBytes, mimeType: 'image/png', name: 'deep_dive_result.png')],
-            sharePositionOrigin: sharePositionOrigin,
-          ),
-        );
-      } else {
-        await SharePlus.instance.share(
-          ShareParams(
-            text: text,
-            subject: '나의 심층 분석',
-            sharePositionOrigin: sharePositionOrigin,
-          ),
-        );
-      }
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('공유하는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.')),
-      );
-    }
+    await shareCapturedCard(
+      context: context,
+      repaintBoundaryKey: _shareCardKey,
+      text: text,
+      subject: '나의 심층 분석',
+      fileName: 'deep_dive_result.png',
+    );
   }
 }
