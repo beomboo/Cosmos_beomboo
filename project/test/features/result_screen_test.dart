@@ -524,6 +524,19 @@ void main() {
       tester.getSemantics(findInBody('무인')),
       matchesSemantics(label: '년주 무인'),
     );
+    // 2026-07-15 발견한 콘텐츠 스왑 취약점 보강: 년주·시주 두 개만 값으로 고정돼
+    // 있어 _PillarCard 4번 호출(년/월/일/시) 중 가운데 두 줄(월주↔일주)의 pillars
+    // 인자가 실수로 뒤바뀌어도(예: 월주 카드에 pillars.day, 일주 카드에 pillars.month)
+    // 양 끝(년주·시주)만 맞으면 이 테스트가 그대로 통과해버렸다 — 월주 경신,
+    // 일주 갑자도 값으로 고정해 스왑 시 반드시 실패하도록 한다.
+    expect(
+      tester.getSemantics(findInBody('경신')),
+      matchesSemantics(label: '월주 경신'),
+    );
+    expect(
+      tester.getSemantics(findInBody('갑자')),
+      matchesSemantics(label: '일주 갑자'),
+    );
     expect(
       tester.getSemantics(findInBody('신미')),
       matchesSemantics(label: '시주 신미'),

@@ -143,6 +143,20 @@ void main() {
       matchesSemantics(label: '년주. 천간 무, 오행 토. 지지 인, 오행 목.'),
     );
 
+    // 2026-07-15 발견한 콘텐츠 스왑 취약점 보강: 년주 한 행만 값으로 고정돼 있어
+    // _pillarRow 4번 호출(년/월/일/시) 중 월주↔일주 두 줄의 pillars 인자가 실수로
+    // 뒤바뀌어도(예: 월주 줄에 pillars.day, 일주 줄에 pillars.month) 년주·시주만
+    // 맞으면 이 테스트가 그대로 통과해버렸다 — 월주 경신(庚申), 일주 갑자(甲子)도
+    // 값으로 고정해 스왑 시 반드시 실패하도록 한다.
+    expect(
+      tester.getSemantics(find.text('경')),
+      matchesSemantics(label: '월주. 천간 경, 오행 금. 지지 신, 오행 금.'),
+    );
+    expect(
+      tester.getSemantics(find.text('갑')),
+      matchesSemantics(label: '일주. 천간 갑, 오행 목. 지지 자, 오행 수.'),
+    );
+
     semantics.dispose();
   });
 

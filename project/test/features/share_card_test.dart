@@ -136,6 +136,53 @@ void main() {
     expect(tester.widget<Text>(find.text('신미')).style!.color, AppColors.ohaengTextColors['금']);
   });
 
+  testWidgets('4기둥 칩은 라벨과 값이 서로 뒤바뀌어도 잡아낼 수 있도록 같은 칩 안에서 짝지어 검증된다',
+      (tester) async {
+    // 2026-07-15 발견한 콘텐츠 스왑 취약점: 위 "4기둥 칩의 한자가 실제 계산값과 정확히
+    // 일치한다" 테스트는 "무인"/"경신"/"갑자"/"신미"가 화면 어딘가에 하나씩 존재하는지만
+    // 확인한다 — `_pillarChip('년주', ...)`를 4번 호출하는 코드에서 예를 들어 월주 줄에
+    // pillars.day를, 일주 줄에 pillars.month를 실수로 바꿔 넣어도(라벨 텍스트 자체는
+    // 그대로 "월주"/"일주") 네 값 모두 여전히 화면에 하나씩 존재하므로 findsOneWidget
+    // 4개가 그대로 통과해버린다. 라벨("월주")과 값("경신")이 같은 칩(Container) 안에
+    // 함께 있는지를 find.ancestor로 스코프를 좁혀 확인해 이런 스왑을 잡아낸다.
+    final pillars = calculateFourPillars(birthDate: DateTime(1998, 8, 15), birthHour: 14);
+    final ohaengCount = pillars.ohaengCount;
+    final total = ohaengCount.values.fold<int>(0, (a, b) => a + b);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShareCard(
+            displayName: '민지',
+            metaLine: '1998.08.15 · 오후 2시生 · 양력',
+            pillars: pillars,
+            dominant: '금',
+            calloutHanja: '金',
+            calloutEmoji: '✨',
+            calloutText: '원칙적이고 결단력 있어요',
+            ohaengCount: ohaengCount,
+            total: total,
+          ),
+        ),
+      ),
+    );
+
+    // 라벨 Text를 찾아 그 칩(가장 가까운 Container) 안에서 값 Text를 찾는다.
+    void expectChipPairs(String label, String hanja) {
+      final chip = find.ancestor(of: find.text(label), matching: find.byType(Container)).first;
+      expect(
+        find.descendant(of: chip, matching: find.text(hanja)),
+        findsOneWidget,
+        reason: '$label 칩 안에 $hanja 값이 함께 있어야 한다',
+      );
+    }
+
+    expectChipPairs('년주', '무인');
+    expectChipPairs('월주', '경신');
+    expectChipPairs('일주', '갑자');
+    expectChipPairs('시주', '신미');
+  });
+
   testWidgets('콜아웃 박스가 우세 오행 색으로 실제로 물든다(고정 accentSoft가 아니라)', (tester) async {
     // 2026-07-06에 result_screen.dart의 콜아웃 박스 배경색을 accentSoft 고정에서
     // ohaengSoftColors[dominant]로 고치면서 result_screen_test.dart엔 실제 색상 값을
