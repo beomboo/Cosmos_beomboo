@@ -186,7 +186,16 @@ class _PillarBreakdownTable extends StatelessWidget {
         container: true,
         child: Row(
           children: [
-            SizedBox(width: 44, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.inkSoft))),
+            SizedBox(
+              width: 44,
+              // 고정폭 44px 라벨("년주"/"월주"/"일주"/"시주")도 시스템 폰트 확대 시
+              // 조용히 잘릴 수 있어 FittedBox로 감싼다(2026-07-15 접근성 감사 발견) —
+              // 기본 배율에서는 원래 크기 그대로다.
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.inkSoft)),
+              ),
+            ),
             const Expanded(
               child: Text(
                 '태어난 시간을 몰라 시주는 계산하지 않았어요. 태어난 시간을 알면 더 정확한 결과를 볼 수 있어요',
@@ -210,7 +219,15 @@ class _PillarBreakdownTable extends StatelessWidget {
       container: true,
       child: Row(
         children: [
-          SizedBox(width: 44, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink))),
+          SizedBox(
+            width: 44,
+            // 위 null-분기(시주 없음 안내)와 같은 이유 — FittedBox로 감싸 폰트 확대 시
+            // 조용히 잘리지 않게 한다.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+            ),
+          ),
           Expanded(child: _charCell('천간', pillar.stem, stemOhaeng(pillar.stemIndex))),
           const SizedBox(width: 8),
           Expanded(child: _charCell('지지', pillar.branch, branchOhaeng(pillar.branchIndex))),
@@ -268,7 +285,12 @@ class _OhaengMeaningCard extends StatelessWidget {
                   color: AppColors.ohaengSoftColors[ohaeng],
                   shape: BoxShape.circle,
                 ),
-                child: Text(meaning.$1, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 16)),
+                // 40x40 원형 배지 안 한자 1글자도 시스템 폰트 확대 시 원 밖으로 잘릴 수
+                // 있어 FittedBox로 감싼다(2026-07-15 접근성 감사, 선택 보강).
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(meaning.$1, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 16)),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

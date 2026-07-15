@@ -160,6 +160,50 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('명식 breakdown 행 라벨(년주/월주/일주/시주)이 FittedBox로 감싸져 폰트 확대 시 잘리지 않는다',
+      (tester) async {
+    // 2026-07-15 접근성 감사 발견: SizedBox(width: 44) 고정폭 라벨은 시스템 폰트
+    // 확대 배율이 커지면 Container/SizedBox 특성상 예외 없이 조용히 잘린다 —
+    // 기존 `takeException()` 방식 테스트로는 이 조용한 잘림을 못 잡는다. FittedBox로
+    // 감싸 배율이 커져도 44px 폭 안에서 스스로 축소되게 고쳤는데, 이 구조 자체가
+    // 남아있는지(누군가 실수로 FittedBox를 걷어내도) 확인한다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportScreen(
+          birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+        ),
+      ),
+    );
+
+    for (final label in const ['년주', '월주', '일주', '시주']) {
+      final fittedBoxAncestor = find.ancestor(
+        of: find.text(label),
+        matching: find.byType(FittedBox),
+      );
+      expect(fittedBoxAncestor, findsOneWidget, reason: '"$label" 라벨이 FittedBox로 감싸져 있어야 함');
+    }
+  });
+
+  testWidgets('시스템 글자 크기를 크게(3배) 키워도 명식 breakdown 표에서 예외가 나지 않는다', (tester) async {
+    // FittedBox로 감싼 라벨(위 테스트 참고)이 실제로 큰 배율에서도 예외 없이
+    // 렌더링되는지 함께 확인한다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(
+      MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(3.0)),
+        child: MaterialApp(
+          home: ReportScreen(
+            birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('시간을 모르면 시주 breakdown 행도 하나의 안내 문장으로 병합된다', (tester) async {
     final semantics = tester.ensureSemantics();
     await useTallViewport(tester);
@@ -232,6 +276,29 @@ void main() {
         AppColors.ohaengTextColors[entry.value],
         reason: '${entry.key} 배지 글자색',
       );
+    }
+  });
+
+  testWidgets('오행 5종 의미 카드의 원형 배지 한자가 FittedBox로 감싸져 폰트 확대 시 잘리지 않는다',
+      (tester) async {
+    // 2026-07-15 접근성 감사(선택 보강) — 40x40 원형 배지 안 한자 1글자도 시스템
+    // 폰트 확대 시 조용히 잘릴 수 있어 FittedBox로 감쌌다. 위 배경/글자색 테스트와
+    // 달리 이 구조(FittedBox 존재) 자체를 확인한다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportScreen(
+          birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+        ),
+      ),
+    );
+
+    for (final hanja in const ['木', '火', '土', '金', '水']) {
+      final fittedBoxAncestor = find.ancestor(
+        of: find.text(hanja).first,
+        matching: find.byType(FittedBox),
+      );
+      expect(fittedBoxAncestor, findsOneWidget, reason: '"$hanja" 배지가 FittedBox로 감싸져 있어야 함');
     }
   });
 
