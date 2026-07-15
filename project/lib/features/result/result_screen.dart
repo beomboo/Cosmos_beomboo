@@ -316,7 +316,10 @@ class _ResultScreenState extends State<ResultScreen> {
                         displayName: displayName,
                         metaLine: metaLine,
                       ),
-                      child: const Text('📸 공유하기'),
+                      child: const Text(
+                        '📸 공유하기',
+                        semanticsLabel: '공유하기',
+                      ),
                     ),
                   ),
                 ),
