@@ -192,19 +192,13 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
             const SizedBox(height: 8),
             // PastelPillButton 자체 라벨은 버튼에 표시된 값("1998.08.15")뿐이라, 스크린
             // 리더가 바로 위 _FieldLabel("태어난 날짜")을 건너뛰고 이 버튼에 도달하면
-            // 무슨 값인지 맥락이 없다 — 위젯 자체는 그대로 두고 바깥에서 필드 맥락을
-            // 더한 라벨로 교체한다. 단순히 Semantics를 한 겹 더 씌우기만 하면 label이
-            // override가 아니라 concat(연결)돼 값이 중복으로 다시 읽힌다(실측 확인) —
-            // excludeSemantics로 안쪽 PastelPillButton 자체 시맨틱스를 걷어내는 대신,
-            // button/onTap을 여기서 그대로 다시 선언해 버튼 역할·탭 액션은 유지하면서
-            // 라벨만 깨끗하게 교체한다(2026-07-15 접근성 발견).
-            Semantics(
-              container: true,
-              excludeSemantics: true,
-              button: true,
-              label: '태어난 날짜 $_formattedDate',
+            // 무슨 값인지 맥락이 없다 — `fieldLabel`을 지정하면 위젯 내부에서 필드
+            // 맥락을 더한 라벨('태어난 날짜 1998.08.15')로 조합해준다(2026-07-15 접근성
+            // 발견, 이후 위젯 내부로 이동해 중복 제거·2026-07-15).
+            PastelPillButton(
+              label: _formattedDate,
+              fieldLabel: '태어난 날짜',
               onTap: _pickDate,
-              child: PastelPillButton(label: _formattedDate, onTap: _pickDate),
             ),
             const SizedBox(height: 14),
             PastelToggleRow<_Calendar>(
@@ -220,23 +214,15 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
             _FieldLabel('태어난 시간'),
             const SizedBox(height: 8),
             // 날짜 pill과 같은 이유(2026-07-15 접근성 발견) — 필드 맥락("태어난 시간")을
-            // 바깥 Semantics 라벨에 더해준다. 단순히 Semantics를 한 겹 더 씌우기만
-            // 하면 label이 override가 아니라 concat(연결)돼 "태어난 시간 오후 2시
-            // 30분\n오후 2시 30분"처럼 같은 값이 중복으로 다시 읽힌다(실측 확인) —
-            // excludeSemantics로 안쪽 PastelPillButton 자체 시맨틱스를 걷어내는 대신,
-            // button/enabled/onTap을 여기서 그대로 다시 선언해 버튼 역할·탭 액션은
-            // 유지하면서 라벨만 깨끗하게 교체한다.
-            Semantics(
-              container: true,
-              excludeSemantics: true,
-              button: true,
-              enabled: !_timeUnknown,
-              label: '태어난 시간 ${_timeUnknown ? "모름" : _formattedTime}',
+            // `fieldLabel`로 더해준다. onTap이 null이면 PastelPillButton이 알아서
+            // enabled:false로 표시하므로 여기서 따로 enabled를 지정할 필요가 없다.
+            // 시간 모름 상태에서는 버튼에 "시간 모름"이 보이지만, "태어난 시간 시간
+            // 모름"처럼 "시간"이 중복되지 않도록 `semanticValue`로 "모름"만 조합한다.
+            PastelPillButton(
+              label: _timeUnknown ? '시간 모름' : _formattedTime,
+              fieldLabel: '태어난 시간',
+              semanticValue: _timeUnknown ? '모름' : _formattedTime,
               onTap: _timeUnknown ? null : _pickTime,
-              child: PastelPillButton(
-                label: _timeUnknown ? '시간 모름' : _formattedTime,
-                onTap: _timeUnknown ? null : _pickTime,
-              ),
             ),
             // 자시 경계 안내 — 시간을 모른다고 체크했으면 어차피 시주를 계산하지 않으므로
             // 이 안내는 의미가 없어 숨긴다. "자시" 같은 한자어 대신 순화된 표현으로 안내.
