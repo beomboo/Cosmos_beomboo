@@ -177,17 +177,23 @@ class _DeepDiveResultScreenState extends State<DeepDiveResultScreen> {
             if (canShare)
               // 화면 밖(왼쪽 멀리)에 배치해 사용자 눈에는 보이지 않지만,
               // RepaintBoundary는 여전히 레이아웃·페인트되므로 캡처는 가능하다.
+              // Positioned는 페인트·히트테스트만 제외할 뿐 시맨틱스 트리에는 그대로
+              // 남아있어, 스크린 리더가 방금 읽은 내용을 라벨 없이 중복해서 다시
+              // 읽어주는 문제가 있었다 — ExcludeSemantics로 이 서브트리 전체를
+              // 시맨틱스에서 제외한다(2026-07-15 접근성 발견, result_screen.dart와 동일 패턴).
               Positioned(
                 left: -4000,
                 top: 0,
-                child: RepaintBoundary(
-                  key: _shareCardKey,
-                  child: DeepDiveShareCard(
-                    displayName: displayName,
-                    metaLine: metaLine,
-                    mbtiCode: deepDiveInfo.mbti?.code,
-                    mbtiComment: mbtiComment,
-                    items: selectedItems,
+                child: ExcludeSemantics(
+                  child: RepaintBoundary(
+                    key: _shareCardKey,
+                    child: DeepDiveShareCard(
+                      displayName: displayName,
+                      metaLine: metaLine,
+                      mbtiCode: deepDiveInfo.mbti?.code,
+                      mbtiComment: mbtiComment,
+                      items: selectedItems,
+                    ),
                   ),
                 ),
               ),

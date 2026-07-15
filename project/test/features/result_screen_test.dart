@@ -532,6 +532,34 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('화면 밖 공유용 카드는 위젯 트리에는 남아있지만 스크린 리더 시맨틱스에서는 제외된다',
+      (WidgetTester tester) async {
+    // 2026-07-15 접근성 발견: ShareCard는 Positioned(left: -4000)로 화면 밖에 배치돼
+    // 페인트·히트테스트만 제외될 뿐, ExcludeSemantics로 감싸지 않으면 시맨틱스
+    // 트리에는 그대로 남아 스크린 리더가 방금 읽은 본문 내용을 라벨 없이 중복해서
+    // 다시 읽어준다 — ShareCard 전용 워터마크 문구("#사주랑 #사주팔자 #오행")로
+    // 위젯 자체는 여전히 존재하되(오프스크린 캡처를 위해 레이아웃·페인트는 필요)
+    // 시맨틱스 트리에서는 완전히 빠졌는지 확인한다.
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    expect(find.text('#사주랑  #사주팔자  #오행'), findsOneWidget);
+    expect(find.bySemanticsLabel('#사주랑  #사주팔자  #오행'), findsNothing);
+
+    semantics.dispose();
+  });
+
   testWidgets('카테고리 카드(연애·재물·건강·성격)도 스크린 리더에 "제목. 설명"으로 병합된 시맨틱스를 제공한다',
       (WidgetTester tester) async {
     // _CategoryCard는 _PillarCard와 같은 파일에 있지만 지금까지 병합 시맨틱스가

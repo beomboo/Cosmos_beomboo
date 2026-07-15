@@ -106,6 +106,32 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('화면 밖 공유용 카드는 위젯 트리에는 남아있지만 스크린 리더 시맨틱스에서는 제외된다',
+      (tester) async {
+    // 2026-07-15 접근성 발견: DeepDiveShareCard는 result_screen.dart의 ShareCard와
+    // 같은 이유로 Positioned(left: -4000)에 있어, ExcludeSemantics 없이는 시맨틱스
+    // 트리에 그대로 남아 스크린 리더가 방금 읽은 본문을 라벨 없이 중복해서 다시
+    // 읽어준다 — DeepDiveShareCard 전용 워터마크 문구로 위젯은 여전히 존재하되
+    // (오프스크린 캡처를 위해 레이아웃·페인트는 필요) 시맨틱스 트리에서는 완전히
+    // 빠졌는지 확인한다.
+    await useTallViewport(tester);
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DeepDiveResultScreen(
+          birthInfo: birthInfo,
+          deepDiveInfo: const DeepDiveInfo(interests: {Interest.love}),
+        ),
+      ),
+    );
+
+    expect(find.text('#사주랑  #심층분석  #MBTI'), findsOneWidget);
+    expect(find.bySemanticsLabel('#사주랑  #심층분석  #MBTI'), findsNothing);
+
+    semantics.dispose();
+  });
+
   testWidgets('관심사를 하나도 안 고르면 안내 문구가 뜨고 카드는 하나도 없다', (tester) async {
     await useTallViewport(tester);
     await tester.pumpWidget(
