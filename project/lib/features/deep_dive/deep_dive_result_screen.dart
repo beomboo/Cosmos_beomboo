@@ -64,9 +64,16 @@ class _DeepDiveResultScreenState extends State<DeepDiveResultScreen> {
               // 하단에 별도 CTA가 없어 리스트 끝 여백을 다른 화면(18)보다 조금 더 둔다.
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
               children: [
-                Text(
-                  '$displayName의 심층 분석 ✨',
-                  style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 20),
+                // TalkBack/VoiceOver의 헤딩 단위 탐색(제목만 골라 건너뛰기)을 지원하려면
+                // 섹션 제목에 header 플래그가 필요하다 — 지금까지는 앱 전체에 이 플래그가
+                // 한 곳도 없었다(2026-07-16 접근성 감사 발견). 자식 Text가 만드는 자동
+                // 라벨을 그대로 병합해 쓰므로 별도 label은 지정하지 않는다.
+                Semantics(
+                  header: true,
+                  child: Text(
+                    '$displayName의 심층 분석 ✨',
+                    style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 20),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
