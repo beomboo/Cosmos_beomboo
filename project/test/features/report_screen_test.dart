@@ -471,6 +471,28 @@ void main() {
     expect(find.text('상세 리포트'), findsOneWidget);
   });
 
+  testWidgets('"MBTI·관심사로 심층 분석 받기 →" 버튼의 스크린 리더 라벨은 화살표 없이 읽힌다', (tester) async {
+    // 2026-07-15 접근성 정리: 화살표(→)는 시각적 장식일 뿐인데 semanticsLabel 없이
+    // Text 그대로 두면 스크린 리더가 "MBTI·관심사로 심층 분석 받기 화살표"처럼 장식
+    // 기호까지 그대로 읽어준다 — semanticsLabel로 라벨을 깨끗하게 교체했는지 확인한다.
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportScreen(
+          birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getSemantics(find.text('MBTI·관심사로 심층 분석 받기 →')).label,
+      'MBTI·관심사로 심층 분석 받기',
+    );
+
+    semantics.dispose();
+  });
+
   testWidgets('"MBTI·관심사로 심층 분석 받기"를 누르면 심층 분석 입력 화면으로 이동한다', (tester) async {
     // 2026-07-07: 결과 화면에 있던 이 진입점을 상세 리포트 화면으로 옮겼다(사용자 요청).
     await useTallViewport(tester);

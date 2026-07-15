@@ -71,6 +71,19 @@ void main() {
     expect(find.text('사주 보러가기 🔮'), findsOneWidget);
   });
 
+  testWidgets('"사주 보러가기 🔮" 버튼의 스크린 리더 라벨은 이모지 없이 "사주 보러가기"만 읽힌다', (tester) async {
+    // 2026-07-15 접근성 정리: 🔮 이모지는 시각적 장식일 뿐인데 semanticsLabel 없이
+    // Text 그대로 두면 스크린 리더가 이모지를 유니코드 이름("수정 구슬")으로 읽어
+    // 혼란을 준다 — semanticsLabel: '사주 보러가기'로 라벨을 깨끗하게 교체했는지 확인한다.
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    expect(tester.getSemantics(find.text('사주 보러가기 🔮')).label, '사주 보러가기');
+
+    semantics.dispose();
+  });
+
   testWidgets('"태어난 시간을 몰라요" 체크 시 시간 버튼이 "시간 모름"으로 바뀐다', (tester) async {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());

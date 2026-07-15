@@ -179,6 +179,38 @@ void main() {
     expect(gradient.colors, [AppColors.accent, AppColors.metal]);
   });
 
+  testWidgets('"📸 공유하기" 버튼의 스크린 리더 라벨은 이모지 없이 "공유하기"만 읽힌다', (WidgetTester tester) async {
+    // 2026-07-15 접근성 정리: 📸 이모지는 시각적 장식일 뿐인데 semanticsLabel 없이
+    // Text 그대로 두면 스크린 리더가 이모지를 유니코드 이름으로 읽어 혼란을 준다 —
+    // semanticsLabel: '공유하기'로 라벨을 깨끗하게 교체했는지 확인한다. 버튼이 긴
+    // 리스트 아래쪽에 있어(기본 뷰포트로는 지연 빌드돼 못 찾음) 뷰포트를 세로로 키운다.
+    final originalSize = tester.view.physicalSize;
+    final originalRatio = tester.view.devicePixelRatio;
+    tester.view.physicalSize = const Size(400, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.physicalSize = originalSize;
+      tester.view.devicePixelRatio = originalRatio;
+    });
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    expect(tester.getSemantics(find.text('📸 공유하기')).label, '공유하기');
+
+    semantics.dispose();
+  });
+
   testWidgets('4기둥 명식과 오행 밸런스 퍼센트가 실제 계산값과 정확히 일치하는 값으로 화면에 보인다',
       (WidgetTester tester) async {
     // share_text_test.dart에서는 공유 텍스트의 퍼센트 줄을 정확한 값으로 검증했지만,

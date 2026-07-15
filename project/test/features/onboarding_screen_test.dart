@@ -30,6 +30,18 @@ void main() {
     expect(find.text('어떻게 계산되나요?'), findsOneWidget);
   });
 
+  testWidgets('"시작하기 →" 버튼의 스크린 리더 라벨은 화살표 없이 "시작하기"만 읽힌다', (tester) async {
+    // 2026-07-15 접근성 정리: 화살표(→)는 시각적 장식일 뿐인데 semanticsLabel 없이
+    // Text 그대로 두면 스크린 리더가 "시작하기 화살표"처럼 장식 기호까지 그대로
+    // 읽어준다 — semanticsLabel: '시작하기'로 라벨을 깨끗하게 교체했는지 확인한다.
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(buildApp());
+
+    expect(tester.getSemantics(find.text('시작하기 →')).label, '시작하기');
+
+    semantics.dispose();
+  });
+
   testWidgets('"시작하기"를 누르면 생년월일시 입력 화면으로 이동한다', (tester) async {
     var navigated = false;
     await tester.pumpWidget(buildApp(onBirthInputRoute: (_) => navigated = true));

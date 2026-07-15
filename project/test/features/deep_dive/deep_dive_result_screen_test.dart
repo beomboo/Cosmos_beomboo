@@ -405,6 +405,27 @@ void main() {
       expect(gradient.colors, [AppColors.accent, AppColors.metal]);
     });
 
+    testWidgets('"📸 공유하기" 버튼의 스크린 리더 라벨은 이모지 없이 "공유하기"만 읽힌다', (tester) async {
+      // 2026-07-15 접근성 정리: 📸 이모지는 시각적 장식일 뿐인데 semanticsLabel 없이
+      // Text 그대로 두면 스크린 리더가 이모지를 유니코드 이름으로 읽어 혼란을 준다 —
+      // semanticsLabel: '공유하기'로 라벨을 깨끗하게 교체했는지 확인한다.
+      await useTallViewport(tester);
+      final semantics = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DeepDiveResultScreen(
+            birthInfo: birthInfo,
+            deepDiveInfo: const DeepDiveInfo(interests: {Interest.love}),
+          ),
+        ),
+      );
+
+      expect(tester.getSemantics(find.text('📸 공유하기')).label, '공유하기');
+
+      semantics.dispose();
+    });
+
     testWidgets('"공유하기"를 눌렀을 때 공유 시트가 실패하면 스낵바로 알려준다', (tester) async {
       // result_screen_test.dart의 동명 테스트와 같은 이유(실제 위젯 테스트 환경에는
       // share_plus 플랫폼 채널 목이 없어 MissingPluginException이 나며, 이게 바로
