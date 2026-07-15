@@ -534,12 +534,22 @@ class _OhaengBarRow extends StatelessWidget {
       excludeSemantics: true,
       container: true,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        // 목업(`.bar-row`)은 margin-bottom:5px인데 위아래 대칭 패딩으로 구현하다 보니
+        // 지금까지는 vertical:4(행 사이 실제 간격 8px)였다(2026-07-15 대조 발견).
+        padding: const EdgeInsets.symmetric(vertical: 2.5),
         child: Row(
           children: [
             SizedBox(
-              width: 20,
-              child: Text(hanja, style: TextStyle(fontWeight: FontWeight.w800, color: color)),
+              // 목업(`.bar-row .tag`)은 width:14px/font-size:11px인데 지금까지는
+              // width:20(폰트 크기 미지정)이었다(2026-07-15 대조 발견).
+              width: 14,
+              child: Center(
+                child: Text(
+                  hanja,
+                  style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 11),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -547,7 +557,9 @@ class _OhaengBarRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(999),
                 child: LinearProgressIndicator(
                   value: percent / 100,
-                  minHeight: 10,
+                  // 목업(`.bar-track`)은 height:8px인데 지금까지는 10이었다
+                  // (2026-07-15 대조 발견).
+                  minHeight: 8,
                   backgroundColor: AppColors.border,
                   valueColor: AlwaysStoppedAnimation(color),
                 ),
