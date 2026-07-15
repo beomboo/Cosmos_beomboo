@@ -778,6 +778,64 @@ void main() {
     expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsNothing);
   });
 
+  testWidgets('밤 11시 직전(22시 59분)에는 자시 경계 안내 문구가 보이지 않는다 (경계값)', (tester) async {
+    // _isJasiRange는 hour == 23 || hour == 0으로 구현돼 있다 — 23시 바로 앞
+    // 시각(22시 59분)까지도 안내가 뜬다면 hour >= 22처럼 경계가 잘못 넓어진
+    // 회귀를 잡지 못한다. 자시 직전 경계값을 직접 확인한다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    await setTimeViaTextInput(tester, hour: '10', minute: '59', pm: true);
+
+    expect(find.text('오후 10시 59분'), findsOneWidget);
+    expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsNothing);
+  });
+
+  testWidgets('정확히 새벽 1시(01시)에는 자시 경계 안내 문구가 보이지 않는다 (경계값)', (tester) async {
+    // four_pillars.dart의 시주 계산(`((birthHour + 1) ~/ 2) % 12`)을 직접 대조하면
+    // hour=1(01시)은 자(子) branch가 아니라 축(丑) branch로 계산된다 — 즉 실제 관법
+    // 경계는 "23시·0시"까지만 자시이고 1시는 이미 축시다. 리서치 문서의 "23시~01시"라는
+    // 표현(23:00~00:59, 두 시간)과 구현(`hour == 23 || hour == 0`)이 정확히 일치하는지,
+    // 그리고 hour == 0을 hour <= 1처럼 잘못 넓히는 회귀가 없는지 이 경계값으로 고정한다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    await setTimeViaTextInput(tester, hour: '1', minute: '00', pm: false);
+
+    expect(find.text('오전 1시 00분'), findsOneWidget);
+    expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsNothing);
+  });
+
+  testWidgets('자시 경계 안내 문구는 태어난 시간 pill과 별개의 시맨틱 노드로 읽힌다 (접근성)', (tester) async {
+    // 안내 Text는 일반 Text 위젯이라 자체 시맨틱 노드를 만든다 — 태어난 시간 pill은
+    // Semantics(excludeSemantics: true)로 라벨을 통째로 교체해두고 있어(위 "중복 없음"
+    // 테스트 참고), 그 옆에 새로 추가된 안내 Text가 그 pill의 병합 라벨 안으로 잘못
+    // 흡수되거나(라벨에 안내 문구가 섞여 중복 낭독) 반대로 안내 문구 자체가 스크린
+    // 리더에서 완전히 누락되지는 않는지 확인한다.
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    await setTimeViaTextInput(tester, hour: '11', minute: '00', pm: true);
+
+    // 시간 pill의 라벨은 여전히 "태어난 시간 오후 11시 00분"뿐이어야 한다 — 안내
+    // 문구가 섞여 들어가 중복 낭독되면 안 된다.
+    final timeNode = tester.getSemantics(find.text('오후 11시 00분'));
+    expect(timeNode.label, '태어난 시간 오후 11시 00분');
+
+    // 안내 문구는 그 자체로 별도 노드에서 온전한 텍스트가 읽혀야 한다.
+    final noticeNode = tester.getSemantics(find.textContaining('앱마다 계산 방식이 조금씩 달라요'));
+    expect(
+      noticeNode.label,
+      '밤 11시~새벽 1시 사이는 앱마다 계산 방식이 조금씩 달라요. '
+      '병원 기록상 시간이 있다면 다시 확인해보세요.',
+    );
+    // 안내 문구는 버튼이 아니라 순수 정보성 텍스트여야 한다.
+    expect(noticeNode.flagsCollection.isButton, isFalse);
+
+    semantics.dispose();
+  });
+
   testWidgets('이미 심층 분석에서 좁혀둔 관심사가 있으면 제출해도 전체 선택으로 되돌아가지 않는다',
       (tester) async {
     // 2026-07-08 버그 수정: 사주 결과 화면은 이 화면이 스택 아래에 그대로 남아 있어
