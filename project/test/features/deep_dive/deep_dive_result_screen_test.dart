@@ -161,6 +161,26 @@ void main() {
 
     expect(findContainingInDeepDiveResult('INTJ'), findsOneWidget);
     expect(findContainingInDeepDiveResult(mbtiComments['INTJ']!), findsOneWidget);
+
+    // 2026-07-16 발견: deep_dive_share_card.dart의 쌍둥이 MBTI 강조 박스
+    // (`PastelCard(color: AppColors.accentSoft, showBorder: false, ...)`)는
+    // deep_dive_share_card_test.dart에서 decoration.color까지 값으로 검증하는데,
+    // 정작 원본인 이 화면 쪽은 텍스트 존재 여부만 확인할 뿐 박스 색을 한 번도
+    // 검증한 적이 없었다(accentSoft 문자열 자체가 이 파일에 등장하지 않았음) — 그
+    // 결과 화면의 MBTI 박스 color 값이 실수로 다른 값(예: 오행색)으로 바뀌거나 다른
+    // 박스와 스왑돼도 이 파일의 기존 테스트는 전혀 잡아내지 못했다. 공유 카드 쪽
+    // 검증 패턴을 그대로 가져와 화면 쪽 커버리지 비대칭을 없앤다.
+    final mbtiBox = tester.widget<Container>(
+      find.ancestor(
+        of: findContainingInDeepDiveResult('INTJ —'),
+        matching: find.byType(Container),
+      ).first,
+    );
+    final mbtiBoxDecoration = mbtiBox.decoration! as BoxDecoration;
+    // MBTI 강조 박스는 오행과 무관해 항상 accentSoft 고정이어야 한다(오행색 사용 금지 원칙).
+    expect(mbtiBoxDecoration.color, AppColors.accentSoft);
+    // showBorder: false이므로 테두리가 없어야 한다.
+    expect(mbtiBoxDecoration.border, isNull);
   });
 
   testWidgets('MBTI를 입력하지 않았으면 MBTI 코멘트 영역이 아예 없다', (tester) async {
