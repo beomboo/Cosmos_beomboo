@@ -227,7 +227,13 @@ class _ResultScreenState extends State<ResultScreen> {
                     '오행 밸런스',
                     // 목업(`.bars h3`)은 font-size:11px/color:var(--app-ink-soft)인데
                     // 지금까지는 본문 헤드라인만큼 진한 15px/ink였다(2026-07-15 대조 발견).
-                    style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.inkSoft, fontSize: 11),
+                    // letter-spacing:.02em(≈0.22px)도 빠져 있었다(2026-07-16 오버나이트 대조 발견).
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.inkSoft,
+                      fontSize: 11,
+                      letterSpacing: 0.22,
+                    ),
                   ),
                 ),
                 // 목업(`.bars h3`)은 margin:0 0 8px인데 지금까지는 12px이었다
@@ -268,7 +274,13 @@ class _ResultScreenState extends State<ResultScreen> {
                     '오늘 궁금한 것부터',
                     // 목업(`.cards h3`)은 font-size:11px/color:var(--app-ink-soft)인데
                     // 지금까지는 본문 헤드라인만큼 진한 15px/ink였다(2026-07-15 대조 발견).
-                    style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.inkSoft, fontSize: 11),
+                    // letter-spacing:.02em(≈0.22px)도 빠져 있었다(2026-07-16 오버나이트 대조 발견).
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.inkSoft,
+                      fontSize: 11,
+                      letterSpacing: 0.22,
+                    ),
                   ),
                 ),
                 // 목업(`.cards h3`)은 margin:0 0 8px인데 지금까지는 12px이었다
