@@ -486,4 +486,34 @@ void main() {
       );
     });
   });
+
+  group('섹션 제목의 header 시맨틱스(TalkBack/VoiceOver 헤딩 단위 탐색)', () {
+    // 2026-07-16 접근성 감사로 페이지 제목에 Semantics(header: true)가 추가됐는데,
+    // 그 header 플래그 자체를 검증하는 테스트가 없었다 — Semantics 래핑이 걷히거나
+    // header: true가 실수로 지워져도 잡아낼 방법이 없는 공백이었다.
+    // deep_dive_share_card.dart(오프스크린 공유 카드)에 같은 문구가 중복 존재하므로,
+    // deepDiveResultScrollView 안으로 범위를 좁힌 findInDeepDiveResult를 그대로
+    // 재사용한다(그렇지 않으면 find.text()가 두 위젯을 찾아 getSemantics 호출 자체가
+    // 실패한다).
+    testWidgets('페이지 제목 "회원님의 심층 분석 ✨"가 헤딩(isHeader)으로 노출된다', (tester) async {
+      await useTallViewport(tester);
+      final semantics = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DeepDiveResultScreen(
+            birthInfo: birthInfo,
+            deepDiveInfo: const DeepDiveInfo(interests: {Interest.love}),
+          ),
+        ),
+      );
+
+      expect(
+        tester.getSemantics(findInDeepDiveResult('회원님의 심층 분석 ✨')),
+        matchesSemantics(label: '회원님의 심층 분석 ✨', isHeader: true),
+      );
+
+      semantics.dispose();
+    });
+  });
 }

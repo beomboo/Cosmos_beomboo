@@ -763,4 +763,88 @@ void main() {
     final listView = tester.widget<ListView>(find.byType(ListView));
     expect(listView.padding, const EdgeInsets.fromLTRB(20, 14, 20, 18));
   });
+
+  group('섹션 제목의 header 시맨틱스(TalkBack/VoiceOver 헤딩 단위 탐색)', () {
+    // 2026-07-16 접근성 감사로 페이지 제목·소제목 4곳에 Semantics(header: true)가
+    // 추가됐는데, 그 header 플래그 자체를 검증하는 테스트가 없었다 — Semantics 래핑이
+    // 걷히거나 header: true가 실수로 지워져도 잡아낼 방법이 없는 공백이었다. 이
+    // 화면(report_screen.dart)은 result/deep_dive와 달리 오프스크린 공유 카드가 없어
+    // 문구 중복이 없으므로 find.text()를 그대로 써도 안전하다.
+
+    testWidgets('페이지 제목 "회원님의 상세 리포트"가 헤딩(isHeader)으로 노출된다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await useTallViewport(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ReportScreen(
+            birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+      );
+
+      expect(
+        tester.getSemantics(find.text('회원님의 상세 리포트')),
+        matchesSemantics(label: '회원님의 상세 리포트', isHeader: true),
+      );
+
+      semantics.dispose();
+    });
+
+    testWidgets('소제목 "명식 한 글자씩 뜯어보기"가 헤딩(isHeader)으로 노출된다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await useTallViewport(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ReportScreen(
+            birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+      );
+
+      expect(
+        tester.getSemantics(find.text('명식 한 글자씩 뜯어보기')),
+        matchesSemantics(label: '명식 한 글자씩 뜯어보기', isHeader: true),
+      );
+
+      semantics.dispose();
+    });
+
+    testWidgets('소제목 "오행 五行 완전 정복"이 헤딩(isHeader)으로 노출된다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await useTallViewport(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ReportScreen(
+            birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+      );
+
+      expect(
+        tester.getSemantics(find.text('오행 五行 완전 정복')),
+        matchesSemantics(label: '오행 五行 완전 정복', isHeader: true),
+      );
+
+      semantics.dispose();
+    });
+
+    testWidgets('소제목 "오행별 오늘의 풀이 모음"이 헤딩(isHeader)으로 노출된다', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await useTallViewport(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ReportScreen(
+            birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+      );
+
+      expect(
+        tester.getSemantics(find.text('오행별 오늘의 풀이 모음')),
+        matchesSemantics(label: '오행별 오늘의 풀이 모음', isHeader: true),
+      );
+
+      semantics.dispose();
+    });
+  });
 }

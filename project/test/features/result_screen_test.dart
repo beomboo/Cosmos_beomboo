@@ -1569,6 +1569,95 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+
+  group('섹션 제목의 header 시맨틱스(TalkBack/VoiceOver 헤딩 단위 탐색)', () {
+    // 2026-07-16 접근성 감사로 페이지 제목·소제목 3곳에 Semantics(header: true)가
+    // 추가됐는데, 그 header 플래그 자체를 검증하는 테스트가 없었다 — Semantics 래핑이
+    // 걷히거나 header: true가 실수로 지워져도 잡아낼 방법이 없는 공백이었다.
+    // share_card.dart(오프스크린 공유 카드)에 같은 문구("$displayName의 사주팔자 ✨",
+    // "오행 밸런스")가 중복 존재하므로, resultScrollView 안으로 범위를 좁힌
+    // findInBody를 그대로 재사용한다(그렇지 않으면 find.text()가 두 위젯을 찾아
+    // getSemantics 호출 자체가 실패한다).
+
+    testWidgets('페이지 제목 "회원님의 사주팔자 ✨"가 헤딩(isHeader)으로 노출된다', (WidgetTester tester) async {
+      final semantics = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          onGenerateRoute: (settings) => MaterialPageRoute(
+            builder: (_) => const ResultScreen(),
+            settings: RouteSettings(
+              arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+            ),
+          ),
+          initialRoute: '/',
+        ),
+      );
+
+      expect(
+        tester.getSemantics(findInBody('회원님의 사주팔자 ✨')),
+        matchesSemantics(label: '회원님의 사주팔자 ✨', isHeader: true),
+      );
+
+      semantics.dispose();
+    });
+
+    testWidgets('소제목 "오행 밸런스"가 헤딩(isHeader)으로 노출된다', (WidgetTester tester) async {
+      final semantics = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          onGenerateRoute: (settings) => MaterialPageRoute(
+            builder: (_) => const ResultScreen(),
+            settings: RouteSettings(
+              arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+            ),
+          ),
+          initialRoute: '/',
+        ),
+      );
+
+      expect(
+        tester.getSemantics(findInBody('오행 밸런스')),
+        matchesSemantics(label: '오행 밸런스', isHeader: true),
+      );
+
+      semantics.dispose();
+    });
+
+    testWidgets('소제목 "오늘 궁금한 것부터"가 헤딩(isHeader)으로 노출된다', (WidgetTester tester) async {
+      // 화면 아래쪽이라 기본 뷰포트로는 지연 빌드돼 못 찾으므로 뷰포트를 세로로 키운다
+      // (위 카테고리 카드 테스트들과 같은 이유).
+      final originalSize = tester.view.physicalSize;
+      final originalRatio = tester.view.devicePixelRatio;
+      tester.view.physicalSize = const Size(400, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.physicalSize = originalSize;
+        tester.view.devicePixelRatio = originalRatio;
+      });
+      final semantics = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          onGenerateRoute: (settings) => MaterialPageRoute(
+            builder: (_) => const ResultScreen(),
+            settings: RouteSettings(
+              arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+            ),
+          ),
+          initialRoute: '/',
+        ),
+      );
+
+      expect(
+        tester.getSemantics(findInBody('오늘 궁금한 것부터')),
+        matchesSemantics(label: '오늘 궁금한 것부터', isHeader: true),
+      );
+
+      semantics.dispose();
+    });
+  });
 }
 
 /// `birth_info.`가 포함된 키를 지우려 하면 실제 플랫폼 채널 오류를 흉내 내 예외를
