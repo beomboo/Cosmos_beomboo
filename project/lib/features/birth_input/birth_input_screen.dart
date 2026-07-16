@@ -229,10 +229,17 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
             // 이 안내는 의미가 없어 숨긴다. "자시" 같은 한자어 대신 순화된 표현으로 안내.
             if (_isJasiRange && !_timeUnknown) ...[
               const SizedBox(height: 6),
-              const Text(
-                '밤 11시~새벽 1시 사이는 앱마다 계산 방식이 조금씩 달라요. '
-                '병원 기록상 시간이 있다면 다시 확인해보세요.',
-                style: TextStyle(color: AppColors.inkSoft, fontSize: 11, fontWeight: FontWeight.w700),
+              // 시간 피커 선택/"태어난 시간을 몰라요" 체크박스 토글에 따라 화면 전환 없이
+              // 동적으로 나타나거나 사라지는 문구라, calculating_screen.dart의 로딩 문구와
+              // 같은 이유로 liveRegion으로 감싸 스크린 리더가 변화를 자동으로 안내하게 한다.
+              // 위 시간 pill(fieldLabel Semantics)과는 별개 노드로 유지된다.
+              Semantics(
+                liveRegion: true,
+                child: const Text(
+                  '밤 11시~새벽 1시 사이는 앱마다 계산 방식이 조금씩 달라요. '
+                  '병원 기록상 시간이 있다면 다시 확인해보세요.',
+                  style: TextStyle(color: AppColors.inkSoft, fontSize: 11, fontWeight: FontWeight.w700),
+                ),
               ),
             ],
             const SizedBox(height: 8),
