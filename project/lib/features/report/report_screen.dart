@@ -128,6 +128,13 @@ class ReportScreen extends StatelessWidget {
             const SizedBox(height: 12),
             for (final ohaeng in const ['목', '화', '토', '금', '수'])
               _AllReadingsSection(ohaeng: ohaeng),
+            // 오행 5개 반복문 전체에 대해 딱 1번만 노출한다 — 각 _AllReadingsSection 안에
+            // 넣으면 건강운 항목마다 5번 중복 노출된다(2026-07-17 오버나이트 리서치 반영
+            // 대조 발견, ohaeng_readings.dart의 healthReadingDisclaimer 참고).
+            const Text(
+              healthReadingDisclaimer,
+              style: TextStyle(color: AppColors.inkSoft, fontSize: 11),
+            ),
             const SizedBox(height: 24),
             Container(
               width: double.infinity,
