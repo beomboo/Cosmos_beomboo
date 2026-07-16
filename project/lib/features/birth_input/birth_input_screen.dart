@@ -186,6 +186,7 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
             // 안내 문구 패턴이라 같은 스타일로 통일한다.
             const Text(
               '이름 없이도 괜찮아요 →',
+              semanticsLabel: '이름 없이도 괜찮아요',
               style: TextStyle(color: AppColors.inkSoft, fontSize: 11, fontWeight: FontWeight.w700),
             ),
             // 목업(`.field`)은 margin-bottom:14px인데 지금까지는 20px이었다
@@ -285,6 +286,7 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
             // (2026-07-07 대조 발견).
             const Text(
               '건너뛰어도 괜찮아요 →',
+              semanticsLabel: '건너뛰어도 괜찮아요',
               style: TextStyle(color: AppColors.inkSoft, fontSize: 11, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 14),
