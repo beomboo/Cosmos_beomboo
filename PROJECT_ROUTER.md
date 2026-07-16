@@ -27,7 +27,7 @@
 | 십신(十神) 콘텐츠 확장 | 아직 없음 — 만든다면 `project/lib/features/deep_dive/` 또는 `project/lib/features/ten_gods/` | ⚪ | 사람 결정 대기, 자동화 루프 임의 착수 금지 |
 | 사주 계산 로직 | `project/lib/core/saju/` | 🟡 | `ganzhi.dart`(오행 한자 공용 상수 `ohaengHanja`, 오행 상생상극 관계 판별 `ohaengRelationOf`/`OhaengRelation` 포함)+`four_pillars.dart`(`dominantOhaeng`/`subDominantOhaeng`). 절기 근사·자시 관법·진태양시·음력 변환 등 정확도 이슈는 사람 결정 대기 |
 | 공용 위젯 | `project/lib/shared/widgets/` | 🟢 | `PastelPillButton`(`fieldLabel`/`semanticValue`로 필드 맥락 시맨틱 라벨 조합 지원)/`PastelToggleRow`/`PastelCard`/`PastelCheckboxRow`(체크박스+터치 가능 라벨 행)/`GradientShareButton`(accent→metal 그라데이션 공유 버튼, 결과·심층 분석 화면 공용)/`OffscreenShareCapture`(오프스크린 공유 캡처 래퍼)/`ShareCardScaffold`(공유 카드 9:16 공통 스캐폴드) |
-| 공유 캡처 로직 | `project/lib/shared/share/share_capture.dart` | 🟢 | `shareCapturedCard` — RepaintBoundary 캡처→SharePlus 공유→실패 스낵바를 결과·심층 분석 화면이 공용으로 사용 |
+| 공유 캡처 로직 | `project/lib/shared/share/share_capture.dart` | 🟢 | `shareCapturedCard` — RepaintBoundary 캡처→SharePlus 공유→실패 스낵바를 결과·심층 분석 화면이 공용으로 사용. release/profile 빌드에서 `assert`가 제거되며 `debugNeedsPaint` 게터의 `LateInitializationError`가 항상 발생해 이미지 없이 텍스트만 공유되던 버그 수정(`boundary != null`만 확인 후 `toImage()` 직접 시도, 실패해도 기존 catch 폴백 유지) (2026-07-16) |
 | 빌드 검증 스크립트 | `project/tool/check_build.sh` | 🟢 | 표준 빌드/린트 체크(pub get→analyze→test→build apk) 일괄 실행 |
 | 앱 아이콘 | `project/assets/icon/icon.png` | 🟢 | 생성 도구: `project/test/tool/generate_app_icon.dart` |
 
