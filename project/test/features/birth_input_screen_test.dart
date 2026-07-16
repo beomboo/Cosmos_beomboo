@@ -12,6 +12,8 @@ import 'package:cosmos_saju/features/birth_input/birth_info.dart';
 import 'package:cosmos_saju/features/birth_input/birth_input_screen.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_info.dart';
 
+import '../support/test_viewport.dart';
+
 void main() {
   // 제출 시 BirthInfoStore.save()가 SharedPreferences를 사용하므로 목(mock) 초기값을 설정해둔다.
   setUp(() {
@@ -19,17 +21,8 @@ void main() {
   });
 
   // 입력 폼(ListView)이 기본 테스트 화면(800x600)보다 길어 제출 버튼이 화면 밖에서
-  // 지연 빌드된다 — 뷰포트를 세로로 넉넉하게 키워 전체 폼이 스크롤 없이 다 보이게 한다.
-  Future<void> useTallViewport(WidgetTester tester) async {
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 2000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
-  }
+  // 지연 빌드된다 — 뷰포트를 세로로 넉넉하게 키워 전체 폼이 스크롤 없이 다 보이게 한다
+  // (높이 2000은 test_viewport.dart의 기본값과 같다).
 
   Widget buildApp({Object? Function(RouteSettings)? onCalculatingRoute}) {
     return MaterialApp(

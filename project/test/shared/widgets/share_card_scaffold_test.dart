@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cosmos_saju/shared/widgets/share_card_scaffold.dart';
 
+import '../../support/test_viewport.dart';
+
 /// `share_card_test.dart`/`deep_dive_share_card_test.dart`가 `ShareCard`/
 /// `DeepDiveShareCard`를 통해서만 간접 검증하던 `ShareCardScaffold` 공용 위젯 자체를
 /// 직접 겨냥한 테스트. 2026-07-15 리팩터링으로 두 카드가 복제하던 고정 크기(360x640)·
@@ -13,14 +15,7 @@ void main() {
     // 스캐폴드의 고정 높이(640)가 기본 테스트 뷰포트(800x600)보다 커서, 뷰포트를
     // 세로로 키우지 않으면 실제 렌더 크기가 600으로 잘려 보인다(CLAUDE.md에 기록된
     // 기존 함정과 동일한 이유).
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 700);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
+    await useTallViewport(tester, height: 700);
 
     await tester.pumpWidget(
       MaterialApp(

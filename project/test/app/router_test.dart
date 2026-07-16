@@ -9,6 +9,8 @@ import 'package:cosmos_saju/features/deep_dive/deep_dive_input_screen.dart';
 import 'package:cosmos_saju/features/report/report_screen.dart';
 import 'package:cosmos_saju/features/result/result_screen.dart';
 
+import '../support/test_viewport.dart';
+
 void main() {
   // birthInput→calculating 체이닝 테스트가 실제로 BirthInfoStore.save()/
   // DeepDiveInfoStore.save()(둘 다 SharedPreferences 사용)를 거치므로 목 값 초기화가
@@ -83,14 +85,7 @@ void main() {
     // 나타나는 것을 실측으로 확인한 뒤, pushReplacementNamed로 복원해 이 테스트가 통과함).
     testWidgets('실제로 이 경로를 타면 BirthInputScreen이 스택에서 제거돼 ResultScreen에 뒤로 가기 버튼이 없다',
         (tester) async {
-      final originalSize = tester.view.physicalSize;
-      final originalRatio = tester.view.devicePixelRatio;
-      tester.view.physicalSize = const Size(400, 1600);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.physicalSize = originalSize;
-        tester.view.devicePixelRatio = originalRatio;
-      });
+      await useTallViewport(tester, height: 1600);
 
       await tester.pumpWidget(
         MaterialApp(routes: AppRoutes.routes, initialRoute: AppRoutes.birthInput),

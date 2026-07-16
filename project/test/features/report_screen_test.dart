@@ -8,22 +8,15 @@ import 'package:cosmos_saju/features/deep_dive/deep_dive_input_screen.dart';
 import 'package:cosmos_saju/features/report/report_screen.dart';
 import 'package:cosmos_saju/features/result/result_screen.dart';
 
+import '../support/test_viewport.dart';
+
 void main() {
   // 리포트/결과 화면 모두 리스트가 길어 기본 테스트 화면(800x600)보다 콘텐츠가 크다 —
   // 뷰포트를 세로로 넉넉하게 키워 하단 콘텐츠까지 스크롤 없이 다 보이게 한다.
-  Future<void> useTallViewport(WidgetTester tester) async {
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 3000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
-  }
+  Future<void> useReportViewport(WidgetTester tester) => useTallViewport(tester, height: 3000);
 
   testWidgets('상세 리포트 화면이 오행 5종 설명과 명식 breakdown을 모두 보여준다', (tester) async {
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -65,7 +58,7 @@ void main() {
     // 보여주면서도 지금까지 "년주"/"월주" 같은 라벨만 확인했을 뿐 실제 글자·오행 값
     // 자체는 검증한 적이 없었다. 1998-08-15 14시의 4주(년주 무인·월주 경신·일주 갑자·
     // 시주 신미)를 그대로 재사용한다.
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -128,7 +121,7 @@ void main() {
     // 따로따로 읽어 어느 기둥의 어느 글자인지 맥락이 끊긴다 — 지금까지 이 표의 실제
     // 계산값(한자·오행 라벨)은 검증했지만 스크린 리더 접근성은 검증한 적이 없었다.
     final semantics = tester.ensureSemantics();
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -167,7 +160,7 @@ void main() {
     // 기존 `takeException()` 방식 테스트로는 이 조용한 잘림을 못 잡는다. FittedBox로
     // 감싸 배율이 커져도 44px 폭 안에서 스스로 축소되게 고쳤는데, 이 구조 자체가
     // 남아있는지(누군가 실수로 FittedBox를 걷어내도) 확인한다.
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -188,7 +181,7 @@ void main() {
   testWidgets('시스템 글자 크기를 크게(3배) 키워도 명식 breakdown 표에서 예외가 나지 않는다', (tester) async {
     // FittedBox로 감싼 라벨(위 테스트 참고)이 실제로 큰 배율에서도 예외 없이
     // 렌더링되는지 함께 확인한다.
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MediaQuery(
         data: const MediaQueryData(textScaler: TextScaler.linear(3.0)),
@@ -217,7 +210,7 @@ void main() {
     // "제약 없는 자연 크기"와 같아야 한다. FittedBox가 없으면 44px 폭 제약 때문에
     // 자연 크기보다 작게(=잘려서) 렌더링된다.
     for (final scale in const [2.0, 3.0]) {
-      await useTallViewport(tester);
+      await useReportViewport(tester);
       await tester.pumpWidget(
         MediaQuery(
           data: MediaQueryData(textScaler: TextScaler.linear(scale)),
@@ -258,7 +251,7 @@ void main() {
 
   testWidgets('시간을 모르면 시주 breakdown 행도 하나의 안내 문장으로 병합된다', (tester) async {
     final semantics = tester.ensureSemantics();
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -285,7 +278,7 @@ void main() {
     // 서로 안 섞이고 "목 · 성장 · 시작 · 추진력. 새싹이 자라나는 이미지"처럼 하나로
     // 들리는지 확인한다.
     final semantics = tester.ensureSemantics();
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -307,7 +300,7 @@ void main() {
     // 늘 5개 전부 렌더링되는데도, 지금까지 색상 값(ohaengSoftColors 배경·ohaengTextColors
     // 글자색) 자체는 한 번도 검증한 적이 없었다 — _pillarRow/_charCell(위 테스트) 색상
     // 검증과 같은 성격의 공백.
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -336,7 +329,7 @@ void main() {
     // 2026-07-15 접근성 감사(선택 보강) — 40x40 원형 배지 안 한자 1글자도 시스템
     // 폰트 확대 시 조용히 잘릴 수 있어 FittedBox로 감쌌다. 위 배경/글자색 테스트와
     // 달리 이 구조(FittedBox 존재) 자체를 확인한다.
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -368,14 +361,7 @@ void main() {
     // 로컬 렌더 크기(tester.getSize, 변환 적용 전)는 항상 "제약 없이 계산한 자연
     // 크기"와 같아야 한다. FittedBox가 없으면 자연 크기가 40을 넘는 배율에서
     // 로컬 렌더 크기가 자연 크기보다 작게(=잘려서) 나온다.
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 9000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
+    await useTallViewport(tester, height: 9000);
 
     for (final scale in const [2.0, 3.0]) {
       await tester.pumpWidget(
@@ -428,7 +414,7 @@ void main() {
     // 것을 발견해 재작성함) — `_OhaengMeaningCard`가 이미 "$ohaeng · 제목. 설명"을
     // 하나의 병합 시맨틱 라벨로 제공하므로, 그 병합 라벨 전체가 정확히 일치하는지
     // 확인해야 특정 오행의 설명이 맞는 카드에 붙어 있는지 확실히 검증된다.
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -462,7 +448,7 @@ void main() {
     // categoryReadingsFor()는 알 수 없는 키가 들어오면 조용히 '토' 풀이로 폴백하므로,
     // 루프 변수가 잘못 전달돼도 화면이 깨지지 않고 그냥 틀린(엉뚱한 오행) 내용을
     // 보여줄 수 있어 실제 문구까지 값으로 대조해야 이런 회귀를 잡을 수 있다.
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -502,7 +488,7 @@ void main() {
     // (2026-07-14 발견). 시각적 텍스트(이모지 포함)는 위 테스트에서 이미 확인했으므로,
     // 여기서는 라벨에서 이모지가 빠졌는지만 확인한다.
     final semantics = tester.ensureSemantics();
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -524,7 +510,7 @@ void main() {
   });
 
   testWidgets('이름과 메타 라인이 결과 화면과 같은 형식으로 헤더에 표시된다', (tester) async {
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -551,7 +537,7 @@ void main() {
     // 이 화면(report_screen.dart도 같은 `buildMetaLine(info)`를 그대로 호출)만
     // isLunar: true로 렌더링해본 적이 한 번도 없었던 비대칭을 발견 — share_card.dart의
     // hour: null 공백(바로 위 "사주 결과 화면" 행 참고)과 같은 종류의 발견.
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -564,7 +550,7 @@ void main() {
   });
 
   testWidgets('이름이 없거나 공백뿐이면 헤더에 "회원님"으로 표시된다', (tester) async {
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -589,7 +575,7 @@ void main() {
   });
 
   testWidgets('시간을 모르면 시주 자리에 안내 문구가 표시된다', (tester) async {
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -604,7 +590,7 @@ void main() {
   testWidgets('시간을 몰라 시주가 없을 때만 재입력 유도 넛지 문구가 보이고, 시간을 알면 보이지 않는다', (tester) async {
     // docs/research/운세/입력_온보딩_설계.md 권장안 반영: "모름" 선택 시 3주만 보여주고
     // 재입력을 유도하는 넛지 문구를 붙인다 — hour가 있을 때는 이 문구가 전혀 없어야 한다.
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -626,7 +612,7 @@ void main() {
   });
 
   testWidgets('결과 화면의 "상세 리포트 보기" 버튼을 누르면 상세 리포트 화면으로 이동한다', (tester) async {
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         onGenerateRoute: (settings) {
@@ -657,7 +643,7 @@ void main() {
     // Text 그대로 두면 스크린 리더가 "MBTI·관심사로 심층 분석 받기 화살표"처럼 장식
     // 기호까지 그대로 읽어준다 — semanticsLabel로 라벨을 깨끗하게 교체했는지 확인한다.
     final semantics = tester.ensureSemantics();
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -676,7 +662,7 @@ void main() {
 
   testWidgets('"MBTI·관심사로 심층 분석 받기"를 누르면 심층 분석 입력 화면으로 이동한다', (tester) async {
     // 2026-07-07: 결과 화면에 있던 이 진입점을 상세 리포트 화면으로 옮겼다(사용자 요청).
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         onGenerateRoute: (settings) {
@@ -713,7 +699,7 @@ void main() {
     // 만한 고정 크기 요소가 있어 검증해봤으나, Container는 Row/Column과 달리
     // 내용이 넘쳐도 조용히 잘릴 뿐 RenderFlex 예외를 던지지 않아 실제로는
     // 재현되지 않음을 확인(코드 변경 없이 회귀 방지용으로 고정).
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MediaQuery(
         data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
@@ -737,7 +723,7 @@ void main() {
     // 테스트를 추가하며 발견한 비대칭. 실제 앱 흐름에서는 도달하지 않아야 정상이지만
     // (결과 화면의 "상세 리포트 보기"가 항상 birthInfo를 넘김), 라우트 배선이 실수로
     // 깨지면 크래시 대신 조용히 엉뚱한 기본값을 보여줄 수 있어 값으로 고정해둔다.
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(const MaterialApp(home: ReportScreen()));
 
     expect(find.text('회원님의 상세 리포트'), findsOneWidget);
@@ -751,7 +737,7 @@ void main() {
     // 이미 목업 `.screen-body`(padding:14px 20px 18px) 값으로 맞춰졌는데 이 화면만
     // 옛 값(24/8/24/32)이 남아 있었다 — 수치 자체를 잠그는 테스트가 없어 다음에 실수로
     // 옛 값으로 되돌아가도 못 잡는 공백이 있었다.
-    await useTallViewport(tester);
+    await useReportViewport(tester);
     await tester.pumpWidget(
       MaterialApp(
         home: ReportScreen(
@@ -773,7 +759,7 @@ void main() {
 
     testWidgets('페이지 제목 "회원님의 상세 리포트"가 헤딩(isHeader)으로 노출된다', (tester) async {
       final semantics = tester.ensureSemantics();
-      await useTallViewport(tester);
+      await useReportViewport(tester);
       await tester.pumpWidget(
         MaterialApp(
           home: ReportScreen(
@@ -792,7 +778,7 @@ void main() {
 
     testWidgets('소제목 "명식 한 글자씩 뜯어보기"가 헤딩(isHeader)으로 노출된다', (tester) async {
       final semantics = tester.ensureSemantics();
-      await useTallViewport(tester);
+      await useReportViewport(tester);
       await tester.pumpWidget(
         MaterialApp(
           home: ReportScreen(
@@ -811,7 +797,7 @@ void main() {
 
     testWidgets('소제목 "오행 五行 완전 정복"이 헤딩(isHeader)으로 노출된다', (tester) async {
       final semantics = tester.ensureSemantics();
-      await useTallViewport(tester);
+      await useReportViewport(tester);
       await tester.pumpWidget(
         MaterialApp(
           home: ReportScreen(
@@ -830,7 +816,7 @@ void main() {
 
     testWidgets('소제목 "오행별 오늘의 풀이 모음"이 헤딩(isHeader)으로 노출된다', (tester) async {
       final semantics = tester.ensureSemantics();
-      await useTallViewport(tester);
+      await useReportViewport(tester);
       await tester.pumpWidget(
         MaterialApp(
           home: ReportScreen(
