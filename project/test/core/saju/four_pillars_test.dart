@@ -233,6 +233,31 @@ void main() {
       });
     });
 
+    group('년주(年柱) — 1984년 이전 출생자(effectiveYear - 1984가 음수)도 60갑자가 정확한지', () {
+      // _wrap60 헬퍼가 실제로 하는 일은 "음수가 될 수 있는 값을 0~59 범위로 접어넣는 것"인데,
+      // 지금까지의 년주 테스트는 전부 effectiveYear가 1984 이상(따라서 (effectiveYear-1984)가
+      // 항상 0 이상)인 날짜만 썼다 — 1984년 이전 출생자는 이 뺄셈이 음수가 되므로, 그 경로가
+      // 실제로 정확한 60갑자를 내는지 실측(양력 세계 표준 만세력과 대조) 값으로 확인한다.
+      test('1900년(입춘 이후)은 경자년(庚子年)이다', () {
+        // 1900-1984 = -84 → wrap 없이 그대로 %만 쓰면 언어별로 음수 나머지가 나올 수 있는
+        // 경계값. 1900년은 실제 만세력 기준으로도 경자년(쥐띠, 서기 1900년)이 맞다.
+        final result = calculateFourPillars(birthDate: DateTime(1900, 3, 1));
+        expect(result.year.label, '경자');
+      });
+
+      test('1899년(입춘 이후)은 기해년(己亥年)이다 — 1900년(경자)의 바로 앞 해', () {
+        final result = calculateFourPillars(birthDate: DateTime(1899, 6, 1));
+        expect(result.year.label, '기해');
+      });
+
+      test('1964년(입춘 이후)은 갑진년(甲辰年)이다 — 60갑자 한 바퀴 전인 2024년(갑진)과 같은 간지', () {
+        final result = calculateFourPillars(birthDate: DateTime(1964, 3, 1));
+        expect(result.year.label, '갑진');
+        final cycle2024 = calculateFourPillars(birthDate: DateTime(2024, 3, 1));
+        expect(result.year.label, cycle2024.year.label);
+      });
+    });
+
     group('월주(月柱) — 오호둔년기월법(五虎遁年起月法)이 정확히 반영되는지', () {
       // 년주/일주/시주는 각각 테스트가 있었지만, 월주(月柱)의 실제 값을 직접
       // 검증한 테스트는 지금까지 하나도 없었다 — 고전 공식(오호둔년기월법: 갑기년
