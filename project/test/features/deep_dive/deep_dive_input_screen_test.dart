@@ -14,6 +14,9 @@ import 'package:cosmos_saju/features/deep_dive/deep_dive_info.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_input_screen.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_result_screen.dart';
 
+import '../../support/scoped_finders.dart';
+import '../../support/test_viewport.dart' as test_viewport;
+
 void main() {
   // 화면이 열릴 때 DeepDiveInfoStore.load()가 SharedPreferences를 읽고, 제출 시에는
   // DeepDiveInfoStore.save()가 쓴다 — 목(mock) 초기값을 설정해둔다.
@@ -23,16 +26,8 @@ void main() {
 
   // 관심사 칩(Wrap) + MBTI 체크박스까지 켜면 기본 뷰포트보다 콘텐츠가 길어질 수 있어
   // 다른 입력 화면 테스트와 같은 방식으로 세로로 넉넉하게 키운다.
-  Future<void> useTallViewport(WidgetTester tester) async {
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 1400);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
-  }
+  Future<void> useTallViewport(WidgetTester tester) =>
+      test_viewport.useTallViewport(tester, height: 1400);
 
   final birthInfo = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false);
 
@@ -131,10 +126,7 @@ void main() {
     // 화면 밖(사용자 눈에는 안 보임)에 같은 텍스트를 가진 캡처용 위젯이 함께 존재할 수
     // 있다 — 실제로 보이는 스크롤 뷰(deepDiveResultScrollView) 안으로 범위를 좁힌다.
     expect(
-      find.descendant(
-        of: find.byKey(const Key('deepDiveResultScrollView')),
-        matching: find.text('1998.08.15 · 오후 2시生 · 양력'),
-      ),
+      findInScrollView('deepDiveResultScrollView', '1998.08.15 · 오후 2시生 · 양력'),
       findsOneWidget,
     );
   });
@@ -226,10 +218,7 @@ void main() {
     // 위 테스트와 같은 이유(2026-07-15, 공유 카드 추가로 화면 밖에 같은 텍스트가 하나
     // 더 생김)로 실제로 보이는 스크롤 뷰 안으로 범위를 좁힌다.
     expect(
-      find.descendant(
-        of: find.byKey(const Key('deepDiveResultScrollView')),
-        matching: find.textContaining('INTJ'),
-      ),
+      findTextContainingInScrollView('deepDiveResultScrollView', 'INTJ'),
       findsOneWidget,
     );
 
@@ -381,10 +370,7 @@ void main() {
 
     expect(find.byType(DeepDiveResultScreen), findsOneWidget);
     expect(
-      find.descendant(
-        of: find.byKey(const Key('deepDiveResultScrollView')),
-        matching: find.textContaining('INTJ'),
-      ),
+      findTextContainingInScrollView('deepDiveResultScrollView', 'INTJ'),
       findsOneWidget,
     );
 

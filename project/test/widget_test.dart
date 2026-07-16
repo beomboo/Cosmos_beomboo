@@ -10,6 +10,9 @@ import 'package:cosmos_saju/features/deep_dive/deep_dive_info.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_readings.dart';
 import 'package:cosmos_saju/main.dart';
 
+import 'support/scoped_finders.dart';
+import 'support/test_viewport.dart';
+
 void main() {
   // birth_input 제출 시 BirthInfoStore.save()가 SharedPreferences를 쓴다.
   setUp(() {
@@ -79,10 +82,7 @@ void main() {
 
     expect(find.text('시작하기 →'), findsNothing);
     expect(
-      find.descendant(
-        of: find.byKey(const Key('resultScrollView')),
-        matching: find.text('회원님의 사주팔자 ✨'),
-      ),
+      findInScrollView('resultScrollView', '회원님의 사주팔자 ✨'),
       findsOneWidget,
     );
   });
@@ -105,14 +105,7 @@ void main() {
       //
       // birth_input의 ListView가 기본 테스트 뷰포트(800x600)보다 길어 제출 버튼이
       // 화면 밖에서 지연 빌드된다 — 뷰포트를 세로로 넉넉하게 키운다.
-      final originalSize = tester.view.physicalSize;
-      final originalRatio = tester.view.devicePixelRatio;
-      tester.view.physicalSize = const Size(400, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.physicalSize = originalSize;
-        tester.view.devicePixelRatio = originalRatio;
-      });
+      await useTallViewport(tester);
 
       await tester.pumpWidget(const CosmosSajuApp());
 
@@ -134,10 +127,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       // 입력했던 생년월일시가 실제 계산·표시까지 그대로 이어졌는지 확인한다.
-      Finder findInResult(String text) => find.descendant(
-            of: find.byKey(const Key('resultScrollView')),
-            matching: find.text(text),
-          );
+      Finder findInResult(String text) => findInScrollView('resultScrollView', text);
       expect(findInResult('회원님의 사주팔자 ✨'), findsOneWidget);
       // birth_input의 성별 기본값은 여성이고 timePicker 기본값은 오후 2시 30분이라
       // (둘 다 실제로 제출되는 값), 메타 라인에도 분까지 그대로 반영된다.
@@ -163,14 +153,7 @@ void main() {
       // 여정 테스트는 처음 한 번 입력하는 경로만 다뤘다 — 저장된 값이 있는 상태에서 시작해
       // 실제로 재입력하고 그 결과 "이전 값이 새 값으로 완전히 교체"되는지는 아직 아무 테스트도
       // 실제 라우트로 확인한 적이 없었다.
-      final originalSize = tester.view.physicalSize;
-      final originalRatio = tester.view.devicePixelRatio;
-      tester.view.physicalSize = const Size(400, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.physicalSize = originalSize;
-        tester.view.devicePixelRatio = originalRatio;
-      });
+      await useTallViewport(tester);
 
       await tester.pumpWidget(
         CosmosSajuApp(
@@ -178,10 +161,7 @@ void main() {
         ),
       );
 
-      Finder findInResult(String text) => find.descendant(
-            of: find.byKey(const Key('resultScrollView')),
-            matching: find.text(text),
-          );
+      Finder findInResult(String text) => findInScrollView('resultScrollView', text);
       // 이 BirthInfo는 테스트에서 직접 만든 값이라 gender를 지정하지 않았으므로
       // (birth_input 실제 제출과 달리) 메타 라인에 "· 여성" 접미사가 붙지 않는다.
       expect(findInResult('1990.03.01 · 오전 9시生 · 양력'), findsOneWidget);
@@ -219,14 +199,7 @@ void main() {
       // 상세 리포트 화면의 콘텐츠(오행 5종 설명+전체 풀이 등)가 아주 길어
       // report_screen_test.dart와 같은 400x3000 뷰포트가 필요하다(2000으로는
       // 맨 아래 "MBTI·관심사로 심층 분석 받기" 버튼이 지연 빌드돼 탭할 수 없었음).
-      final originalSize = tester.view.physicalSize;
-      final originalRatio = tester.view.devicePixelRatio;
-      tester.view.physicalSize = const Size(400, 3000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.physicalSize = originalSize;
-        tester.view.devicePixelRatio = originalRatio;
-      });
+      await useTallViewport(tester, height: 3000);
 
       // 1998-08-15/14시는 이미 four_pillars_test.dart에서 우세 오행이 '금'으로
       // 검증돼 있는 조합이라(목:2,화:0,토:2,금:3,수:1) 그대로 재사용한다.
@@ -253,14 +226,10 @@ void main() {
       // 화면 밖(화면에는 안 보임)에 같은 텍스트를 가진 캡처용 위젯이 함께 존재하게
       // 됐다 — result_screen_test.dart의 findInResult와 같은 이유로, 실제로 보이는
       // 스크롤 뷰(deepDiveResultScrollView) 안으로 finder 범위를 좁힌다.
-      Finder findInDeepDiveResult(String text) => find.descendant(
-            of: find.byKey(const Key('deepDiveResultScrollView')),
-            matching: find.text(text),
-          );
-      Finder findContainingInDeepDiveResult(String text) => find.descendant(
-            of: find.byKey(const Key('deepDiveResultScrollView')),
-            matching: find.textContaining(text),
-          );
+      Finder findInDeepDiveResult(String text) =>
+          findInScrollView('deepDiveResultScrollView', text);
+      Finder findContainingInDeepDiveResult(String text) =>
+          findTextContainingInScrollView('deepDiveResultScrollView', text);
 
       expect(findInDeepDiveResult('회원님의 심층 분석 ✨'), findsOneWidget);
       // 관심사 4개(연애·재물·직장·건강) 전부 우세 오행(금) 기준 풀이가 실제로 보인다.
@@ -287,14 +256,7 @@ void main() {
       // 결과→상세 리포트→심층 분석 입력(화면엔 안 보임)을 거쳐 심층 분석 결과 화면의 MBTI
       // 코멘트로 정확히 이어지는지 실제 라우트로 검증한다.
       // 상세 리포트 화면 콘텐츠가 길어 위 테스트와 같은 이유로 3000까지 키운다.
-      final originalSize = tester.view.physicalSize;
-      final originalRatio = tester.view.devicePixelRatio;
-      tester.view.physicalSize = const Size(400, 3000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.physicalSize = originalSize;
-        tester.view.devicePixelRatio = originalRatio;
-      });
+      await useTallViewport(tester, height: 3000);
 
       await tester.pumpWidget(const CosmosSajuApp());
 
@@ -330,10 +292,7 @@ void main() {
       // 이유(2026-07-15, 공유 카드 추가로 화면 밖에 같은 텍스트가 하나 더 생김)로
       // 실제로 보이는 스크롤 뷰 안으로 finder 범위를 좁힌다.
       expect(
-        find.descendant(
-          of: find.byKey(const Key('deepDiveResultScrollView')),
-          matching: find.textContaining('INTJ'),
-        ),
+        findTextContainingInScrollView('deepDiveResultScrollView', 'INTJ'),
         findsOneWidget,
       );
     },

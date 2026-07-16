@@ -9,30 +9,20 @@ import 'package:cosmos_saju/features/deep_dive/deep_dive_readings.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_result_screen.dart';
 import 'package:cosmos_saju/features/result/meta_line.dart';
 
+import '../../support/scoped_finders.dart';
+import '../../support/test_viewport.dart' as test_viewport;
+
 void main() {
-  Future<void> useTallViewport(WidgetTester tester) async {
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 1600);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
-  }
+  Future<void> useTallViewport(WidgetTester tester) =>
+      test_viewport.useTallViewport(tester, height: 1600);
 
   // 2026-07-15: 공유하기 기능이 추가되면서 화면 밖(사용자 눈에는 안 보임)에 같은
   // 텍스트를 가진 캡처용 DeepDiveShareCard가 함께 존재할 수 있게 됐다 —
   // result_screen_test.dart의 findInResult와 같은 이유로, 실제로 보이는 스크롤 뷰
   // (deepDiveResultScrollView) 안으로 finder 범위를 좁혀 중복 매칭을 피한다.
-  Finder findInDeepDiveResult(String text) => find.descendant(
-        of: find.byKey(const Key('deepDiveResultScrollView')),
-        matching: find.text(text),
-      );
-  Finder findContainingInDeepDiveResult(String text) => find.descendant(
-        of: find.byKey(const Key('deepDiveResultScrollView')),
-        matching: find.textContaining(text),
-      );
+  Finder findInDeepDiveResult(String text) => findInScrollView('deepDiveResultScrollView', text);
+  Finder findContainingInDeepDiveResult(String text) =>
+      findTextContainingInScrollView('deepDiveResultScrollView', text);
 
   // deep_dive_result_screen.dart가 실제로 하는 것과 똑같이 dominant/sub/subCount를
   // 계산해 readingFor()에 넘긴다 — readingFor의 시그니처가 (interest, ohaeng)에서

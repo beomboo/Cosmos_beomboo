@@ -7,6 +7,9 @@ import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
 import 'package:cosmos_saju/features/result/result_screen.dart';
 
+import '../support/scoped_finders.dart';
+import '../support/test_viewport.dart';
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -15,15 +18,10 @@ void main() {
   // ResultScreen에는 화면 밖에 배치된 공유용 ShareCard(동일 문구를 일부 재사용)가
   // 위젯 트리에 함께 존재하므로, 텍스트 파인더는 눈에 보이는 본문(resultScrollView)으로
   // 범위를 좁혀야 정확히 하나만 매치된다.
-  Finder findInBody(String text) => find.descendant(
-        of: find.byKey(const Key('resultScrollView')),
-        matching: find.text(text),
-      );
+  Finder findInBody(String text) => findInScrollView('resultScrollView', text);
 
-  Finder findInBodyContaining(String text) => find.descendant(
-        of: find.byKey(const Key('resultScrollView')),
-        matching: find.textContaining(text),
-      );
+  Finder findInBodyContaining(String text) =>
+      findTextContainingInScrollView('resultScrollView', text);
 
   group('buildOhaengBalanceNarrative', () {
     // 2026-07-14 추가: `flutter test --coverage` 실측 결과 2순위 오행이 사실상 없을 때
@@ -201,14 +199,7 @@ void main() {
     // 동작은 안 바뀌므로 그런 테스트들은 그라데이션이 실수로 다시 단색으로 되돌아가도
     // 못 잡는다. 버튼이 긴 리스트 아래쪽에 있어(기본 뷰포트로는 지연 빌드돼 못 찾음)
     // 뷰포트를 세로로 키운다.
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 2000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
+    await useTallViewport(tester);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -237,14 +228,7 @@ void main() {
     // Text 그대로 두면 스크린 리더가 이모지를 유니코드 이름으로 읽어 혼란을 준다 —
     // semanticsLabel: '공유하기'로 라벨을 깨끗하게 교체했는지 확인한다. 버튼이 긴
     // 리스트 아래쪽에 있어(기본 뷰포트로는 지연 빌드돼 못 찾음) 뷰포트를 세로로 키운다.
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 2000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
+    await useTallViewport(tester);
     final semantics = tester.ensureSemantics();
 
     await tester.pumpWidget(
@@ -384,14 +368,7 @@ void main() {
     // 관계)로 문구가 바뀌었다. 접미사가 늘어난 만큼(밸런스 서술 문단도 새로 추가됨) 카테고리
     // 카드가 기본 뷰포트(800x600) 아래로 밀려 ListView가 지연 빌드해버려 못 찾는 걸
     // 실측으로 확인했다 — 뷰포트를 세로로 키운다.
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 2000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
+    await useTallViewport(tester);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -489,14 +466,7 @@ void main() {
     // 접미사·밸런스 서술 문단이 늘어난 만큼 카드가 기본 뷰포트(800x600) 아래로 밀려
     // ListView가 지연 빌드해버리는 걸 다른 카테고리 카드 테스트에서와 같은 이유로
     // 뷰포트를 세로로 키운다.
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 2000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
+    await useTallViewport(tester);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -800,14 +770,7 @@ void main() {
     // 로컬 렌더 크기(tester.getSize, 변환 적용 전)는 항상 TextPainter로 직접 계산한
     // "제약 없는 자연 크기"와 같아야 한다. FittedBox가 없으면 고정폭 제약 때문에
     // 자연 크기보다 작게(=잘려서) 렌더링된다.
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 3000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
+    await useTallViewport(tester, height: 3000);
 
     for (final scale in const [2.0, 3.0]) {
       await tester.pumpWidget(
@@ -926,14 +889,7 @@ void main() {
     // 2026-07-16 오버나이트 대조 추가 수정: 목업(`.bars h3`/`.cards h3`)의
     // letter-spacing:.02em(≈0.22px)이 빠져 있던 것도 새로 확인한다 — fontSize/color만
     // 확인하던 기존 테스트로는 letterSpacing 누락(또는 회귀)을 잡을 수 없었다.
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 2000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
+    await useTallViewport(tester);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -996,14 +952,7 @@ void main() {
     // + 접미사")으로 병합됐는지 확인한다.
     // 접미사·밸런스 서술 문단이 늘어난 만큼 카드가 기본 뷰포트(800x600) 아래로 밀려
     // ListView가 지연 빌드해버리는 걸 실측으로 확인했다 — 뷰포트를 세로로 키운다.
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 2000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
+    await useTallViewport(tester);
 
     final semantics = tester.ensureSemantics();
 
@@ -1065,14 +1014,7 @@ void main() {
     // 키워야 하고, RenderRepaintBoundary.toImage() 캡처가 실제 엔진 콜백을
     // 기다려야 해서 tester.runAsync()로 감싸야 한다(둘 다 CLAUDE.md에 기록된
     // 기존 함정과 동일한 이유).
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 2000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
+    await useTallViewport(tester);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -1120,14 +1062,7 @@ void main() {
     // 하고 paint는 아직 안 돈 상태로 멈춘 뒤(탭 좌표 계산 없이) 버튼의 onPressed를
     // 직접 동기 호출하면, `_handleShare`가 읽는 `boundary.debugNeedsPaint`가 아직
     // true라 캡처를 건너뛰고 텍스트 전용 분기(else)를 타게 된다.
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 2000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
+    await useTallViewport(tester);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -1548,14 +1483,7 @@ void main() {
     // 테스트도 기본 배율(1.0) 외의 글자 크기로 이 화면을 렌더링해본 적이 없어서
     // 이 회귀를 못 잡고 있었다. Row-of-Expanded(_PillarCard와 같은 패턴)로 고친
     // 뒤 2배 배율에서도 예외 없이 렌더링되는지 확인한다.
-    final originalSize = tester.view.physicalSize;
-    final originalRatio = tester.view.devicePixelRatio;
-    tester.view.physicalSize = const Size(400, 2400);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.physicalSize = originalSize;
-      tester.view.devicePixelRatio = originalRatio;
-    });
+    await useTallViewport(tester, height: 2400);
 
     await tester.pumpWidget(
       MediaQuery(
@@ -1634,14 +1562,7 @@ void main() {
     testWidgets('소제목 "오늘 궁금한 것부터"가 헤딩(isHeader)으로 노출된다', (WidgetTester tester) async {
       // 화면 아래쪽이라 기본 뷰포트로는 지연 빌드돼 못 찾으므로 뷰포트를 세로로 키운다
       // (위 카테고리 카드 테스트들과 같은 이유).
-      final originalSize = tester.view.physicalSize;
-      final originalRatio = tester.view.devicePixelRatio;
-      tester.view.physicalSize = const Size(400, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.physicalSize = originalSize;
-        tester.view.devicePixelRatio = originalRatio;
-      });
+      await useTallViewport(tester);
       final semantics = tester.ensureSemantics();
 
       await tester.pumpWidget(
