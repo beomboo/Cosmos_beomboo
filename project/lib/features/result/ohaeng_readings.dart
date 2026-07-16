@@ -132,6 +132,13 @@ String ohaengComboSuffix(OhaengRelation relation, String sub) {
   }
 }
 
+/// 건강운 카드/문단 아래에 붙이는 면책 문구. 오행별 건강운 문구가 "소화기 계통", "호흡기·피부"처럼
+/// 특정 신체 부위를 콕 짚어 말하는데도 안내 문구가 전혀 없었다(2026-07-17 오버나이트 리서치 반영
+/// 대조 발견, `docs/research/운세/SNS_콘텐츠_전략.md`의 건강 디스클레이머 패턴 참고). 결과/리포트/
+/// 심층 분석 화면이 기존에 쓰던 절기 디스클레이머와 같은 톤·스타일(`AppColors.inkSoft`, 11px)로
+/// 노출한다.
+const String healthReadingDisclaimer = '※ 건강운 내용은 참고용이에요. 몸 상태가 걱정되면 전문의와 상담해주세요';
+
 /// [dominant] 단독 또는 [dominant]+[sub] 조합에 맞는 4개 영역(연애·재물·건강·성격) 풀이를
 /// 반환한다.
 ///

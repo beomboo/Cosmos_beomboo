@@ -327,6 +327,14 @@ class _ResultScreenState extends State<ResultScreen> {
                 // 목업(`.cat-grid`)은 margin-bottom:14px인데 지금까지는 28px이었다
                 // (2026-07-07 대조 발견).
                 const SizedBox(height: 14),
+                // 카테고리 카드 4개(연애·재물·건강·성격)는 항상 함께 노출되고 그중 건강운은
+                // 특정 신체 부위를 짚어 말하는데 면책 문구가 없었다(2026-07-17 오버나이트
+                // 리서치 반영 대조 발견). 카드가 조건 없이 상시 노출되므로 문구도 상시 노출.
+                const Text(
+                  healthReadingDisclaimer,
+                  style: TextStyle(color: AppColors.inkSoft, fontSize: 11),
+                ),
+                const SizedBox(height: 12),
                 // 목업(docs/mockups/01-pastel-cute.html)의 "공유하기" 버튼(`.share-btn`)은
                 // 다른 CTA 버튼과 달리 단색이 아니라 accent→metal 그라데이션을 쓴다 —
                 // 심층 분석 결과 화면과 완전히 동일한 구조라 공용 위젯(GradientShareButton)으로
