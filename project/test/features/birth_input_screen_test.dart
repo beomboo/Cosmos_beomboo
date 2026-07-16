@@ -849,6 +849,46 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('자시 경계 안내 문구는 SemanticsFlag.isLiveRegion 플래그를 갖는다 (접근성)', (tester) async {
+    // 위 "별개의 시맨틱 노드로 읽힌다" 테스트는 라벨 텍스트·isButton만 확인했을 뿐,
+    // 정작 이 문구가 동적으로 나타났을 때 스크린 리더가 포커스 이동 없이도 자동으로
+    // 읽어주게 하는 liveRegion 플래그 자체는 검증한 적이 없었다 — Semantics(liveRegion:
+    // true)로 감쌌더라도 실수로 값을 빠뜨리거나 다른 위치에 흡수되면 이 플래그가
+    // 사라질 수 있어, getSemanticsData().flagsCollection.isLiveRegion으로 직접 확인한다
+    // (hasFlag(SemanticsFlag.isLiveRegion)은 flagsCollection으로 대체되며 deprecated됨).
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    await setTimeViaTextInput(tester, hour: '11', minute: '00', pm: true);
+
+    final noticeNode = tester.getSemantics(find.textContaining('앱마다 계산 방식이 조금씩 달라요'));
+    expect(noticeNode.getSemanticsData().flagsCollection.isLiveRegion, isTrue);
+
+    semantics.dispose();
+  });
+
+  testWidgets('시맨틱스가 활성화된 상태에서 체크박스로 안내 문구를 없애도 시맨틱 트리 처리 중 예외가 없다 (접근성)',
+      (tester) async {
+    // liveRegion 노드가 트리에서 제거되는 과정(체크박스 토글로 문구 자체가 사라짐)에서
+    // 시맨틱스 파이프라인이 예외 없이 노드를 정리하는지 확인한다 — ensureSemantics()로
+    // 시맨틱 트리를 실제로 구성해둔 상태에서 진행해야 이 정리 경로가 실행된다.
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    await setTimeViaTextInput(tester, hour: '11', minute: '00', pm: true);
+    expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsOneWidget);
+
+    await tester.tap(find.text('태어난 시간을 몰라요'));
+    await tester.pump();
+
+    expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsNothing);
+    expect(tester.takeException(), isNull);
+
+    semantics.dispose();
+  });
+
   testWidgets('이미 심층 분석에서 좁혀둔 관심사가 있으면 제출해도 전체 선택으로 되돌아가지 않는다',
       (tester) async {
     // 2026-07-08 버그 수정: 사주 결과 화면은 이 화면이 스택 아래에 그대로 남아 있어
