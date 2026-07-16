@@ -51,6 +51,8 @@ dev_dependencies:
   # SharedPreferencesStorePlatform.instance를 일부러 실패하는 가짜 구현으로 바꿔치기하기
   # 위해 필요(2026-07-08, result_screen_test.dart의 "다시 입력하기" 부분 실패 테스트).
   shared_preferences_platform_interface: ^2.4.2
+  integration_test:
+    sdk: flutter
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
