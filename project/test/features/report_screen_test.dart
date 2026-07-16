@@ -6,6 +6,7 @@ import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_input_screen.dart';
 import 'package:cosmos_saju/features/report/report_screen.dart';
+import 'package:cosmos_saju/features/result/ohaeng_readings.dart';
 import 'package:cosmos_saju/features/result/result_screen.dart';
 
 import '../support/test_viewport.dart';
@@ -479,6 +480,23 @@ void main() {
     expect(find.text('💰 재물운: 무리한 투자보다 꾸준한 저축이 유리해요'), findsOneWidget); // 토
     expect(find.text('🌱 건강운: 호흡기·피부 컨디션을 신경 쓰면 좋아요'), findsOneWidget); // 금
     expect(find.text('💘 연애운: 은근한 매력으로 다가오는 인연이 있어요'), findsOneWidget); // 수
+  });
+
+  testWidgets('오행별 오늘의 풀이 모음 섹션 뒤에 건강운 면책 문구가 정확히 1번만 노출된다', (tester) async {
+    // 2026-07-17 오버나이트 리서치 반영: 오행 5개 반복문(_AllReadingsSection)이 5번
+    // 도는데, 건강운 면책 문구는 그 반복문 "안"이 아니라 반복문이 끝난 지점에 딱 1번만
+    // 노출돼야 한다 — 실수로 반복문 안(각 _AllReadingsSection)에 넣으면 5번 중복
+    // 노출되는 회귀가 생기는데, findsOneWidget으로 그 회귀를 고정해 잡아낸다.
+    await useReportViewport(tester);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ReportScreen(
+          birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+        ),
+      ),
+    );
+
+    expect(find.text(healthReadingDisclaimer), findsOneWidget);
   });
 
   testWidgets('오행별 오늘의 풀이 모음 항목의 스크린 리더 라벨에는 장식용 이모지가 빠져 있다', (tester) async {

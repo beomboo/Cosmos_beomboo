@@ -1585,6 +1585,30 @@ void main() {
       semantics.dispose();
     });
   });
+
+  testWidgets('카테고리 카드(연애·재물·건강·성격) 아래 건강운 면책 문구가 항상 노출된다',
+      (WidgetTester tester) async {
+    // 2026-07-17 오버나이트 리서치 반영: 오행별 건강운 문구가 "소화기 계통 컨디션을 특히
+    // 잘 챙기면 좋아요", "호흡기·피부 컨디션을 신경 쓰면 좋아요"처럼 특정 신체 부위를 콕
+    // 짚어 말하는데도 안내 문구가 전혀 없었다 — 카테고리 카드 4개는 조건 없이 항상
+    // 노출되므로 면책 문구도 상시 노출돼야 한다. 카드가 화면 아래쪽에 있어(기본 뷰포트로는
+    // 지연 빌드돼 못 찾음) 뷰포트를 세로로 키운다.
+    await useTallViewport(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    expect(findInBodyContaining('건강운 내용은 참고용이에요'), findsOneWidget);
+  });
 }
 
 /// `birth_info.`가 포함된 키를 지우려 하면 실제 플랫폼 채널 오류를 흉내 내 예외를

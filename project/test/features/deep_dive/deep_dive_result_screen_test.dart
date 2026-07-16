@@ -8,6 +8,7 @@ import 'package:cosmos_saju/features/deep_dive/deep_dive_info.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_readings.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_result_screen.dart';
 import 'package:cosmos_saju/features/result/meta_line.dart';
+import 'package:cosmos_saju/features/result/ohaeng_readings.dart';
 
 import '../../support/scoped_finders.dart';
 import '../../support/test_viewport.dart' as test_viewport;
@@ -298,6 +299,41 @@ void main() {
 
     expect(findInDeepDiveResult(reading(Interest.career, noHourInfo)), findsOneWidget);
     expect(findInDeepDiveResult(reading(Interest.career, birthInfo)), findsNothing);
+  });
+
+  group('건강운 면책 문구', () {
+    // 2026-07-17 오버나이트 리서치 반영: 건강 카드 자체가 관심사 선택에 따라 조건부로만
+    // 노출되므로(deepDiveInfo.interests.contains(Interest.health)), 면책 문구도 같은
+    // 조건일 때만 보여야 한다 — result_screen.dart(상시 노출)·report_screen.dart(오행 5개
+    // 전부 순회 후 1번)와 달리 이 화면만 조건부 로직이라 노출/비노출 두 케이스 모두 고정한다.
+
+    testWidgets('건강 관심사를 선택하면 면책 문구가 보인다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DeepDiveResultScreen(
+            birthInfo: birthInfo,
+            deepDiveInfo: const DeepDiveInfo(interests: {Interest.health}),
+          ),
+        ),
+      );
+
+      expect(findInDeepDiveResult(healthReadingDisclaimer), findsOneWidget);
+    });
+
+    testWidgets('건강 관심사를 선택하지 않으면 면책 문구가 보이지 않는다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DeepDiveResultScreen(
+            birthInfo: birthInfo,
+            deepDiveInfo: const DeepDiveInfo(interests: {Interest.love, Interest.wealth, Interest.career}),
+          ),
+        ),
+      );
+
+      expect(find.text(healthReadingDisclaimer), findsNothing);
+    });
   });
 
   testWidgets('시스템 글자 크기를 크게(2배) 키워도 RenderFlex overflow가 나지 않는다', (tester) async {
