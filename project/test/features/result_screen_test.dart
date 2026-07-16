@@ -1530,7 +1530,7 @@ void main() {
 
       expect(
         tester.getSemantics(findInBody('회원님의 사주팔자 ✨')),
-        matchesSemantics(label: '회원님의 사주팔자 ✨', isHeader: true),
+        matchesSemantics(label: '회원님의 사주팔자', isHeader: true),
       );
 
       semantics.dispose();

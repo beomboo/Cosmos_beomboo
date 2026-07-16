@@ -141,6 +141,7 @@ class _ResultScreenState extends State<ResultScreen> {
                   header: true,
                   child: Text(
                     '$displayName의 사주팔자 ✨',
+                    semanticsLabel: '$displayName의 사주팔자',
                     style: const TextStyle(
                       fontSize: 15.5,
                       fontWeight: FontWeight.w800,
