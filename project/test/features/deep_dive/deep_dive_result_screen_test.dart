@@ -520,7 +520,7 @@ void main() {
 
       expect(
         tester.getSemantics(findInDeepDiveResult('회원님의 심층 분석 ✨')),
-        matchesSemantics(label: '회원님의 심층 분석 ✨', isHeader: true),
+        matchesSemantics(label: '회원님의 심층 분석', isHeader: true),
       );
 
       semantics.dispose();

@@ -72,6 +72,7 @@ class _DeepDiveResultScreenState extends State<DeepDiveResultScreen> {
                   header: true,
                   child: Text(
                     '$displayName의 심층 분석 ✨',
+                    semanticsLabel: '$displayName의 심층 분석',
                     style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 20),
                   ),
                 ),
