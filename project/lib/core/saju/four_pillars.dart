@@ -72,6 +72,9 @@ class FourPillars {
 ///   (변환 없이 엉뚱한 날짜로 계산되어) 통째로 틀릴 수 있는 훨씬 큰 정확도 문제다. 다른 세 항목과
 ///   마찬가지로 정밀 구현(만세력 데이터 기반 음양력 변환 라이브러리 포팅)은 사람 결정 대기.
 ///
+/// 어떤 정수든 항상 0~59(60갑자 인덱스 범위) 안으로 접어넣는다(음수 나머지 방지).
+int _wrap60(int cycleIndex) => (cycleIndex % 60 + 60) % 60;
+
 /// [birthDate]는 양력 날짜로 취급된다(음력 미변환, 위 참고). [birthHour]는 0~23시(모르면 null → 시주 없이 계산).
 FourPillars calculateFourPillars({
   required DateTime birthDate,
@@ -83,7 +86,7 @@ FourPillars calculateFourPillars({
   final isBeforeIpchun = date.month < 2 || (date.month == 2 && date.day < 4);
   final effectiveYear = isBeforeIpchun ? date.year - 1 : date.year;
   // 1984-02-04 이후 ~ 1985-02-03 이전은 갑자년(甲子年, index 0)
-  final yearCycleIndex = ((effectiveYear - 1984) % 60 + 60) % 60;
+  final yearCycleIndex = _wrap60(effectiveYear - 1984);
   final yearStemIndex = yearCycleIndex % 10;
   final yearBranchIndex = yearCycleIndex % 12;
 
@@ -98,7 +101,7 @@ FourPillars calculateFourPillars({
   // 없음) 서머타임 기간과 무관하게 항상 정확한 날짜 차이가 나온다.
   final utcDate = DateTime.utc(date.year, date.month, date.day);
   final daysSinceEpoch = utcDate.difference(DateTime.utc(1900, 1, 1)).inDays;
-  final dayCycleIndex = ((40 + daysSinceEpoch) % 60 + 60) % 60;
+  final dayCycleIndex = _wrap60(40 + daysSinceEpoch);
   final dayStemIndex = dayCycleIndex % 10;
   final dayBranchIndex = dayCycleIndex % 12;
 
