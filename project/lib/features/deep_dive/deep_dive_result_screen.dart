@@ -8,6 +8,7 @@ import '../../shared/widgets/offscreen_share_capture.dart';
 import '../../shared/widgets/pastel_card.dart';
 import '../birth_input/birth_info.dart';
 import '../result/meta_line.dart';
+import '../result/ohaeng_readings.dart';
 import 'deep_dive_info.dart';
 import 'deep_dive_readings.dart';
 import 'deep_dive_share_card.dart';
@@ -143,6 +144,16 @@ class _DeepDiveResultScreenState extends State<DeepDiveResultScreen> {
                           ),
                         ),
                       ),
+                // 건강 카드 자체가 관심사 선택에 따라 조건부로만 노출되므로 면책 문구도
+                // 같은 조건일 때만 보여준다(2026-07-17 오버나이트 리서치 반영 대조 발견,
+                // ohaeng_readings.dart의 healthReadingDisclaimer 참고).
+                if (deepDiveInfo.interests.contains(Interest.health)) ...[
+                  const SizedBox(height: 4),
+                  const Text(
+                    healthReadingDisclaimer,
+                    style: TextStyle(color: AppColors.inkSoft, fontSize: 11),
+                  ),
+                ],
                 if (canShare) ...[
                   const SizedBox(height: 4),
                   // result_screen.dart의 공유 버튼과 완전히 동일한 구조라 공용 위젯
