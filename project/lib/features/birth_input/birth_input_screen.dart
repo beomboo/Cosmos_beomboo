@@ -163,7 +163,9 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
           children: [
             _FieldLabel('이름 (선택)'),
-            const SizedBox(height: 8),
+            // 목업(`.field label`)은 margin-bottom:7px인데 지금까지는 8px이었다
+            // (2026-07-16 오버나이트 대조 발견).
+            const SizedBox(height: 7),
             // hintText만으로는 스크린 리더가 "예: 민지"를 필드 이름으로 잘못 읽는다(필드가
             // 비어 있을 때 hintText가 시맨틱 label로 그대로 노출됨 — 실제 확인함). 위의
             // _FieldLabel은 시각적으로만 보이고 이 TextField와 시맨틱으로 연결되지 않으므로,
@@ -190,7 +192,9 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
             // (2026-07-07 대조 발견) — 이하 필드 그룹 사이 간격 전부 동일하게 수정.
             const SizedBox(height: 14),
             _FieldLabel('태어난 날짜'),
-            const SizedBox(height: 8),
+            // 목업(`.field label`)은 margin-bottom:7px인데 지금까지는 8px이었다
+            // (2026-07-16 오버나이트 대조 발견).
+            const SizedBox(height: 7),
             // PastelPillButton 자체 라벨은 버튼에 표시된 값("1998.08.15")뿐이라, 스크린
             // 리더가 바로 위 _FieldLabel("태어난 날짜")을 건너뛰고 이 버튼에 도달하면
             // 무슨 값인지 맥락이 없다 — `fieldLabel`을 지정하면 위젯 내부에서 필드
@@ -213,7 +217,9 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
             ),
             const SizedBox(height: 14),
             _FieldLabel('태어난 시간'),
-            const SizedBox(height: 8),
+            // 목업(`.field label`)은 margin-bottom:7px인데 지금까지는 8px이었다
+            // (2026-07-16 오버나이트 대조 발견).
+            const SizedBox(height: 7),
             // 날짜 pill과 같은 이유(2026-07-15 접근성 발견) — 필드 맥락("태어난 시간")을
             // `fieldLabel`로 더해준다. onTap이 null이면 PastelPillButton이 알아서
             // enabled:false로 표시하므로 여기서 따로 enabled를 지정할 필요가 없다.
@@ -252,7 +258,9 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
             ),
             const SizedBox(height: 14),
             _FieldLabel('성별'),
-            const SizedBox(height: 8),
+            // 목업(`.field label`)은 margin-bottom:7px인데 지금까지는 8px이었다
+            // (2026-07-16 오버나이트 대조 발견).
+            const SizedBox(height: 7),
             PastelToggleRow<Gender>(
               value: _gender,
               options: const {Gender.female: '여성', Gender.male: '남성'},
@@ -261,7 +269,9 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
             ),
             const SizedBox(height: 14),
             _FieldLabel('태어난 곳 (선택)'),
-            const SizedBox(height: 8),
+            // 목업(`.field label`)은 margin-bottom:7px인데 지금까지는 8px이었다
+            // (2026-07-16 오버나이트 대조 발견).
+            const SizedBox(height: 7),
             Semantics(
               label: '태어난 곳 (선택)',
               child: TextField(
@@ -342,8 +352,11 @@ class _FieldLabel extends StatelessWidget {
     return Text(
       text,
       style: const TextStyle(
-        fontWeight: FontWeight.w700,
-        fontSize: 13,
+        // 목업(`.field label`)은 font-size:11px/font-weight:800/letter-spacing:.02em인데
+        // 지금까지는 13px/700/자간 없음이었다(2026-07-16 오버나이트 대조 발견).
+        fontWeight: FontWeight.w800,
+        fontSize: 11,
+        letterSpacing: 0.22,
         color: AppColors.inkSoft,
       ),
     );
