@@ -48,21 +48,22 @@ class DeepDiveShareCard extends StatelessWidget {
         children: [
           if (hasMbti) ...[
             const SizedBox(height: 20),
-            Container(
+            SizedBox(
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
+              child: PastelCard(
+                padding: const EdgeInsets.all(16),
+                borderRadius: 16,
                 color: AppColors.accentSoft,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                '$mbtiCode — $mbtiComment',
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.ink,
-                  height: 1.4,
+                showBorder: false,
+                child: Text(
+                  '$mbtiCode — $mbtiComment',
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.ink,
+                    height: 1.4,
+                  ),
                 ),
               ),
             ),

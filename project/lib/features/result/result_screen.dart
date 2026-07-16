@@ -185,20 +185,21 @@ class _ResultScreenState extends State<ResultScreen> {
                 // 오행이 우세하든 항상 같은 accentSoft/ink만 써서 이 색 연동을 놓치고
                 // 있었다(2026-07-06 대조 발견). ohaengTextColors는 이미 ohaengSoftColors
                 // 배경 위에서 WCAG AA를 만족하도록 설계돼 있어 그대로 재사용 가능.
-                Container(
+                SizedBox(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-                  decoration: BoxDecoration(
+                  child: PastelCard(
+                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+                    borderRadius: 16,
                     color: AppColors.ohaengSoftColors[dominant] ?? AppColors.accentSoft,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    '$dominant(${callout.$1}) 기운이 강한 타입이에요 ${callout.$2}\n${callout.$3}',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.ohaengTextColors[dominant] ?? AppColors.ink,
-                      height: 1.55,
+                    showBorder: false,
+                    child: Text(
+                      '$dominant(${callout.$1}) 기운이 강한 타입이에요 ${callout.$2}\n${callout.$3}',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ohaengTextColors[dominant] ?? AppColors.ink,
+                        height: 1.55,
+                      ),
                     ),
                   ),
                 ),

@@ -82,16 +82,17 @@ class _DeepDiveResultScreenState extends State<DeepDiveResultScreen> {
                 ),
                 if (mbtiComment != null) ...[
                   const SizedBox(height: 20),
-                  Container(
+                  SizedBox(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
+                    child: PastelCard(
+                      padding: const EdgeInsets.all(16),
+                      borderRadius: 16,
                       color: AppColors.accentSoft,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      '${deepDiveInfo.mbti!.code} — $mbtiComment',
-                      style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, height: 1.4),
+                      showBorder: false,
+                      child: Text(
+                        '${deepDiveInfo.mbti!.code} — $mbtiComment',
+                        style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, height: 1.4),
+                      ),
                     ),
                   ),
                 ],

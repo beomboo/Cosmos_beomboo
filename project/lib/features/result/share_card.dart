@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme/app_colors.dart';
 import '../../core/saju/four_pillars.dart';
 import '../../core/saju/ganzhi.dart';
+import '../../shared/widgets/pastel_card.dart';
 import '../../shared/widgets/share_card_scaffold.dart';
 
 /// 공유용 9:16 카드 — 실제 화면(스크롤 가능한 ResultScreen)과 별개로,
@@ -61,20 +62,21 @@ class ShareCard extends StatelessWidget {
           const SizedBox(height: 24),
           // result_screen.dart와 같은 이유(목업 `.callout`은 우세 오행 색으로 물듦)로
           // accentSoft/ink 고정 대신 우세 오행 색을 쓴다(2026-07-06 대조 발견).
-          Container(
+          SizedBox(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-            decoration: BoxDecoration(
+            child: PastelCard(
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+              borderRadius: 16,
               color: AppColors.ohaengSoftColors[dominant] ?? AppColors.accentSoft,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              '$dominant($calloutHanja) 기운이 강한 타입이에요 $calloutEmoji\n$calloutText',
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: AppColors.ohaengTextColors[dominant] ?? AppColors.ink,
-                height: 1.55,
+              showBorder: false,
+              child: Text(
+                '$dominant($calloutHanja) 기운이 강한 타입이에요 $calloutEmoji\n$calloutText',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.ohaengTextColors[dominant] ?? AppColors.ink,
+                  height: 1.55,
+                ),
               ),
             ),
           ),
@@ -95,13 +97,9 @@ class ShareCard extends StatelessWidget {
         ? AppColors.inkSoft
         : (AppColors.ohaengTextColors[stemOhaeng(stemIndex)] ?? AppColors.ink);
     return Expanded(
-      child: Container(
+      child: PastelCard(
         padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: AppColors.bgCard,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
-        ),
+        borderRadius: 12,
         child: Column(
           children: [
             Text(hanja, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 13)),
