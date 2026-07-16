@@ -113,6 +113,22 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets(
+      '"이름 없이도 괜찮아요 →"/"건너뛰어도 괜찮아요 →" 안내 문구의 스크린 리더 라벨은 화살표 없이 읽힌다',
+      (tester) async {
+    // 2026-07-16 오버나이트 접근성 정리: 장식용 화살표(→)는 스크린 리더가 "오른쪽
+    // 화살표"처럼 유니코드 이름으로 그대로 읽어 혼란을 준다 — 위 "사주 보러가기 🔮"
+    // 버튼과 같은 패턴으로 semanticsLabel을 화살표 없는 값으로 교체했는지 확인한다.
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    expect(tester.getSemantics(find.text('이름 없이도 괜찮아요 →')).label, '이름 없이도 괜찮아요');
+    expect(tester.getSemantics(find.text('건너뛰어도 괜찮아요 →')).label, '건너뛰어도 괜찮아요');
+
+    semantics.dispose();
+  });
+
   testWidgets('"태어난 시간을 몰라요" 체크 시 시간 버튼이 "시간 모름"으로 바뀐다', (tester) async {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
