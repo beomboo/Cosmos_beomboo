@@ -26,7 +26,13 @@ Future<void> shareCapturedCard({
   try {
     final boundary =
         repaintBoundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-    if (boundary != null && !boundary.debugNeedsPaint) {
+    // 주의: `debug*` 접두사가 붙은 게터/메서드(예: `debugNeedsPaint`)는 프레임워크
+    // 내부에서 `assert()` 블록 안에서만 값을 대입하는 구조라 release/profile 빌드에서는
+    // (assert가 제거되므로) `LateInitializationError`를 던진다. 절대 운영 코드 경로에서
+    // `debug*` 게터/메서드를 조건문으로 호출하지 않는다. `toImage()` 내부의
+    // `assert(!debugNeedsPaint)`는 release에서 자동으로 사라지므로 안전하고, 정말 레이아웃
+    // 전이라 실패하면 일반 예외가 던져져 아래 catch에서 텍스트 폴백으로 처리된다.
+    if (boundary != null) {
       final image = await boundary.toImage(pixelRatio: 3);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       imageBytes = byteData?.buffer.asUint8List();
