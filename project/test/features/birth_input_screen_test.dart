@@ -71,6 +71,42 @@ void main() {
     expect(find.text('사주 보러가기 🔮'), findsOneWidget);
   });
 
+  testWidgets(
+      '_FieldLabel 글자 스타일이 목업 값(fontSize 11/fontWeight w800/letterSpacing 0.22)과 일치한다',
+      (tester) async {
+    // 2026-07-16 오버나이트 대조 수정: 목업(`.field label`)은
+    // font-size:11px/font-weight:800/letter-spacing:.02em(≈0.22px)인데 지금까지는
+    // 13px/700/자간 없음이었다 — 이 값 자체를 확인하는 테스트가 지금까지 없었다.
+    // _FieldLabel은 5개 필드(이름·태어난 날짜·태어난 시간·성별·태어난 곳)에 재사용되는
+    // 공용 위젯이라, 대표로 두 곳(첫 필드·마지막 필드)만 확인해도 공용 스타일 정의
+    // 자체의 회귀는 충분히 잡을 수 있다.
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    for (final label in ['이름 (선택)', '태어난 곳 (선택)']) {
+      final text = tester.widget<Text>(find.text(label));
+      expect(text.style!.fontSize, 11, reason: '$label fontSize');
+      expect(text.style!.fontWeight, FontWeight.w800, reason: '$label fontWeight');
+      expect(text.style!.letterSpacing, 0.22, reason: '$label letterSpacing');
+    }
+  });
+
+  testWidgets('필드 라벨 아래 여백이 목업 값(7px)과 일치한다 (5개 필드 전부)', (tester) async {
+    // 2026-07-16 오버나이트 대조 수정: 목업(`.field label`)은 margin-bottom:7px인데
+    // 지금까지는 8px이었다 — 이 값 자체를 확인하는 테스트가 지금까지 없었다.
+    // height:7인 SizedBox는 이 화면에서 필드 라벨(이름·태어난 날짜·태어난 시간·성별·
+    // 태어난 곳) 5곳 뒤에만 쓰이므로, 개수(5개)를 세는 것만으로 5곳 전부에
+    // 일관되게 적용됐는지 확인할 수 있다(대표 1~2곳만 값으로 확인하는 위 스타일
+    // 테스트와 달리, 간격은 위젯을 공유하지 않는 리터럴이라 개수 확인이 필요하다).
+    await useTallViewport(tester);
+    await tester.pumpWidget(buildApp());
+
+    final sevenHeightBoxes = tester.widgetList<SizedBox>(
+      find.byWidgetPredicate((widget) => widget is SizedBox && widget.height == 7),
+    );
+    expect(sevenHeightBoxes.length, 5);
+  });
+
   testWidgets('"사주 보러가기 🔮" 버튼의 스크린 리더 라벨은 이모지 없이 "사주 보러가기"만 읽힌다', (tester) async {
     // 2026-07-15 접근성 정리: 🔮 이모지는 시각적 장식일 뿐인데 semanticsLabel 없이
     // Text 그대로 두면 스크린 리더가 이모지를 유니코드 이름("수정 구슬")으로 읽어

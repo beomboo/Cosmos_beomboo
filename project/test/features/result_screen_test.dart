@@ -916,12 +916,16 @@ void main() {
     expect(rowPaddings.length, 5);
   });
 
-  testWidgets('"오행 밸런스"/"오늘 궁금한 것부터" 소제목이 목업 eyebrow 라벨 톤(fontSize 11/inkSoft)으로 렌더링된다',
+  testWidgets(
+      '"오행 밸런스"/"오늘 궁금한 것부터" 소제목이 목업 eyebrow 라벨 톤(fontSize 11/inkSoft/letterSpacing 0.22)으로 렌더링된다',
       (WidgetTester tester) async {
     // 2026-07-15 목업(.bars h3/.cards h3) 정밀 대조 수정: 두 소제목이 본문 헤드라인만큼
     // 진한 fontSize 15/AppColors.ink였던 걸 목업 스펙인 fontSize 11/AppColors.inkSoft로
     // 바꿨다 — 이 값 자체를 확인하는 테스트가 지금까지 없었다. "오늘 궁금한 것부터"는
     // 화면 아래쪽이라 기본 뷰포트로는 지연 빌드돼 못 찾으므로 뷰포트를 세로로 키운다.
+    // 2026-07-16 오버나이트 대조 추가 수정: 목업(`.bars h3`/`.cards h3`)의
+    // letter-spacing:.02em(≈0.22px)이 빠져 있던 것도 새로 확인한다 — fontSize/color만
+    // 확인하던 기존 테스트로는 letterSpacing 누락(또는 회귀)을 잡을 수 없었다.
     final originalSize = tester.view.physicalSize;
     final originalRatio = tester.view.devicePixelRatio;
     tester.view.physicalSize = const Size(400, 2000);
@@ -946,10 +950,12 @@ void main() {
     final balanceTitle = tester.widget<Text>(findInBody('오행 밸런스'));
     expect(balanceTitle.style!.fontSize, 11, reason: '오행 밸런스 소제목 fontSize');
     expect(balanceTitle.style!.color, AppColors.inkSoft, reason: '오행 밸런스 소제목 color');
+    expect(balanceTitle.style!.letterSpacing, 0.22, reason: '오행 밸런스 소제목 letterSpacing');
 
     final cardsTitle = tester.widget<Text>(findInBody('오늘 궁금한 것부터'));
     expect(cardsTitle.style!.fontSize, 11, reason: '오늘 궁금한 것부터 소제목 fontSize');
     expect(cardsTitle.style!.color, AppColors.inkSoft, reason: '오늘 궁금한 것부터 소제목 color');
+    expect(cardsTitle.style!.letterSpacing, 0.22, reason: '오늘 궁금한 것부터 소제목 letterSpacing');
   });
 
   testWidgets('화면 밖 공유용 카드는 위젯 트리에는 남아있지만 스크린 리더 시맨틱스에서는 제외된다',
