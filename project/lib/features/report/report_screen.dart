@@ -5,6 +5,7 @@ import '../../app/theme/app_colors.dart';
 import '../../core/saju/four_pillars.dart';
 import '../../core/saju/ganzhi.dart';
 import '../../shared/widgets/health_disclaimer_text.dart';
+import '../../shared/widgets/page_heading.dart';
 import '../../shared/widgets/pastel_card.dart';
 import '../birth_input/birth_info.dart';
 import '../result/meta_line.dart';
@@ -56,17 +57,9 @@ class ReportScreen extends StatelessWidget {
             // 섹션 제목에 header 플래그가 필요하다 — 지금까지는 앱 전체에 이 플래그가
             // 한 곳도 없었다(2026-07-16 접근성 감사 발견). 자식 Text가 만드는 자동
             // 라벨을 그대로 병합해 쓰므로 별도 label은 지정하지 않는다.
-            Semantics(
-              header: true,
-              child: Text(
-                '$displayName의 상세 리포트',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.ink,
-                  fontSize: 20,
-                ),
-              ),
-            ),
+            // 페이지 제목 스타일이 deep_dive_result_screen.dart와 중복돼 있어 공용
+            // 위젯(PageHeading)으로 통합했다(2026-07-17 오버나이트 코드 정리).
+            PageHeading(title: '$displayName의 상세 리포트'),
             const SizedBox(height: 4),
             Text(
               buildMetaLine(info),
