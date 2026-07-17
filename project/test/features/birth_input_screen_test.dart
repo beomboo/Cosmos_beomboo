@@ -49,6 +49,98 @@ void main() {
     );
   }
 
+  // **2026-07-17 버그 수정**: _birthDate/_birthTime이 더 이상 처음부터 유효한
+  // 기본값(1998-08-15/14:30)으로 채워져 있지 않고 null(미선택)로 시작한다 —
+  // 제출 버튼도 날짜(그리고 시간-모름이 아니면 시간)를 실제로 고르기 전까지는
+  // onPressed가 null이라 비활성화된다. 아래 세 헬퍼는 "확인"으로 명시적으로
+  // 확정하는 절차를 재사용하기 위한 것이다. 두 피커 모두 값이 없을 때
+  // initialDate/initialTime을 각각 DateTime(2000,1,1)/TimeOfDay(14,30)로 잡아두므로
+  // ("확인"만 눌러도 그 값이 그대로 반영됨), 결과는 "2000.01.01 · 오후 2시 30분"이 된다.
+  Future<void> pickDate(WidgetTester tester) async {
+    await tester.tap(find.text('날짜를 선택해주세요'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('확인'));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> pickTime(WidgetTester tester) async {
+    await tester.tap(find.text('시간을 선택해주세요'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('확인'));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> pickDateAndTime(WidgetTester tester) async {
+    await pickDate(tester);
+    await pickTime(tester);
+  }
+
+  group('_canSubmit — 날짜/시간 미선택 시 제출 버튼 비활성화 (2026-07-17 버그 수정)', () {
+    // "아무런 데이터를 입력하지 않은 상태에서는 사주팔자 결과보기로 넘어가면 안 됨"
+    // 리포트의 핵심 — 날짜와 시간(또는 "몰라요" 체크) 중 하나라도 비어 있으면
+    // ElevatedButton.onPressed가 null이어야 한다. 버튼 스타일이나 tester.tap()의
+    // 무동작만으로는 "정말 비활성 상태인지"를 확정할 수 없어 onPressed 자체를 직접 값으로 본다.
+
+    ElevatedButton submitButton(WidgetTester tester) =>
+        tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '사주 보러가기 🔮'));
+
+    testWidgets('날짜/시간을 아무것도 고르지 않으면 제출 버튼이 비활성화된다(onPressed == null)',
+        (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(buildApp());
+
+      expect(submitButton(tester).onPressed, isNull);
+    });
+
+    testWidgets('날짜만 고르고 시간(또는 "몰라요")을 고르지 않으면 여전히 비활성화된다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(buildApp());
+
+      await pickDate(tester);
+
+      expect(submitButton(tester).onPressed, isNull);
+    });
+
+    testWidgets('날짜와 시간을 모두 고르면 제출 버튼이 활성화된다(onPressed != null)', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(buildApp());
+
+      await pickDateAndTime(tester);
+
+      expect(submitButton(tester).onPressed, isNotNull);
+    });
+
+    testWidgets('날짜만 고르고 "태어난 시간을 몰라요"를 체크하면 시간 없이도 활성화된다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(buildApp());
+
+      await pickDate(tester);
+      await tester.tap(find.text('태어난 시간을 몰라요'));
+      await tester.pump();
+
+      expect(submitButton(tester).onPressed, isNotNull);
+    });
+
+    testWidgets('시간만 고르고 날짜를 고르지 않으면 여전히 비활성화된다(날짜는 항상 필수)', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(buildApp());
+
+      await pickTime(tester);
+
+      expect(submitButton(tester).onPressed, isNull);
+    });
+
+    testWidgets('"태어난 시간을 몰라요"만 체크하고 날짜를 고르지 않으면 여전히 비활성화된다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(buildApp());
+
+      await tester.tap(find.text('태어난 시간을 몰라요'));
+      await tester.pump();
+
+      expect(submitButton(tester).onPressed, isNull);
+    });
+  });
+
   testWidgets('기본 입력 필드와 CTA 버튼을 보여준다', (tester) async {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
@@ -153,22 +245,26 @@ void main() {
     expect(find.text('시간 모름'), findsOneWidget);
   });
 
-  testWidgets('기본값으로 제출하면 BirthInfo가 계산 화면으로 그대로 전달된다', (tester) async {
+  testWidgets('날짜/시간을 고르고 제출하면 그 값 그대로 BirthInfo가 계산 화면으로 전달된다', (tester) async {
+    // **2026-07-17 버그 수정 이후**: _birthDate/_birthTime이 더 이상 기본값으로 채워져
+    // 있지 않아, 제출하려면 먼저 날짜/시간을 실제로 골라 확정해야 한다(안 그러면
+    // 버튼이 비활성화돼 탭이 무시된다 — 위 "_canSubmit" 그룹 참고).
     await useTallViewport(tester);
     BirthInfo? captured;
     await tester.pumpWidget(buildApp(
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
     expect(find.text('CALCULATING_STUB'), findsOneWidget);
     expect(captured, isNotNull);
-    expect(captured!.date, DateTime(1998, 8, 15));
+    expect(captured!.date, DateTime(2000, 1, 1));
     expect(captured!.hour, 14);
-    // timePicker 기본값(오후 2시 30분)의 "분"이 지금까지는 BirthInfo에 필드 자체가
-    // 없어서 제출 시 통째로 버려지고 있었다 — 목업 STEP 4 결과 화면이 "오후 2시
+    // timePicker 기본 초기 위치(오후 2시 30분)의 "분"이 지금까지는 BirthInfo에 필드
+    // 자체가 없어서 제출 시 통째로 버려지고 있었다 — 목업 STEP 4 결과 화면이 "오후 2시
     // 30분生"처럼 분까지 보여주는 것과 어긋나던 부분이라 minute 필드를 추가해 맞췄다.
     expect(captured!.minute, 30);
     expect(captured!.isLunar, isFalse);
@@ -189,6 +285,10 @@ void main() {
     await tester.pumpWidget(buildApp(
       onCalculatingRoute: (_) => calculatingPushCount++,
     ));
+
+    // 날짜/시간을 먼저 골라 확정해야 onPressed가 null이 아니게 된다(2026-07-17
+    // 버그 수정 이후 — 안 그러면 아래 button.onPressed!()가 널 체크에서 바로 예외를 던진다).
+    await pickDateAndTime(tester);
 
     final button =
         tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '사주 보러가기 🔮'));
@@ -211,6 +311,7 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
     expect(find.text('CALCULATING_STUB'), findsOneWidget);
@@ -219,13 +320,18 @@ void main() {
     expect(navigator.canPop(), isFalse);
   });
 
-  testWidgets('"태어난 시간을 몰라요"를 체크하고 제출하면 hour·minute 모두 null로 전달된다', (tester) async {
+  testWidgets('날짜를 고르고 "태어난 시간을 몰라요"를 체크해 제출하면 hour·minute 모두 null로 전달된다',
+      (tester) async {
+    // _canSubmit은 시간-모름이면 날짜만 있어도 되지만, 날짜는 항상 필수다 —
+    // 날짜를 먼저 고르지 않으면 버튼이 여전히 비활성화된 채라 이 흐름 자체가
+    // 성립하지 않는다(2026-07-17 버그 수정 이후).
     await useTallViewport(tester);
     BirthInfo? captured;
     await tester.pumpWidget(buildApp(
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
+    await pickDate(tester);
     await tester.tap(find.text('태어난 시간을 몰라요'));
     await tester.pump();
     await tester.tap(find.text('사주 보러가기 🔮'));
@@ -240,14 +346,17 @@ void main() {
     // _timeUnknown(체크 여부)과 _birthTime(실제 시간값)은 서로 다른 state라, 체크
     // 해제만으로 _birthTime이 초기화될 이유는 없지만 — deep_dive_input_screen의
     // MBTI 체크박스와 같은 관례(껐다 켜도 값 유지)를 여기서도 지금까지 직접 값으로
-    // 확인한 적은 없었다. "몰라요"를 체크했다 다시 해제하고 제출해도, 시간이 0시나
-    // null 같은 엉뚱한 값이 아니라 원래 고른 기본값(오후 2시 30분)이 그대로
-    // 전달되는지 확인한다.
+    // 확인한 적은 없었다. 먼저 시간을 실제로 골라 확정한 뒤(2026-07-17 버그 수정
+    // 이후 더 이상 기본값이 미리 채워져 있지 않으므로), "몰라요"를 체크했다 다시
+    // 해제하고 제출해도, 시간이 0시나 null 같은 엉뚱한 값이 아니라 원래 고른 값
+    // (오후 2시 30분)이 그대로 전달되는지 확인한다.
     await useTallViewport(tester);
     BirthInfo? captured;
     await tester.pumpWidget(buildApp(
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
+
+    await pickDateAndTime(tester);
 
     await tester.tap(find.text('태어난 시간을 몰라요'));
     await tester.pump();
@@ -273,6 +382,7 @@ void main() {
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
+    await pickDateAndTime(tester);
     await tester.tap(find.text('음력'));
     await tester.pump();
     await tester.tap(find.text('사주 보러가기 🔮'));
@@ -289,6 +399,7 @@ void main() {
     ));
 
     await tester.enterText(find.byType(TextField).first, '민지');
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -303,6 +414,7 @@ void main() {
     ));
 
     await tester.enterText(find.byType(TextField).last, '서울특별시');
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -316,6 +428,7 @@ void main() {
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -329,6 +442,7 @@ void main() {
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -344,6 +458,7 @@ void main() {
 
     await tester.tap(find.text('남성'));
     await tester.pump();
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -358,6 +473,7 @@ void main() {
     ));
 
     await tester.enterText(find.byType(TextField).first, '   ');
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -375,6 +491,7 @@ void main() {
     ));
 
     await tester.enterText(find.byType(TextField).at(1), '   ');
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -391,6 +508,7 @@ void main() {
     // 공유 카드(share_card.dart)가 폭 고정 레이아웃이라 이름이 너무 길면 잘리거나
     // 겹칠 수 있어 maxLength로 제한해뒀다 — 실제로 그 이상은 입력되지 않는지 검증.
     await tester.enterText(find.byType(TextField).first, '가' * 25);
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -408,6 +526,7 @@ void main() {
     ));
 
     await tester.enterText(find.byType(TextField).at(1), '가' * 35);
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -418,22 +537,26 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    await tester.tap(find.text('1998.08.15'));
+    // 아직 아무 값도 고르지 않은 초기 상태라 pill에는 플레이스홀더 문구가 보인다
+    // (2026-07-17 버그 수정 이후 — 예전엔 여기가 처음부터 "1998.08.15"였다).
+    expect(find.text('날짜를 선택해주세요'), findsOneWidget);
+    await tester.tap(find.text('날짜를 선택해주세요'));
     await tester.pumpAndSettle();
 
     expect(find.text('확인'), findsOneWidget);
     await tester.tap(find.text('확인'));
     await tester.pumpAndSettle();
 
-    // 같은 날짜를 그대로 확정해도 화면은 오류 없이 유지되고 pill에 날짜가 계속 보인다.
-    expect(find.text('1998.08.15'), findsOneWidget);
+    // "확인"을 누르면 initialDate(2000.01.01)가 그대로 _birthDate에 반영돼 pill에 보인다.
+    expect(find.text('2000.01.01'), findsOneWidget);
   });
 
   testWidgets('태어난 시간 pill을 탭해 timePicker를 열고 "확인"을 누르면 정상 진행된다', (tester) async {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    await tester.tap(find.text('오후 2시 30분'));
+    expect(find.text('시간을 선택해주세요'), findsOneWidget);
+    await tester.tap(find.text('시간을 선택해주세요'));
     await tester.pumpAndSettle();
 
     expect(find.text('확인'), findsOneWidget);
@@ -443,35 +566,38 @@ void main() {
     expect(find.text('오후 2시 30분'), findsOneWidget);
   });
 
-  testWidgets('datePicker에서 "취소"를 누르면 원래 날짜가 그대로 유지된다', (tester) async {
+  testWidgets('datePicker에서 "취소"를 누르면 아무 값도 채워지지 않고 플레이스홀더가 그대로 유지된다',
+      (tester) async {
     // 지금까지는 "확인"으로 확정하는 경로만 테스트했지, 실제 사용자가 자주 하는
     // "취소"(picked == null) 경로는 한 번도 검증한 적이 없었다 — showDatePicker가
     // null을 반환할 때 _pickDate()의 `if (picked != null)` 가드가 실제로 잘 동작하는지 확인.
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    await tester.tap(find.text('1998.08.15'));
+    await tester.tap(find.text('날짜를 선택해주세요'));
     await tester.pumpAndSettle();
 
     expect(find.text('취소'), findsOneWidget);
     await tester.tap(find.text('취소'));
     await tester.pumpAndSettle();
 
-    expect(find.text('1998.08.15'), findsOneWidget);
+    // 취소했으니 _birthDate는 여전히 null이라 플레이스홀더가 그대로 남아있어야 한다.
+    expect(find.text('날짜를 선택해주세요'), findsOneWidget);
   });
 
-  testWidgets('timePicker에서 "취소"를 누르면 원래 시간이 그대로 유지된다', (tester) async {
+  testWidgets('timePicker에서 "취소"를 누르면 아무 값도 채워지지 않고 플레이스홀더가 그대로 유지된다',
+      (tester) async {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    await tester.tap(find.text('오후 2시 30분'));
+    await tester.tap(find.text('시간을 선택해주세요'));
     await tester.pumpAndSettle();
 
     expect(find.text('취소'), findsOneWidget);
     await tester.tap(find.text('취소'));
     await tester.pumpAndSettle();
 
-    expect(find.text('오후 2시 30분'), findsOneWidget);
+    expect(find.text('시간을 선택해주세요'), findsOneWidget);
   });
 
   testWidgets('성별 토글에서 "남성"을 누르면 선택 상태가 바뀐다', (tester) async {
@@ -552,19 +678,23 @@ void main() {
 
   testWidgets('태어난 날짜/시간 pill은 버튼 역할을 유지한 채 필드 맥락이 붙은 라벨 하나만 읽힌다 (중복 없음)',
       (tester) async {
-    // 2026-07-15 접근성 발견: PastelPillButton 자체 라벨은 값만("1998.08.15")
-    // 담고 있어, 바로 위 _FieldLabel을 건너뛰고 스크린 리더가 이 버튼에 도달하면
-    // 무슨 필드인지 맥락이 없었다. 바깥 Semantics로 "태어난 날짜/시간" 맥락을
-    // 라벨에 더하되, 단순히 Semantics를 한 겹 더 씌우기만 하면 값이 "태어난 날짜
-    // 1998.08.15\n1998.08.15"처럼 중복으로 이어붙는다는 걸 실측으로 확인했다 —
-    // excludeSemantics + button/onTap 재선언으로 라벨을 완전히 교체하면서도
-    // 버튼 역할·탭 액션은 그대로 유지되는지 검증한다.
+    // 2026-07-15 접근성 발견: PastelPillButton 자체 라벨은 값만 담고 있어, 바로 위
+    // _FieldLabel을 건너뛰고 스크린 리더가 이 버튼에 도달하면 무슨 필드인지 맥락이
+    // 없었다. 바깥 Semantics로 "태어난 날짜/시간" 맥락을 라벨에 더하되, 단순히
+    // Semantics를 한 겹 더 씌우기만 하면 값이 "태어난 날짜 2000.01.01\n2000.01.01"처럼
+    // 중복으로 이어붙는다는 걸 실측으로 확인했다 — excludeSemantics + button/onTap
+    // 재선언으로 라벨을 완전히 교체하면서도 버튼 역할·탭 액션은 그대로 유지되는지
+    // 검증한다. 날짜/시간을 실제로 골라 값을 채운 뒤 그 값이 라벨에 조합되는지 본다
+    // (2026-07-17 버그 수정 이후 — 초기 플레이스홀더로도 같은 조합 규칙이 적용되지만,
+    // 실제 선택된 값으로 검증하는 편이 이 테스트의 원래 의도에 더 가깝다).
     final semantics = tester.ensureSemantics();
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    final dateNode = tester.getSemantics(find.text('1998.08.15'));
-    expect(dateNode.label, '태어난 날짜 1998.08.15');
+    await pickDateAndTime(tester);
+
+    final dateNode = tester.getSemantics(find.text('2000.01.01'));
+    expect(dateNode.label, '태어난 날짜 2000.01.01');
     expect(dateNode.flagsCollection.isButton, isTrue);
 
     final timeNode = tester.getSemantics(find.text('오후 2시 30분'));
@@ -596,7 +726,7 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    final dateNode = tester.getSemantics(find.text('1998.08.15'));
+    final dateNode = tester.getSemantics(find.text('날짜를 선택해주세요'));
     expect(dateNode.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
 
     // ignore: deprecated_member_use
@@ -608,7 +738,7 @@ void main() {
     await tester.tap(find.text('취소'));
     await tester.pumpAndSettle();
 
-    final timeNode = tester.getSemantics(find.text('오후 2시 30분'));
+    final timeNode = tester.getSemantics(find.text('시간을 선택해주세요'));
     expect(timeNode.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
 
     // ignore: deprecated_member_use
@@ -676,6 +806,7 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -714,6 +845,7 @@ void main() {
     await tester.tap(find.text('MBTI를 알고 있어요'));
     await tester.pump();
 
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -735,6 +867,7 @@ void main() {
     await tester.tap(find.text('N · 직관'));
     await tester.pump();
 
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -765,6 +898,7 @@ void main() {
     await tester.tap(find.text('P · 인식'));
     await tester.pump();
 
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -776,7 +910,9 @@ void main() {
   // 2026-07-15: 리서치(docs/research/운세/입력_온보딩_설계.md)가 짚은 23시~01시(자시)
   // 경계 안내 문구 — 계산 로직(관법)은 그대로 두고 정보성 안내만 노출한다.
   Future<void> setTimeViaTextInput(WidgetTester tester, {required String hour, required String minute, required bool pm}) async {
-    await tester.tap(find.text('오후 2시 30분'));
+    // 2026-07-17 버그 수정 이후 _birthTime이 처음엔 null이라 pill에 플레이스홀더
+    // 문구("시간을 선택해주세요")가 보인다 — 예전엔 이 자리가 "오후 2시 30분"이었다.
+    await tester.tap(find.text('시간을 선택해주세요'));
     await tester.pumpAndSettle();
     // 다이얼 대신 텍스트 입력 모드로 바꿔 정확한 시:분을 직접 입력한다(23:00/00:30처럼
     // 다이얼 제스처로는 안정적으로 재현하기 어려운 값들을 결정적으로 넣기 위함).
@@ -816,7 +952,9 @@ void main() {
     expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsOneWidget);
   });
 
-  testWidgets('기본 시간(오후 2시 30분)에서는 자시 경계 안내 문구가 보이지 않는다', (tester) async {
+  testWidgets('시간을 아직 고르지 않은 초기 상태에서는 자시 경계 안내 문구가 보이지 않는다', (tester) async {
+    // 2026-07-17 버그 수정 이후 _birthTime이 null인 초기 상태에서는 _isJasiRange가
+    // 항상 false로 취급되므로(자시 여부를 판단할 시간 자체가 없음) 안내 문구도 없다.
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
@@ -950,6 +1088,7 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
+    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 

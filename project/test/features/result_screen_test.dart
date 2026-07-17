@@ -5,6 +5,7 @@ import 'package:shared_preferences_platform_interface/shared_preferences_platfor
 
 import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
+import 'package:cosmos_saju/features/birth_input/birth_input_screen.dart';
 import 'package:cosmos_saju/features/result/result_screen.dart';
 
 import '../support/scoped_finders.dart';
@@ -1267,23 +1268,33 @@ void main() {
     expect(findInBody('민지의 사주팔자 ✨'), findsOneWidget);
   });
 
-  testWidgets('생성자 birthInfo도 라우트 arguments도 없으면 하드코딩된 기본값(1998-08-15 14시)으로 표시된다',
+  testWidgets(
+      '생성자 birthInfo도 라우트 arguments도 없으면 결과 대신 입력 화면으로 되돌아간다 (2026-07-17 버그 수정)',
       (WidgetTester tester) async {
-    // build()의 `widget.birthInfo ?? (라우트 arguments) ?? BirthInfo(1998-08-15, 14시)`
-    // 3단 폴백 중 마지막(둘 다 없을 때의 하드코딩된 기본값) 분기는 지금까지 어떤
-    // 테스트에서도 실제로 타본 적이 없었다 — 다른 테스트는 항상 constructor 아니면
-    // 라우트 arguments 둘 중 하나로 실제 값을 넘겼다. 이 분기는 실제 앱 흐름에서는
-    // (calculating_screen.dart가 항상 arguments를 넘기므로) 도달하지 않아야 정상이지만,
-    // 미래에 라우트 배선이 실수로 깨지면(예: arguments 전달을 빠뜨림) 크래시 대신
-    // 조용히 엉뚱한 남의 생년월일시(1998-08-15 14시)를 자기 결과인 것처럼 보여주는
-    // 회귀가 될 수 있어, 이 기본값 자체가 여전히 그 값인지 값으로 고정해둔다.
+    // **2026-07-17 버그 수정**: 이전에는 build()의
+    // `widget.birthInfo ?? (라우트 arguments) ?? BirthInfo(1998-08-15, 14시)` 3단 폴백
+    // 중 마지막(둘 다 없을 때의 하드코딩된 기본값) 분기에서 조용히 엉뚱한 남의
+    // 생년월일시(1998-08-15 14시)를 자기 결과인 것처럼 보여줬다 — "아무 데이터도
+    // 입력하지 않은 상태에서는 결과 화면으로 넘어가면 안 됨" 버그 리포트의 원인 중
+    // 하나였다. 이제는 birthInfo가 없으면 결과를 그리지 않고 addPostFrameCallback으로
+    // BirthInputScreen까지 pushAndRemoveUntil 리다이렉트한다.
     await tester.pumpWidget(const MaterialApp(home: ResultScreen()));
 
-    expect(findInBody('회원님의 사주팔자 ✨'), findsOneWidget);
-    expect(findInBody('무인'), findsOneWidget);
-    expect(findInBody('경신'), findsOneWidget);
-    expect(findInBody('갑자'), findsOneWidget);
-    expect(findInBody('신미'), findsOneWidget);
+    // 리다이렉트가 일어나는 프레임 사이에는 결과 콘텐츠 대신 로딩 스피너만 보인다.
+    expect(find.text('회원님의 사주팔자 ✨'), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    await tester.pumpAndSettle();
+
+    // 리다이렉트 후에는 입력 화면이 보이고, 결과 콘텐츠는 트리에 남아있지 않아야 한다.
+    expect(find.byType(BirthInputScreen), findsOneWidget);
+    expect(find.text('생년월일시를 알려주세요'), findsOneWidget);
+    expect(find.text('회원님의 사주팔자 ✨'), findsNothing);
+
+    // pushAndRemoveUntil((route) => false)로 스택을 완전히 비웠으므로 뒤로 가기로
+    // 결과 화면(ResultScreen)으로 돌아갈 수 없어야 한다.
+    final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
+    expect(navigator.canPop(), isFalse);
   });
 
   testWidgets('"다시 입력하기"를 누르면 저장된 정보를 지우고 생년월일시 입력 화면으로 이동한다',

@@ -34,7 +34,9 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('1998.08.15'));
+    // 2026-07-17 버그 수정 이후 _birthDate가 처음엔 null이라 pill에 플레이스홀더
+    // 문구("날짜를 선택해주세요")가 보인다 — 예전엔 이 자리가 "1998.08.15"였다.
+    await tester.tap(find.text('날짜를 선택해주세요'));
     await tester.pumpAndSettle();
 
     expect(find.text('확인'), findsOneWidget);

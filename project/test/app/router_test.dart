@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -88,8 +89,31 @@ void main() {
       await useTallViewport(tester, height: 1600);
 
       await tester.pumpWidget(
-        MaterialApp(routes: AppRoutes.routes, initialRoute: AppRoutes.birthInput),
+        MaterialApp(
+          // main.dart와 동일한 로케일 설정 — showDatePicker/showTimePicker의 "확인" 버튼
+          // 등을 한국어로 띄우기 위함(이 테스트가 실제로 그 버튼을 탭해야 한다).
+          locale: const Locale('ko', 'KR'),
+          supportedLocales: const [Locale('ko', 'KR')],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          routes: AppRoutes.routes,
+          initialRoute: AppRoutes.birthInput,
+        ),
       );
+
+      // 2026-07-17 버그 수정 이후 날짜/시간을 실제로 고르기 전까지는 제출 버튼이
+      // 비활성화된다 — 먼저 "확인"으로 확정해 활성화시킨다.
+      await tester.tap(find.text('날짜를 선택해주세요'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('확인'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('시간을 선택해주세요'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('확인'));
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('사주 보러가기 🔮'));
       // _submit()이 BirthInfoStore.save()/DeepDiveInfoStore.save()를 await한 뒤에야

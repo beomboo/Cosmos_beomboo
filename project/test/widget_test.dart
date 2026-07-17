@@ -19,6 +19,26 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  // **2026-07-17 버그 수정 이후**: birth_input_screen.dart의 _birthDate/_birthTime이
+  // 처음부터 유효한 기본값(1998-08-15/14:30)으로 채워지지 않고 null(미선택)로 시작하도록
+  // 바뀌어, 제출 버튼도 날짜(그리고 시간-모름이 아니면 시간)를 실제로 고르기 전까지
+  // 비활성화된다 — 아래 여정 테스트들은 "아무것도 안 건드리고 제출"이 더 이상
+  // 가능하지 않으므로, 제출 전에 날짜/시간 피커를 열어 "확인"으로 명시적으로 확정하는
+  // 이 헬퍼를 거쳐야 한다. 두 피커 모두 값이 없을 때 initialDate/initialTime을 각각
+  // DateTime(2000,1,1)/TimeOfDay(14,30)로 잡아두므로("확인"만 눌러도 그 값이 그대로
+  // 반영됨), 제출 결과는 "2000.01.01 · 오후 2시 30분"이 된다.
+  Future<void> pickDefaultBirthDateAndTime(WidgetTester tester) async {
+    await tester.tap(find.text('날짜를 선택해주세요'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('확인'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('시간을 선택해주세요'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('확인'));
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('저장된 정보가 없으면 온보딩 화면이 타이틀과 시작 버튼을 보여준다', (WidgetTester tester) async {
     await tester.pumpWidget(const CosmosSajuApp());
 
@@ -113,7 +133,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('생년월일시를 알려주세요'), findsOneWidget);
 
-      // 기본값(1998.08.15 · 오후 2시 30분 · 양력) 그대로 제출한다.
+      // 날짜/시간을 실제로 골라 확정해야 제출 버튼이 활성화된다(2026-07-17 버그 수정
+      // 이후 — 아무것도 안 고르면 onPressed가 null이라 탭 자체가 무시된다).
+      await pickDefaultBirthDateAndTime(tester);
+
       await tester.tap(find.text('사주 보러가기 🔮'));
       // CalculatingScreen은 궤도 애니메이션이 AnimationController.repeat()로 무한
       // 반복되므로, 이 지점부터는 pumpAndSettle()을 쓰면 절대 끝나지 않는다 —
@@ -131,7 +154,7 @@ void main() {
       expect(findInResult('회원님의 사주팔자 ✨'), findsOneWidget);
       // birth_input의 성별 기본값은 여성이고 timePicker 기본값은 오후 2시 30분이라
       // (둘 다 실제로 제출되는 값), 메타 라인에도 분까지 그대로 반영된다.
-      expect(findInResult('1998.08.15 · 오후 2시 30분生 · 양력 · 여성'), findsOneWidget);
+      expect(findInResult('2000.01.01 · 오후 2시 30분生 · 양력 · 여성'), findsOneWidget);
       expect(findInResult('년주'), findsOneWidget);
       expect(findInResult('시주'), findsOneWidget);
 
@@ -141,7 +164,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('회원님의 상세 리포트'), findsOneWidget);
-      expect(find.text('1998.08.15 · 오후 2시 30분生 · 양력 · 여성'), findsOneWidget);
+      expect(find.text('2000.01.01 · 오후 2시 30분生 · 양력 · 여성'), findsOneWidget);
       expect(find.text('명식 한 글자씩 뜯어보기'), findsOneWidget);
     },
   );
@@ -173,14 +196,17 @@ void main() {
 
       expect(find.text('생년월일시를 알려주세요'), findsOneWidget);
 
-      // birth_input의 기본값(1998.08.15)을 그대로 제출한다 — 이전 값(1990.03.01)과는 다르다.
+      // 날짜/시간을 실제로 골라 확정해야 제출 버튼이 활성화된다(2026-07-17 버그 수정
+      // 이후). 새로 고른 값(2000.01.01)을 제출한다 — 이전 값(1990.03.01)과는 다르다.
+      await pickDefaultBirthDateAndTime(tester);
+
       await tester.tap(find.text('사주 보러가기 🔮'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
       await tester.pump(const Duration(seconds: 3));
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(findInResult('1998.08.15 · 오후 2시 30분生 · 양력 · 여성'), findsOneWidget);
+      expect(findInResult('2000.01.01 · 오후 2시 30분生 · 양력 · 여성'), findsOneWidget);
       expect(findInResult('1990.03.01 · 오전 9시生 · 양력'), findsNothing);
     },
   );
@@ -270,6 +296,9 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('N · 직관'));
       await tester.pump();
+
+      // 날짜/시간을 실제로 골라 확정해야 제출 버튼이 활성화된다(2026-07-17 버그 수정 이후).
+      await pickDefaultBirthDateAndTime(tester);
 
       await tester.tap(find.text('사주 보러가기 🔮'));
       await tester.pump();
