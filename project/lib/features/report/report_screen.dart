@@ -74,13 +74,9 @@ class ReportScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             // 헤딩 단위 탐색 지원(2026-07-16 접근성 감사 발견, 위 페이지 제목과 같은 이유).
-            Semantics(
-              header: true,
-              child: const Text(
-                '명식 한 글자씩 뜯어보기',
-                style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 16),
-              ),
-            ),
+            // 이 파일 안 세 섹션 제목이 문구만 다르고 구조가 완전히 같아 private
+            // `_SectionHeading`으로 통합했다(2026-07-17 오버나이트 코드 정리).
+            const _SectionHeading('명식 한 글자씩 뜯어보기'),
             const SizedBox(height: 4),
             const Text(
               '사주는 총 4개의 기둥, 각 기둥은 천간(위)과 지지(아래) 두 글자로 이루어져요.',
@@ -102,25 +98,13 @@ class ReportScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
             // 헤딩 단위 탐색 지원(2026-07-16 접근성 감사 발견, 위 페이지 제목과 같은 이유).
-            Semantics(
-              header: true,
-              child: const Text(
-                '오행 五行 완전 정복',
-                style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 16),
-              ),
-            ),
+            const _SectionHeading('오행 五行 완전 정복'),
             const SizedBox(height: 12),
             for (final ohaeng in const ['목', '화', '토', '금', '수'])
               _OhaengMeaningCard(ohaeng: ohaeng),
             const SizedBox(height: 32),
             // 헤딩 단위 탐색 지원(2026-07-16 접근성 감사 발견, 위 페이지 제목과 같은 이유).
-            Semantics(
-              header: true,
-              child: const Text(
-                '오행별 오늘의 풀이 모음',
-                style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 16),
-              ),
-            ),
+            const _SectionHeading('오행별 오늘의 풀이 모음'),
             const SizedBox(height: 4),
             const Text(
               '결과 화면에서는 가장 우세한 오행 풀이만 보여드렸어요. 여기서는 5가지 오행의 풀이를 모두 볼 수 있어요.',
@@ -375,6 +359,28 @@ class _AllReadingsSection extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// 이 화면 안 섹션 제목 3개("명식 한 글자씩 뜯어보기"/"오행 五行 완전 정복"/
+/// "오행별 오늘의 풀이 모음")가 제목 문자열만 다르고 완전히 같은 구조(헤딩 단위 탐색을
+/// 위한 `Semantics(header: true)` + 고정 스타일)를 반복하던 걸 통합했다(2026-07-17
+/// 오버나이트 코드 정리). 이 스타일은 다른 화면에는 없어 `shared/widgets/`로 내보내지
+/// 않고 이 파일 스코프(private)로 한정한다.
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading(this.title);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      header: true,
+      child: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink, fontSize: 16),
       ),
     );
   }
