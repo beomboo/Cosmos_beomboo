@@ -710,13 +710,26 @@ void main() {
       ),
     );
 
+    // 2026-07-18 mutation 검증 발견: `AppColors.ohaengTextColors[ohaeng]`를 기대값으로
+    // 그대로 쓰면, 맵 자체의 값이 뒤섞여도 위젯이 읽는 값과 테스트가 기대하는 값이
+    // 똑같이(둘 다 같은 맵을 참조하므로) 뒤섞여서 항상 통과해버린다 — 실제로 목/화 값을
+    // 맞바꿔 실행해봐도 빨간불이 뜨지 않는 걸 확인했다. 맵을 거치지 않는 개별 상수
+    // (`woodText`/`fireText`/...)로 기대값을 고정해야 맵 값 스왑을 실제로 잡아낸다.
+    const expectedColors = {
+      '목': AppColors.woodText,
+      '화': AppColors.fireText,
+      '토': AppColors.earthText,
+      '금': AppColors.metalText,
+      '수': AppColors.waterText,
+    };
+
     for (final ohaeng in const ['목', '화', '토', '금', '수']) {
       final hanja = ohaengHanja[ohaeng]!;
       final hanjaFinder = findInBody(hanja);
       final hanjaText = tester.widget<Text>(hanjaFinder);
       expect(
         hanjaText.style!.color,
-        AppColors.ohaengTextColors[ohaeng],
+        expectedColors[ohaeng],
         reason: '$ohaeng($hanja) 한자 태그 색상',
       );
 
@@ -726,7 +739,7 @@ void main() {
       );
       expect(
         (bar.valueColor! as AlwaysStoppedAnimation<Color?>).value,
-        AppColors.ohaengTextColors[ohaeng],
+        expectedColors[ohaeng],
         reason: '$ohaeng($hanja) 진행바 색상',
       );
     }
