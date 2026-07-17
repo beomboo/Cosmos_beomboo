@@ -223,21 +223,11 @@ class _ResultScreenState extends State<ResultScreen> {
                 // (2026-07-07 대조 발견).
                 const SizedBox(height: 14),
                 // 헤딩 단위 탐색 지원(2026-07-16 접근성 감사 발견, 위 페이지 제목과 같은 이유).
-                Semantics(
-                  header: true,
-                  child: const Text(
-                    '오행 밸런스',
-                    // 목업(`.bars h3`)은 font-size:11px/color:var(--app-ink-soft)인데
-                    // 지금까지는 본문 헤드라인만큼 진한 15px/ink였다(2026-07-15 대조 발견).
-                    // letter-spacing:.02em(≈0.22px)도 빠져 있었다(2026-07-16 오버나이트 대조 발견).
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.inkSoft,
-                      fontSize: 11,
-                      letterSpacing: 0.22,
-                    ),
-                  ),
-                ),
+                // 목업(`.bars h3`/`.cards h3`)의 소제목 스타일(font-size:11px/inkSoft/
+                // letter-spacing:.02em)이 이 파일 안에서 "오행 밸런스"/"오늘 궁금한 것부터"
+                // 두 곳에 문구만 다르게 중복돼 있어 private `_SubsectionHeading`으로
+                // 통합했다(2026-07-17 오버나이트 코드 정리).
+                const _SubsectionHeading('오행 밸런스'),
                 // 목업(`.bars h3`)은 margin:0 0 8px인데 지금까지는 12px이었다
                 // (2026-07-07 대조 발견).
                 const SizedBox(height: 8),
@@ -270,21 +260,9 @@ class _ResultScreenState extends State<ResultScreen> {
                 // (2026-07-07 대조 발견).
                 const SizedBox(height: 14),
                 // 헤딩 단위 탐색 지원(2026-07-16 접근성 감사 발견, 위 페이지 제목과 같은 이유).
-                Semantics(
-                  header: true,
-                  child: const Text(
-                    '오늘 궁금한 것부터',
-                    // 목업(`.cards h3`)은 font-size:11px/color:var(--app-ink-soft)인데
-                    // 지금까지는 본문 헤드라인만큼 진한 15px/ink였다(2026-07-15 대조 발견).
-                    // letter-spacing:.02em(≈0.22px)도 빠져 있었다(2026-07-16 오버나이트 대조 발견).
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.inkSoft,
-                      fontSize: 11,
-                      letterSpacing: 0.22,
-                    ),
-                  ),
-                ),
+                // 위 "오행 밸런스"와 같은 이유로 _SubsectionHeading을 재사용한다
+                // (2026-07-17 오버나이트 코드 정리).
+                const _SubsectionHeading('오늘 궁금한 것부터'),
                 // 목업(`.cards h3`)은 margin:0 0 8px인데 지금까지는 12px이었다
                 // (2026-07-07 대조 발견).
                 const SizedBox(height: 8),
@@ -625,6 +603,36 @@ class _OhaengBarRow extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 이 화면 안 소제목 2개("오행 밸런스"/"오늘 궁금한 것부터")가 제목 문자열만 다르고
+/// 완전히 같은 구조(헤딩 단위 탐색을 위한 `Semantics(header: true)` + 목업 eyebrow 라벨
+/// 톤 고정 스타일)를 반복하던 걸 통합했다(2026-07-17 오버나이트 코드 정리). 이 스타일은
+/// 다른 화면에는 없어 `shared/widgets/`로 내보내지 않고 이 파일 스코프(private)로 한정한다
+/// (report_screen.dart의 `_SectionHeading`과 같은 방식).
+class _SubsectionHeading extends StatelessWidget {
+  const _SubsectionHeading(this.title);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      header: true,
+      child: Text(
+        title,
+        // 목업(`.bars h3`/`.cards h3`)은 font-size:11px/color:var(--app-ink-soft)인데
+        // 지금까지는 본문 헤드라인만큼 진한 15px/ink였다(2026-07-15 대조 발견).
+        // letter-spacing:.02em(≈0.22px)도 빠져 있었다(2026-07-16 오버나이트 대조 발견).
+        style: const TextStyle(
+          fontWeight: FontWeight.w800,
+          color: AppColors.inkSoft,
+          fontSize: 11,
+          letterSpacing: 0.22,
         ),
       ),
     );
