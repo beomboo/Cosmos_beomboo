@@ -84,9 +84,25 @@ class _ResultScreenState extends State<ResultScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final birthInfo = widget.birthInfo ??
-        (ModalRoute.of(context)?.settings.arguments as BirthInfo?) ??
-        BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false);
+    final birthInfo =
+        widget.birthInfo ?? (ModalRoute.of(context)?.settings.arguments as BirthInfo?);
+
+    // **2026-07-17 버그 수정**: 이전에는 여기서 birthInfo가 없으면(직접 전달도, 라우트
+    // arguments도 없는 경우) 하드코딩된 가짜 BirthInfo(1998-08-15, 14시)로 조용히 결과를
+    // 그렸다 — "아무 데이터도 입력하지 않은 상태에서는 결과 화면으로 넘어가면 안 됨"
+    // 버그 리포트의 원인 중 하나였다. 이제는 결과를 그리지 않고 입력 화면으로 돌려보낸다.
+    // build() 도중에는 Navigator를 직접 조작할 수 없어 프레임이 끝난 뒤로 미루고, 그
+    // 사이엔 빈 로딩 화면만 보여준다(_resetAndReenter와 같은 pushAndRemoveUntil 패턴 재사용).
+    if (birthInfo == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const BirthInputScreen()),
+          (route) => false,
+        );
+      });
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     final pillars = calculateFourPillars(
       birthDate: birthInfo.date,
