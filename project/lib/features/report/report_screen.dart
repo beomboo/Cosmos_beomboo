@@ -4,6 +4,7 @@ import '../../app/router.dart';
 import '../../app/theme/app_colors.dart';
 import '../../core/saju/four_pillars.dart';
 import '../../core/saju/ganzhi.dart';
+import '../../shared/widgets/health_disclaimer_text.dart';
 import '../../shared/widgets/pastel_card.dart';
 import '../birth_input/birth_info.dart';
 import '../result/meta_line.dart';
@@ -130,11 +131,10 @@ class ReportScreen extends StatelessWidget {
               _AllReadingsSection(ohaeng: ohaeng),
             // 오행 5개 반복문 전체에 대해 딱 1번만 노출한다 — 각 _AllReadingsSection 안에
             // 넣으면 건강운 항목마다 5번 중복 노출된다(2026-07-17 오버나이트 리서치 반영
-            // 대조 발견, ohaeng_readings.dart의 healthReadingDisclaimer 참고).
-            const Text(
-              healthReadingDisclaimer,
-              style: TextStyle(color: AppColors.inkSoft, fontSize: 11),
-            ),
+            // 대조 발견, ohaeng_readings.dart의 healthReadingDisclaimer 참고). 위젯 자체는
+            // 결과·심층 분석 화면과 공용(`HealthDisclaimerText`, 2026-07-17 오버나이트
+            // 코드 정리로 3중 중복 통합).
+            const HealthDisclaimerText(),
             const SizedBox(height: 24),
             Container(
               width: double.infinity,

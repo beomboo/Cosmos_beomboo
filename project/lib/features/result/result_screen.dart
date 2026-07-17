@@ -8,6 +8,7 @@ import '../../core/storage/birth_info_store.dart';
 import '../../core/storage/deep_dive_info_store.dart';
 import '../../shared/share/share_capture.dart';
 import '../../shared/widgets/gradient_share_button.dart';
+import '../../shared/widgets/health_disclaimer_text.dart';
 import '../../shared/widgets/offscreen_share_capture.dart';
 import '../../shared/widgets/pastel_card.dart';
 import '../birth_input/birth_info.dart';
@@ -330,10 +331,9 @@ class _ResultScreenState extends State<ResultScreen> {
                 // 카테고리 카드 4개(연애·재물·건강·성격)는 항상 함께 노출되고 그중 건강운은
                 // 특정 신체 부위를 짚어 말하는데 면책 문구가 없었다(2026-07-17 오버나이트
                 // 리서치 반영 대조 발견). 카드가 조건 없이 상시 노출되므로 문구도 상시 노출.
-                const Text(
-                  healthReadingDisclaimer,
-                  style: TextStyle(color: AppColors.inkSoft, fontSize: 11),
-                ),
+                // 위젯 자체는 리포트·심층 분석 화면과 공용(`HealthDisclaimerText`, 2026-07-17
+                // 오버나이트 코드 정리로 3중 중복 통합).
+                const HealthDisclaimerText(),
                 const SizedBox(height: 12),
                 // 목업(docs/mockups/01-pastel-cute.html)의 "공유하기" 버튼(`.share-btn`)은
                 // 다른 CTA 버튼과 달리 단색이 아니라 accent→metal 그라데이션을 쓴다 —
