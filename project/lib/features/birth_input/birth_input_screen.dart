@@ -22,8 +22,15 @@ class BirthInputScreen extends StatefulWidget {
 }
 
 class _BirthInputScreenState extends State<BirthInputScreen> {
-  DateTime _birthDate = DateTime(1998, 8, 15);
-  TimeOfDay _birthTime = const TimeOfDay(hour: 14, minute: 30);
+  // **2026-07-17 버그 수정**: 이전에는 두 값이 처음부터 유효한 기본값(1998-08-15,
+  // 14:30)으로 채워져 있었고 제출 버튼도 폼 상태와 무관하게 항상 활성화돼 있었다 —
+  // 사용자가 아무 필드도 건드리지 않고 "사주 보러가기"만 눌러도 그대로 결과 화면까지
+  // 넘어가는 실제 버그였다("아무 데이터도 입력하지 않은 상태에서는 결과 화면으로
+  // 넘어가면 안 됨" 리포트). null을 진짜 "아직 선택 안 함"으로 취급하고, 사용자가
+  // 피커에서 실제로 확인을 눌러야만 값이 채워지게 한다 — `_canSubmit`이 이 두 값을
+  // 근거로 제출 가능 여부를 판단한다.
+  DateTime? _birthDate;
+  TimeOfDay? _birthTime;
   bool _timeUnknown = false;
   _Calendar _calendar = _Calendar.solar;
   Gender _gender = Gender.female;
@@ -56,7 +63,9 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
     final now = DateTime.now();
     final picked = await showDatePicker(
       context: context,
-      initialDate: _birthDate,
+      // 아직 선택한 값이 없으면(null) 피커의 초기 위치만 합리적인 기본값으로 잡는다 —
+      // 사용자가 실제로 확인을 눌러야만 아래 setState에서 _birthDate에 반영된다.
+      initialDate: _birthDate ?? DateTime(2000, 1, 1),
       firstDate: DateTime(1900),
       lastDate: now,
     );
@@ -73,7 +82,8 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
   Future<void> _pickTime() async {
     final picked = await showTimePicker(
       context: context,
-      initialTime: _birthTime,
+      // _pickDate와 같은 이유 — 초기 위치만 잡을 뿐 실제 반영은 사용자의 확인 이후.
+      initialTime: _birthTime ?? const TimeOfDay(hour: 14, minute: 30),
     );
     if (!mounted) return;
     if (picked != null) {
@@ -84,28 +94,51 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
   // 자시(23시~01시, four_pillars.dart의 `midnight` 관법 주석과 동일한 경계) 출생자는
   // 일주 계산 방식이 앱마다 갈릴 수 있다는 리서치 결과(docs/research/운세/입력_온보딩_설계.md)에
   // 따라 안내 문구만 추가한다 — 계산 로직(관법)은 건드리지 않는다. "23시~01시" 두 시간은
-  // 23:00~23:59와 00:00~00:59로 구성되므로 hour가 23 또는 0일 때만 해당한다.
-  bool get _isJasiRange => _birthTime.hour == 23 || _birthTime.hour == 0;
-
-  String get _formattedDate =>
-      '${_birthDate.year}.${_birthDate.month.toString().padLeft(2, '0')}.${_birthDate.day.toString().padLeft(2, '0')}';
-
-  String get _formattedTime {
-    final period = _birthTime.hour < 12 ? '오전' : '오후';
-    final hour12 = _birthTime.hourOfPeriod == 0 ? 12 : _birthTime.hourOfPeriod;
-    return '$period $hour12시 ${_birthTime.minute.toString().padLeft(2, '0')}분';
+  // 23:00~23:59와 00:00~00:59로 구성되므로 hour가 23 또는 0일 때만 해당한다. 아직 시간을
+  // 선택하지 않았으면(null) 안내 자체가 의미 없으니 false로 취급한다.
+  bool get _isJasiRange {
+    final time = _birthTime;
+    return time != null && (time.hour == 23 || time.hour == 0);
   }
 
+  // 아직 아무 값도 고르지 않은 초기 상태를 유효한 기본값(예: 1998.08.15)으로 조용히
+  // 채워두지 않기 위해 null-safe하게 만들었다 — "아무 데이터도 입력하지 않은 상태"를
+  // 그대로 화면에 드러내는 플레이스홀더 문구를 대신 보여준다.
+  String get _formattedDate {
+    final date = _birthDate;
+    if (date == null) return '날짜를 선택해주세요';
+    return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
+  }
+
+  String get _formattedTime {
+    final time = _birthTime;
+    if (time == null) return '시간을 선택해주세요';
+    final period = time.hour < 12 ? '오전' : '오후';
+    final hour12 = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    return '$period $hour12시 ${time.minute.toString().padLeft(2, '0')}분';
+  }
+
+  // 날짜는 반드시 골라야 하고, 시간은 "태어난 시간을 몰라요"에 체크했거나 실제로
+  // 시간을 고른 경우에만 제출을 허용한다 — 성별은 이미 명시적 토글 선택 상태(기본값이
+  // 있어도 사용자가 건드리지 않은 "미입력"과 구분하기 어려움)라 이번 검증 범위에서 제외.
+  bool get _canSubmit => _birthDate != null && (_timeUnknown || _birthTime != null);
+
   Future<void> _submit() async {
-    if (_isSubmitting) return;
-    _isSubmitting = true;
+    if (_isSubmitting || !_canSubmit) return;
+    // 버튼이 onPressed 조건(_canSubmit && !_isSubmitting)으로 다시 비활성화되도록
+    // setState로 갱신한다 — 이전에는 _isSubmitting을 그냥 대입만 해서 화면이 다시
+    // 그려지기 전까지는 버튼이 여전히 눌리는 것처럼 보일 수 있었다.
+    setState(() => _isSubmitting = true);
 
     final trimmedName = _nameController.text.trim();
     final trimmedBirthPlace = _birthPlaceController.text.trim();
+    // _canSubmit이 이미 널 아님을 보장한다(날짜는 항상, 시간은 시간-모름이 아닐 때만).
+    final birthDate = _birthDate!;
+    final birthTime = _birthTime;
     final birthInfo = BirthInfo(
-      date: _birthDate,
-      hour: _timeUnknown ? null : _birthTime.hour,
-      minute: _timeUnknown ? null : _birthTime.minute,
+      date: birthDate,
+      hour: _timeUnknown ? null : birthTime!.hour,
+      minute: _timeUnknown ? null : birthTime!.minute,
       isLunar: _calendar == _Calendar.lunar,
       name: trimmedName.isEmpty ? null : trimmedName,
       birthPlace: trimmedBirthPlace.isEmpty ? null : trimmedBirthPlace,
@@ -331,7 +364,10 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _submit,
+                // 날짜(그리고 시간-모름이 아니면 시간)를 실제로 고르기 전까지는 버튼을
+                // 비활성화한다 — "아무 데이터도 입력하지 않은 상태에서는 결과 화면으로
+                // 넘어가면 안 됨" 버그 수정.
+                onPressed: _canSubmit && !_isSubmitting ? _submit : null,
                 child: const Text(
                   '사주 보러가기 🔮',
                   semanticsLabel: '사주 보러가기',
