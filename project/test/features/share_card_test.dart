@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/core/saju/four_pillars.dart';
+import 'package:cosmos_saju/core/saju/ganzhi.dart';
 import 'package:cosmos_saju/features/result/share_card.dart';
 
 void main() {
@@ -181,6 +182,61 @@ void main() {
     expectChipPairs('월주', '경신');
     expectChipPairs('일주', '갑자');
     expectChipPairs('시주', '신미');
+  });
+
+  testWidgets('오행 밸런스 바 각 행의 한자·진행바 색상이 오행별 ohaengTextColors와 정확히 일치한다 (색상 스왑 방지)',
+      (tester) async {
+    // saju-planner 발견 커버리지 갭(2026-07-18): `_balanceRow`도 result_screen.dart의
+    // `_OhaengBarRow`와 똑같이 `AppColors.ohaengTextColors[ohaeng]`를 한자 색·
+    // `LinearProgressIndicator.valueColor`로 그대로 쓰는데, 위 "한자 라벨·퍼센트가 실제
+    // 계산값과 정확히 일치한다" 테스트는 텍스트 값만 확인했을 뿐 색상 자체는 한 번도
+    // 검증한 적이 없었다 — 4기둥 칩(무인/경신/갑자/신미)은 이미 색상 값 고정 테스트가
+    // 있는데 오행 밸런스 바만 이 안전망에서 빠져 있었다.
+    final pillars = calculateFourPillars(birthDate: DateTime(1998, 8, 15), birthHour: 14);
+    final ohaengCount = pillars.ohaengCount;
+    final total = ohaengCount.values.fold<int>(0, (a, b) => a + b);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShareCard(
+            displayName: '민지',
+            metaLine: '1998.08.15 · 오후 2시生 · 양력',
+            pillars: pillars,
+            dominant: '금',
+            calloutHanja: '金',
+            calloutEmoji: '✨',
+            calloutText: '원칙적이고 결단력 있어요',
+            ohaengCount: ohaengCount,
+            total: total,
+          ),
+        ),
+      ),
+    );
+
+    for (final ohaeng in const ['목', '화', '토', '금', '수']) {
+      final hanja = ohaengHanja[ohaeng]!;
+      // 콜아웃 문구("금(金) 기운이...")는 하나의 보간된 문자열 Text라 별도 "金" 노드가
+      // 아니므로(위 "한자 라벨·퍼센트가..." 테스트 주석 참고), 오행 밸런스 바의 한자
+      // 태그 하나만 정확히 매칭된다.
+      final hanjaFinder = find.text(hanja);
+      final hanjaText = tester.widget<Text>(hanjaFinder);
+      expect(
+        hanjaText.style!.color,
+        AppColors.ohaengTextColors[ohaeng],
+        reason: '$ohaeng($hanja) 한자 태그 색상',
+      );
+
+      final row = find.ancestor(of: hanjaFinder, matching: find.byType(Row)).first;
+      final bar = tester.widget<LinearProgressIndicator>(
+        find.descendant(of: row, matching: find.byType(LinearProgressIndicator)),
+      );
+      expect(
+        (bar.valueColor! as AlwaysStoppedAnimation<Color?>).value,
+        AppColors.ohaengTextColors[ohaeng],
+        reason: '$ohaeng($hanja) 진행바 색상',
+      );
+    }
   });
 
   testWidgets('콜아웃 박스가 우세 오행 색으로 실제로 물든다(고정 accentSoft가 아니라)', (tester) async {

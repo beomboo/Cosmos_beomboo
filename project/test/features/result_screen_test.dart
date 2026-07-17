@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 
 import 'package:cosmos_saju/app/theme/app_colors.dart';
+import 'package:cosmos_saju/core/saju/ganzhi.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
 import 'package:cosmos_saju/features/birth_input/birth_input_screen.dart';
 import 'package:cosmos_saju/features/result/result_screen.dart';
@@ -686,6 +687,49 @@ void main() {
     }
 
     semantics.dispose();
+  });
+
+  testWidgets('오행 밸런스 바 각 행의 한자·진행바 색상이 오행별 ohaengTextColors와 정확히 일치한다 (색상 스왑 방지)',
+      (WidgetTester tester) async {
+    // saju-planner 발견 커버리지 갭(2026-07-18): `_OhaengBarRow`는 한자 태그 텍스트 색과
+    // `LinearProgressIndicator.valueColor`를 둘 다 `AppColors.ohaengTextColors[ohaeng]`
+    // 그대로 쓰는데, 지금까지 이 화면의 테스트들은 한자·퍼센트·시맨틱스 라벨만 확인했을 뿐
+    // 실제 색상 값 자체는 한 번도 검증하지 않았다 — 이 맵의 값이 뒤섞여도(예: 목=fireText,
+    // 화=woodText로 실수 편집) 기존 테스트는 전부 통과해버린다. `_PillarCard`(무인/경신/
+    // 갑자/신미 색상 검증)와 report_screen.dart의 `_charCell`처럼 오행별 값 고정 테스트로
+    // 안전망을 채운다.
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    for (final ohaeng in const ['목', '화', '토', '금', '수']) {
+      final hanja = ohaengHanja[ohaeng]!;
+      final hanjaFinder = findInBody(hanja);
+      final hanjaText = tester.widget<Text>(hanjaFinder);
+      expect(
+        hanjaText.style!.color,
+        AppColors.ohaengTextColors[ohaeng],
+        reason: '$ohaeng($hanja) 한자 태그 색상',
+      );
+
+      final row = find.ancestor(of: hanjaFinder, matching: find.byType(Row)).first;
+      final bar = tester.widget<LinearProgressIndicator>(
+        find.descendant(of: row, matching: find.byType(LinearProgressIndicator)),
+      );
+      expect(
+        (bar.valueColor! as AlwaysStoppedAnimation<Color?>).value,
+        AppColors.ohaengTextColors[ohaeng],
+        reason: '$ohaeng($hanja) 진행바 색상',
+      );
+    }
   });
 
   testWidgets('오행 밸런스 바 한자 태그가 목업 값대로 SizedBox(width:14)/fontSize 11/가운데 정렬로 렌더링된다',
