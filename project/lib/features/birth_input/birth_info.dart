@@ -2,6 +2,10 @@
 /// 필요해 입력받아둔다 (참고: docs/research/07_오픈소스_계산로직).
 enum Gender { female, male }
 
+/// 혈액형. 사주 계산과는 무관한 순수 저장/참고 필드 — 2026-07-19 입력 화면 필수값
+/// 확장(목업 `.field-required` "혈액형")에 맞춰 추가됐다.
+enum BloodType { a, b, ab, o }
+
 /// 생년월일시 입력 화면에서 다음 화면(계산 중 → 결과)으로 전달하는 입력 데이터.
 class BirthInfo {
   const BirthInfo({
@@ -12,6 +16,7 @@ class BirthInfo {
     this.name,
     this.birthPlace,
     this.gender,
+    this.bloodType,
   });
 
   final DateTime date;
@@ -36,4 +41,9 @@ class BirthInfo {
   /// BirthInfo를 만들 때(예: 데모 기본값, 테스트) 생략할 수 있도록 nullable로 둔다.
   /// 현재는 계산에 쓰지 않고 결과 화면에 참고 정보로만 표시한다.
   final Gender? gender;
+
+  /// 2026-07-19 입력 화면에서 필수값으로 추가됐지만, Gender와 마찬가지로 사주 계산과는
+  /// 무관한 순수 저장 필드라 다른 곳에서 BirthInfo를 만들 때(데모 기본값, 테스트) 생략할
+  /// 수 있도록 nullable로 둔다.
+  final BloodType? bloodType;
 }

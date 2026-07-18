@@ -12,6 +12,7 @@ abstract final class BirthInfoStore {
   static const _keyName = 'birth_info.name';
   static const _keyBirthPlace = 'birth_info.birth_place';
   static const _keyGender = 'birth_info.gender';
+  static const _keyBloodType = 'birth_info.blood_type';
 
   static Future<void> save(BirthInfo info) async {
     final prefs = await SharedPreferences.getInstance();
@@ -42,6 +43,11 @@ abstract final class BirthInfoStore {
     } else {
       await prefs.remove(_keyGender);
     }
+    if (info.bloodType != null) {
+      await prefs.setString(_keyBloodType, info.bloodType!.name);
+    } else {
+      await prefs.remove(_keyBloodType);
+    }
   }
 
   /// 저장된 정보가 없으면 null.
@@ -51,6 +57,7 @@ abstract final class BirthInfoStore {
     if (dateMillis == null) return null;
 
     final genderName = prefs.getString(_keyGender);
+    final bloodTypeName = prefs.getString(_keyBloodType);
 
     return BirthInfo(
       date: DateTime.fromMillisecondsSinceEpoch(dateMillis),
@@ -62,6 +69,9 @@ abstract final class BirthInfoStore {
       gender: genderName == null
           ? null
           : Gender.values.asNameMap()[genderName],
+      bloodType: bloodTypeName == null
+          ? null
+          : BloodType.values.asNameMap()[bloodTypeName],
     );
   }
 
@@ -74,5 +84,6 @@ abstract final class BirthInfoStore {
     await prefs.remove(_keyName);
     await prefs.remove(_keyBirthPlace);
     await prefs.remove(_keyGender);
+    await prefs.remove(_keyBloodType);
   }
 }
