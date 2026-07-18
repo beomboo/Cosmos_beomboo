@@ -7,6 +7,7 @@ import '../../core/storage/deep_dive_info_store.dart';
 import '../../shared/widgets/pastel_checkbox_row.dart';
 import '../../shared/widgets/pastel_pill_button.dart';
 import '../../shared/widgets/pastel_toggle_row.dart';
+import '../../shared/widgets/wheel_date_picker_sheet.dart';
 import '../deep_dive/deep_dive_info.dart';
 import 'birth_info.dart';
 
@@ -76,9 +77,13 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
     super.dispose();
   }
 
+  // 2026-07-19: docs/mockups/01-pastel-cute.html "생년월일 선택 UI — 스크롤 휠
+  // 피커로 교체" 시안에 맞춰 Material `showDatePicker`(팝업 달력)를 iOS 스타일
+  // 스크롤 휠 피커(`showWheelDatePicker`, shared/widgets/wheel_date_picker_sheet.dart)로
+  // 바꿨다 — 미래 날짜 선택 방지(firstDate/lastDate) 제약은 그대로 유지한다.
   Future<void> _pickDate() async {
     final now = DateTime.now();
-    final picked = await showDatePicker(
+    final picked = await showWheelDatePicker(
       context: context,
       // 아직 선택한 값이 없으면(null) 피커의 초기 위치만 합리적인 기본값으로 잡는다 —
       // 사용자가 실제로 확인을 눌러야만 아래 setState에서 _birthDate에 반영된다.
@@ -86,7 +91,7 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
       firstDate: DateTime(1900),
       lastDate: now,
     );
-    // 다이얼로그가 떠 있는 동안(await 구간) 이 화면이 사라질 수 있다 — 다른 비동기
+    // 시트가 떠 있는 동안(await 구간) 이 화면이 사라질 수 있다 — 다른 비동기
     // 메서드(_submit() 등)와 같은 이유로 방어한다(2026-07-11 발견, 이 화면의 두 피커
     // 메서드만 이 가드가 빠져 있었음 — 정확한 경쟁 상태 재현은 위젯 테스트로는
     // 결정적으로 만들기 어려워 값 검증 테스트 없이 기존 관례에 맞춰 방어만 추가함).
@@ -96,8 +101,10 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
     }
   }
 
+  // 2026-07-19: 위 _pickDate와 같은 이유로 Material `showTimePicker`(스피너/다이얼
+  // 다이얼로그)를 스크롤 휠 피커(`showWheelTimePicker`)로 교체했다.
   Future<void> _pickTime() async {
-    final picked = await showTimePicker(
+    final picked = await showWheelTimePicker(
       context: context,
       // _pickDate와 같은 이유 — 초기 위치만 잡을 뿐 실제 반영은 사용자의 확인 이후.
       initialTime: _birthTime ?? const TimeOfDay(hour: 14, minute: 30),
