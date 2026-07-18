@@ -345,6 +345,33 @@
   .skip{font-size:11px; color:var(--app-ink-soft); font-weight:700; margin-top:6px; display:inline-block;}
   .jasi-tip{font-size:10px; color:var(--app-ink-soft); font-weight:600; line-height:1.5; margin:8px 0 0; background:var(--app-bg-alt, var(--app-bg-card)); border:1px dashed var(--app-border); border-radius:10px; padding:7px 9px;}
   .input-spacer{flex:1 1 auto;}
+  .field-required::after{content:" *"; color:var(--app-accent); font-weight:800;}
+  .mbti-field-link{
+    display:flex; align-items:center; justify-content:space-between;
+    border:1.5px solid var(--app-border); background:var(--app-bg-card);
+    border-radius:12px; padding:9px 13px;
+    font-size:12px; font-weight:700; color:var(--app-ink-soft);
+  }
+
+  /* ---------- Wheel picker (date selection close-up) ---------- */
+  .wheel-picker{
+    position:relative; display:flex; height:132px; overflow:hidden;
+    border-radius:14px; background:var(--app-bg-card); border:1px solid var(--app-border);
+  }
+  .wheel-col{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .wheel-item{
+    font-size:12.5px; color:var(--app-ink-soft); font-weight:600; padding:6px 0;
+    font-variant-numeric:tabular-nums;
+  }
+  .wheel-item.active{font-size:16px; font-weight:800; color:var(--app-ink);}
+  .wheel-highlight{
+    position:absolute; left:8px; right:8px; top:50%; transform:translateY(-50%);
+    height:32px; border-top:1.5px solid var(--app-accent); border-bottom:1.5px solid var(--app-accent);
+    border-radius:8px; background:color-mix(in srgb, var(--app-accent) 6%, transparent);
+    pointer-events:none;
+  }
 
   /* ===== Screen 3: Loading ===== */
   .loading .screen-body{
@@ -445,9 +472,29 @@
   .share-btn:focus-visible{outline:2px solid var(--app-ink); outline-offset:2px;}
   .report-link{display:block; text-align:center; font-size:11px; font-weight:700; color:var(--app-ink-soft); text-decoration:underline; text-underline-offset:3px;}
 
-  /* ===== Screen 5: Report ===== */
-  .report .screen-body{padding-top:12px; overflow-y:auto;}
+  /* ===== Screen 5: Ad-gate + interest select ===== */
+  .interest-select .screen-body{padding-top:12px; overflow-y:auto;}
   .page-heading{font-size:15.5px; font-weight:800; margin:0 0 12px;}
+  .page-sub{font-size:11.5px; color:var(--app-ink-soft); font-weight:600; line-height:1.5; margin:-6px 0 14px;}
+  .ad-gate-card{
+    background:linear-gradient(120deg, var(--app-accent-soft), var(--app-metal-soft));
+    border-radius:16px; padding:14px 15px; margin-bottom:16px;
+    text-align:center;
+  }
+  .ad-gate-card p{margin:0 0 10px; font-size:12px; font-weight:700; color:var(--app-ink); line-height:1.5;}
+  .ad-gate-btn{
+    appearance:none; border:none; cursor:pointer; width:100%;
+    background:var(--app-ink); color:#fff;
+    font-weight:800; font-size:13px;
+    padding:12px; border-radius:14px;
+  }
+  .ad-gate-btn:focus-visible{outline:2px solid var(--app-ink); outline-offset:2px;}
+  .mbti-known-chip{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--app-bg-card); border:1px solid var(--app-border);
+    border-radius:999px; padding:6px 12px; margin-bottom:14px;
+    font-size:11.5px; font-weight:800; color:var(--app-ink);
+  }
   .oheang-report-card{
     background:var(--app-bg-card); border:1px solid var(--app-border);
     border-radius:15px; padding:12px 13px; margin-bottom:9px;
@@ -634,14 +681,14 @@
 <div class="wrap">
 
   <header class="intro">
-    <p class="eyebrow">UI 컨셉 목업 · 파스텔 큐트 방향 · 2026-07-18 리서치 반영</p>
+    <p class="eyebrow">UI 컨셉 목업 · 파스텔 큐트 방향 · 2026-07-18 구조 리팩터</p>
     <h1>사주랑 — 온보딩부터 결과까지</h1>
-    <p><code>docs/research/</code> 자료에서 정리한 흐름(입력 → 로딩 → 결과 → 상세 리포트 → 심층 분석)에, 앞서 고른 <b style="color:var(--accent)">파스텔 큐트형</b> 톤을 입힌 스타일 목업입니다. 회색 박스 와이어프레임 대신 실제 색·카피를 채워 넣어 바로 감을 잡을 수 있게 했습니다.</p>
+    <p><code>docs/research/</code> 자료에서 정리한 흐름(입력 → 로딩 → 결과 → 상세 리포트)에, 앞서 고른 <b style="color:var(--accent)">파스텔 큐트형</b> 톤을 입힌 스타일 목업입니다. 회색 박스 와이어프레임 대신 실제 색·카피를 채워 넣어 바로 감을 잡을 수 있게 했습니다.</p>
     <p>색상은 임의의 파스텔이 아니라 <b style="color:var(--ink)">사주의 오행(목·화·토·금·수)</b>을 그대로 팔레트로 옮긴 것입니다 — 하단 범례 참고.</p>
-    <p>이번 갱신은 실제로 구현·검증된 6단계 화면(온보딩~심층 분석)에 더해, 맨 아래 <b style="color:var(--ink)">🔒 승인 대기 콘텐츠 개념 시안</b> 섹션에 십신·용신·대운/세운·십이운성·신살·공망·신강신약·납음오행·궁합 9종을 "이런 느낌일 수 있다"는 시안으로만 덧붙였습니다 — 전부 <b>사람 승인 전</b>이며 실제 구현과 무관합니다.</p>
+    <p><b style="color:var(--ink)">이번 갱신(2026-07-18 /grill-me 합의) — 정보 흐름 구조 리팩터</b>: ① 입력 화면 필수 항목에 태어난 시간·혈액형 추가(그동안 선택이던 시간도 필수로), 날짜 선택을 스크롤 휠 피커로 교체, ② 결과 화면은 "내 사주결과"로 개명하고 연애·재물·건강·성격 카드를 제거해 명식·오행 중심으로 간결화, ③ 기존 "상세 리포트"·"심층 분석" 두 화면을 광고 시청 → 관심사 선택 → 통합 결과 하나의 흐름으로 합침. 공망·납음오행은 2026-07-18 사람 승인을 받아 실제 코드에 구현됐으므로 이번 갱신부터 상세 리포트 화면 안에 정식으로 포함하고, 맨 아래 <b>🔒 승인 대기 콘텐츠 개념 시안</b> 목록에서는 뺐습니다.</p>
   </header>
 
-  <div class="journey" role="list" aria-label="온보딩부터 심층 분석까지 6단계 화면 흐름">
+  <div class="journey" role="list" aria-label="온보딩부터 상세 리포트까지 6단계 화면 흐름">
 
     <!-- STEP 1 : ONBOARDING -->
     <section class="step" role="listitem">
@@ -684,12 +731,12 @@
             </div>
 
             <div class="field">
-              <label>이름 (선택)</label>
+              <label class="field-required">이름</label>
               <input class="text-input" type="text" placeholder="예: 민지">
             </div>
 
             <div class="field">
-              <label>태어난 날짜</label>
+              <label class="field-required">태어난 날짜</label>
               <div class="date-row">
                 <button class="pill placeholder" type="button">날짜를 선택해주세요</button>
               </div>
@@ -703,23 +750,38 @@
             </div>
 
             <div class="field">
-              <label>태어난 시간</label>
+              <label class="field-required">태어난 시간</label>
               <div class="pill-row">
                 <button class="pill placeholder" type="button">시간을 선택해주세요</button>
               </div>
               <div class="check-row">
                 <input type="checkbox" id="unknownTime">
-                <label for="unknownTime" style="margin:0;font-weight:600;text-transform:none;letter-spacing:0;color:inherit;">태어난 시간을 몰라요</label>
+                <label for="unknownTime" style="margin:0;font-weight:600;text-transform:none;letter-spacing:0;color:inherit;">정확한 시간을 몰라요</label>
               </div>
-              <p class="jasi-tip">💡 23:00~01:00 사이에 태어났다면, 정확한 결과를 위해 병원 기록상 시간을 확인해보세요</p>
+              <p class="jasi-tip">💡 체크해도 시간 선택은 필요해요 — 대략적인 시간대라도 골라주시면 그 안에서 최대한 정확하게 봐드릴게요. 23:00~01:00 사이라면 병원 기록상 시간을 확인해보세요</p>
             </div>
 
             <div class="field">
-              <label>성별</label>
+              <label class="field-required">성별</label>
               <div class="pill-row" role="group" aria-label="성별 선택">
                 <button class="pill" type="button">여성</button>
                 <button class="pill" type="button">남성</button>
               </div>
+            </div>
+
+            <div class="field">
+              <label class="field-required">혈액형</label>
+              <div class="pill-row" role="group" aria-label="혈액형 선택">
+                <button class="pill" type="button">A형</button>
+                <button class="pill" type="button">B형</button>
+                <button class="pill" type="button">AB형</button>
+                <button class="pill" type="button">O형</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>MBTI (선택)</label>
+              <div class="mbti-field-link"><span>선택하면 심층 분석에 반영돼요</span><span aria-hidden="true">›</span></div>
             </div>
 
             <div class="field">
@@ -730,7 +792,7 @@
 
             <div class="input-spacer"></div>
             <button class="btn-primary is-disabled" type="button" disabled>사주 보러가기 🔮</button>
-            <p class="input-hint">날짜 · 시간(또는 &ldquo;몰라요&rdquo;)을 다 골라야 눌러져요</p>
+            <p class="input-hint">이름 · 날짜 · 시간 · 성별 · 혈액형을 다 채워야 눌러져요</p>
           </div>
           <div class="home-indicator"><i></i></div>
         </div>
@@ -775,12 +837,12 @@
           <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
           <div class="screen-body">
             <div class="result-head">
-              <h2>민지님의 사주팔자 ✨</h2>
+              <h2>내 사주결과</h2>
               <p class="meta">1998.08.15 · 오후 2시 30분生 · 양력</p>
             </div>
 
             <div class="callout">
-              <p>목(木) 기운이 강한 타입이에요 🌿<br>새로운 걸 벌이는 힘이 넘쳐요</p>
+              <p>목(木) 기운이 강한 타입이에요 🌿<br>씨앗이 땅을 뚫고 나오듯, 새로운 걸 벌이고 밀어붙이는 추진력이 두드러져요. 주변에서 "또 뭔가 시작했네" 소리를 자주 듣는 편이라면, 그게 바로 이 목(木) 기운 때문이에요.</p>
             </div>
 
             <div class="pillars">
@@ -799,20 +861,8 @@
               <div class="bar-row"><span class="tag" style="color:var(--app-water)">水</span><div class="bar-track"><div class="bar-fill" style="width:10%;background:var(--app-water)"></div></div><span class="pct">10%</span></div>
             </div>
 
-            <div class="cards">
-              <h3>오늘 궁금한 것부터</h3>
-              <div class="cat-grid">
-                <div class="cat-card"><div class="ico">💘</div><div class="t">연애운</div><div class="d">눈높이가 살짝 높은 편, 이번 달 인연 타이밍이에요</div></div>
-                <div class="cat-card"><div class="ico">💰</div><div class="t">재물운</div><div class="d">돈 들어오는 타이밍, 이번 달이 딱이에요</div></div>
-                <div class="cat-card"><div class="ico">🌱</div><div class="t">건강운</div><div class="d">무리하지만 않으면 컨디션 최상이에요</div></div>
-                <div class="cat-card"><div class="ico">🎭</div><div class="t">성격</div><div class="d">추진력 갑, 시작은 빠르고 화끈해요</div></div>
-              </div>
-            </div>
-
-            <p class="disclaimer">※ 건강운 내용은 참고용이에요. 몸 상태가 걱정되면 전문의와 상담해주세요</p>
-
             <button class="share-btn" type="button">📸 인스타 스토리로 공유하기</button>
-            <a class="report-link" href="#" onclick="return false;">상세 리포트 보기 (무료)</a>
+            <a class="report-link" href="#" onclick="return false;">🎬 광고 보고 상세 리포트 이어보기</a>
           </div>
           <div class="home-indicator"><i></i></div>
         </div>
@@ -821,12 +871,56 @@
 
     <div class="connector" aria-hidden="true">
       <svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="1.6"/></svg>
-      <span>더 자세히</span>
+      <span>광고 시청</span>
     </div>
 
-    <!-- STEP 5 : REPORT -->
+    <!-- STEP 5 : AD-GATE + INTEREST SELECT -->
     <section class="step" role="listitem">
-      <p class="step-label"><b>STEP 5</b> · 상세 리포트</p>
+      <p class="step-label"><b>STEP 5</b> · 관심사 선택</p>
+      <div class="phone">
+        <div class="screen interest-select">
+          <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+          <div class="screen-body">
+            <div class="input-head">
+              <span class="chevron" aria-hidden="true">‹</span>
+              <h2 class="page-heading">더 자세히 알아보기</h2>
+            </div>
+            <p class="page-sub">명식·오행 상세 풀이부터 관심사별 이야기까지, 짧은 광고 하나면 전부 확인할 수 있어요</p>
+
+            <div class="ad-gate-card">
+              <p>🎬 15초 광고 하나만 보면<br>상세 리포트가 열려요</p>
+              <button class="ad-gate-btn" type="button">광고 보고 계속하기</button>
+            </div>
+
+            <span class="mbti-known-chip">✅ ENFP · 스파크 메이커</span>
+
+            <div class="field">
+              <label>무엇이 가장 궁금하세요? (하나 이상 선택)</label>
+              <div class="pill-row pill-row-multi" role="group" aria-label="관심사 선택">
+                <button class="pill is-active" type="button">💘 연애운</button>
+                <button class="pill is-active" type="button">💼 직장운</button>
+                <button class="pill" type="button">💰 재물운</button>
+                <button class="pill" type="button">🌱 건강운</button>
+                <button class="pill" type="button">🎭 성격</button>
+              </div>
+            </div>
+
+            <div class="input-spacer"></div>
+            <button class="btn-primary" type="button">결과 보기</button>
+          </div>
+          <div class="home-indicator"><i></i></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="connector" aria-hidden="true">
+      <svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="1.6"/></svg>
+      <span>통합 결과</span>
+    </div>
+
+    <!-- STEP 6 : COMBINED DETAILED REPORT -->
+    <section class="step" role="listitem">
+      <p class="step-label"><b>STEP 6</b> · 상세 리포트</p>
       <div class="phone">
         <div class="screen report">
           <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
@@ -836,64 +930,51 @@
               <h2 class="page-heading">민지님의 상세 리포트</h2>
             </div>
 
+            <div class="mbti-box">
+              <p class="type">ENFP · 스파크 메이커</p>
+              <p>호기심이 넘치고 사람들과 에너지를 주고받는 걸 좋아하는 타입이에요</p>
+            </div>
+
             <div class="oheang-report-card wood">
               <div class="badge">木</div>
-              <div class="body"><h4>목(木) · 40%</h4><p>새로운 걸 벌이는 추진력이 강해요. 아이디어가 떠오르면 일단 시작하고 보는 편이에요</p></div>
+              <div class="body">
+                <h4>목(木) · 40% · 년주</h4>
+                <p>새로운 걸 벌이는 추진력이 강해요. 아이디어가 떠오르면 일단 시작하고 보는 편이에요</p>
+                <div class="chip-row" style="margin-top:6px;"><span class="chip">노중화(爐中火) 납음</span></div>
+              </div>
             </div>
             <div class="oheang-report-card fire">
               <div class="badge">火</div>
-              <div class="body"><h4>화(火) · 22%</h4><p>표현력이 좋고 주변 사람들에게 인기가 많아요. 감정 기복은 조금 큰 편일 수 있어요</p></div>
+              <div class="body">
+                <h4>화(火) · 22% · 월주</h4>
+                <p>표현력이 좋고 주변 사람들에게 인기가 많아요. 감정 기복은 조금 큰 편일 수 있어요</p>
+                <div class="chip-row" style="margin-top:6px;"><span class="chip">노중화(爐中火) 납음</span><span class="chip" style="background:var(--app-border);">공망</span></div>
+              </div>
             </div>
             <div class="oheang-report-card earth">
               <div class="badge">土</div>
-              <div class="body"><h4>토(土) · 15%</h4><p>중심을 잡아주는 안정감이 있어요. 급한 결정보다 한 박자 쉬어가는 게 잘 맞아요</p></div>
+              <div class="body"><h4>토(土) · 15% · 일주</h4><p>중심을 잡아주는 안정감이 있어요. 급한 결정보다 한 박자 쉬어가는 게 잘 맞아요</p></div>
             </div>
             <div class="oheang-report-card metal">
               <div class="badge">金</div>
-              <div class="body"><h4>금(金) · 13%</h4><p>원칙을 지키는 걸 중요하게 여겨요. 마무리를 깔끔하게 짓는 힘이 있어요</p></div>
+              <div class="body">
+                <h4>금(金) · 13% · 시주</h4>
+                <p>원칙을 지키는 걸 중요하게 여겨요. 마무리를 깔끔하게 짓는 힘이 있어요</p>
+                <div class="chip-row" style="margin-top:6px;"><span class="chip">벽상토(壁上土) 납음</span></div>
+              </div>
             </div>
             <div class="oheang-report-card water">
               <div class="badge">水</div>
               <div class="body"><h4>수(水) · 10%</h4><p>통찰력이 있지만 이번엔 비중이 적어요. 혼자 생각할 시간을 조금 더 챙겨보세요</p></div>
             </div>
 
-            <p class="disclaimer">※ 건강운 내용은 참고용이에요. 몸 상태가 걱정되면 전문의와 상담해주세요</p>
-          </div>
-          <div class="home-indicator"><i></i></div>
-        </div>
-      </div>
-    </section>
-
-    <div class="connector" aria-hidden="true">
-      <svg width="34" height="14" viewBox="0 0 34 14" fill="none"><path d="M0 7H32M32 7L26 1M32 7L26 13" stroke="currentColor" stroke-width="1.6"/></svg>
-      <span>MBTI · 관심사</span>
-    </div>
-
-    <!-- STEP 6 : DEEP DIVE -->
-    <section class="step" role="listitem">
-      <p class="step-label"><b>STEP 6</b> · 심층 분석</p>
-      <div class="phone">
-        <div class="screen deepdive">
-          <div class="status-bar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
-          <div class="screen-body">
-            <div class="input-head">
-              <span class="chevron" aria-hidden="true">‹</span>
-              <h2 class="page-heading">민지님의 심층 분석 ✨</h2>
-            </div>
-
-            <div class="mbti-box">
-              <p class="type">ENFP · 스파크 메이커</p>
-              <p>호기심이 넘치고 사람들과 에너지를 주고받는 걸 좋아하는 타입이에요</p>
-            </div>
-
             <div class="cards">
-              <h3>관심 있는 영역</h3>
-              <div class="interest-card"><div class="t">💼 직장운</div><p>새 프로젝트 제안이 들어올 타이밍, 일단 손 들어보는 게 좋아요</p></div>
+              <h3>고른 관심사부터</h3>
               <div class="interest-card"><div class="t">💘 연애운</div><p>먼저 다가가는 쪽이 유리해요, 망설이면 타이밍을 놓칠 수 있어요</p></div>
-              <div class="interest-card"><div class="t">🌱 건강운</div><p>체력 소모가 큰 시기예요, 무리하지 않는 게 관건이에요</p></div>
+              <div class="interest-card"><div class="t">💼 직장운</div><p>새 프로젝트 제안이 들어올 타이밍, 일단 손 들어보는 게 좋아요</p></div>
             </div>
 
-            <p class="disclaimer">※ 건강운 내용은 참고용이에요. 몸 상태가 걱정되면 전문의와 상담해주세요</p>
+            <button class="share-btn" type="button">📸 인스타 스토리로 공유하기</button>
           </div>
           <div class="home-indicator"><i></i></div>
         </div>
@@ -903,8 +984,46 @@
   </div>
 
   <p style="font-size:0.8rem;color:var(--ink-soft);margin:-8px 0 40px;max-width:64ch;">
-    STEP 5·6은 MBTI 색상 코딩을 새로 도입하지 않고 브랜드 중립색(<code>accentSoft</code>)만 쓴 카드입니다 — <b style="color:var(--ink)">16Personalities의 4그룹 색이 우리 오행 5색과 거의 1:1로 겹친다</b>는 <code>docs/research/MBTI/현황.md</code> 조사 결과에 따라 MBTI 쪽엔 오행 팔레트를 재사용하지 않았습니다.
+    STEP 6 MBTI 박스는 색상 코딩을 새로 도입하지 않고 브랜드 중립색(<code>accentSoft</code>)만 쓴 카드입니다 — <b style="color:var(--ink)">16Personalities의 4그룹 색이 우리 오행 5색과 거의 1:1로 겹친다</b>는 <code>docs/research/MBTI/현황.md</code> 조사 결과에 따라 MBTI 쪽엔 오행 팔레트를 재사용하지 않았습니다.
   </p>
+
+  <section class="share-preview">
+    <h2>생년월일 선택 UI — 스크롤 휠 피커로 교체</h2>
+    <p>STEP 2 화면의 날짜 필드는 탭하면 아래 같은 3열(연/월/일) 스크롤 휠 피커 시트가 뜨는 걸로 바꿉니다. 기존 "숫자 pill 3개 → 팝업 달력" 방식은 연도는 스크롤이 짧아 고르기 쉽지만 월/일은 달력 그리드에서 정확한 칸을 탭해야 해 불편하다는 피드백을 반영 — 셋 다 같은 스크롤 휠 동작이라 손에 익으면 월/일도 연도만큼 빠르게 맞출 수 있습니다. 확정은 "확인" 버튼을 눌러야 반영되고, 그전까지는 STEP 2 화면처럼 "날짜를 선택해주세요" 플레이스홀더가 유지됩니다.</p>
+    <div class="share-row">
+      <div class="wheel-picker" role="img" aria-label="연/월/일 스크롤 휠 피커 예시, 가운데 강조된 1998년 8월 15일이 선택 후보">
+        <div class="wheel-col">
+          <div class="wheel-item">1996</div>
+          <div class="wheel-item">1997</div>
+          <div class="wheel-item active">1998</div>
+          <div class="wheel-item">1999</div>
+          <div class="wheel-item">2000</div>
+        </div>
+        <div class="wheel-col">
+          <div class="wheel-item">6월</div>
+          <div class="wheel-item">7월</div>
+          <div class="wheel-item active">8월</div>
+          <div class="wheel-item">9월</div>
+          <div class="wheel-item">10월</div>
+        </div>
+        <div class="wheel-col">
+          <div class="wheel-item">13일</div>
+          <div class="wheel-item">14일</div>
+          <div class="wheel-item active">15일</div>
+          <div class="wheel-item">16일</div>
+          <div class="wheel-item">17일</div>
+        </div>
+        <div class="wheel-highlight" aria-hidden="true"></div>
+      </div>
+      <div class="share-notes">
+        <ul>
+          <li><b>세 열 모두 같은 조작</b> — 연/월/일 전부 위아래로 스와이프해 맞추는 동일한 휠, 배우는 비용이 하나로 줄어듦</li>
+          <li><b>가운데 강조 밴드</b>가 지금 선택 후보 값을 보여주고, 시트 하단 "확인"을 눌러야 실제로 필드에 반영(오탭 방지)</li>
+          <li>태어난 시간 필드도 같은 방식(시/분 2열 휠)으로 통일</li>
+        </ul>
+      </div>
+    </div>
+  </section>
 
   <section class="share-preview">
     <h2>SNS 공유 카드 레이아웃 (9:16)</h2>
@@ -1017,14 +1136,14 @@
 
   <section class="gate-section">
     <h2>🔒 승인 대기 콘텐츠 — 개념 시안</h2>
-    <p>아래 10개는 <code>docs/research/사주팔자/</code>·<code>docs/research/궁합/</code>에 리서치는 돼 있지만 <b style="color:var(--ink)">실제 앱 구현은 사람 승인 대기</b> 상태인 콘텐츠(십신·용신·대운/세운·십이운성·신살·공망·신강신약·납음오행·궁합·유료 경계선)입니다. "이런 느낌일 수 있다"는 논의용 개념 시안일 뿐, 확정된 디자인이 아닙니다 — 각 카드에 예시로 쓰인 문구·수치도 리서치에서 확인한 실제 사례를 참고했을 뿐 최종 카피가 아닙니다.</p>
-    <p><b style="color:var(--ink)">우선순위 제안</b> — <code>docs/research/사주팔자/기초개념.md</code>의 콘텐츠 갭 난이도 평가(절기 계산 필요 여부·계산 복잡도 기준)를 따라 각 카드에 우선순위 번호를 매겼습니다: 공망·납음오행(★☆☆☆☆, 이미 계산된 60갑자 인덱스만으로 산출)부터 시작해 십이운성·신강신약·십신·신살(★★☆☆☆)을 거쳐, 학파 논쟁이 있는 용신, 2인 입력 UX가 새로 필요한 궁합, 마지막으로 정밀 절기 계산이 필요한 대운/세운(★★★★☆, 가장 어려움) 순으로 착수하는 게 합리적이라는 제안입니다 — 실제 착수 순서는 사람 승인 시점에 다시 정할 수 있습니다.</p>
+    <p>아래 8개는 <code>docs/research/사주팔자/</code>·<code>docs/research/궁합/</code>에 리서치는 돼 있지만 <b style="color:var(--ink)">실제 앱 구현은 사람 승인 대기</b> 상태인 콘텐츠(십신·용신·대운/세운·십이운성·신살·신강신약·궁합·유료 경계선)입니다. "이런 느낌일 수 있다"는 논의용 개념 시안일 뿐, 확정된 디자인이 아닙니다 — 각 카드에 예시로 쓰인 문구·수치도 리서치에서 확인한 실제 사례를 참고했을 뿐 최종 카피가 아닙니다. (공망·납음오행은 2026-07-18 사람 승인을 받아 이미 실제 코드에 구현돼 STEP 6 상세 리포트 화면으로 옮겨갔습니다 — 이 목록에서는 제외.)</p>
+    <p><b style="color:var(--ink)">우선순위 제안</b> — <code>docs/research/사주팔자/기초개념.md</code>의 콘텐츠 갭 난이도 평가(절기 계산 필요 여부·계산 복잡도 기준)를 따라 각 카드에 우선순위 번호를 매겼습니다: 십이운성·신강신약·십신·신살(★★☆☆☆)부터 시작해, 학파 논쟁이 있는 용신, 2인 입력 UX가 새로 필요한 궁합, 마지막으로 정밀 절기 계산이 필요한 대운/세운(★★★★☆, 가장 어려움) 순으로 착수하는 게 합리적이라는 제안입니다 — 실제 착수 순서는 사람 승인 시점에 다시 정할 수 있습니다.</p>
     <p style="font-size:0.85rem;"><b style="color:var(--ink)">참고 사례</b> — 우리와 정확히 같은 기술 스택(Flutter)을 쓰는 1인 개발 경쟁 앱 "사주냥"이 이미 천간·지지·오행·십신·십이운성·신살(50종)·궁합·택일까지 계산 범위를 넓혔다는 조사 결과(<code>docs/research/운세/시장_현황.md</code>)가 있어, 위 개념들이 1인/소규모 팀 기준으로도 기술적으로 무리한 범위는 아니라는 참고가 됩니다.</p>
 
     <div class="concept-grid">
 
       <div class="concept-card">
-        <span class="gate-ribbon">🔒 미승인 · 십신(十神)</span><span class="priority-tag">우선순위 5 · ★★☆☆☆</span>
+        <span class="gate-ribbon">🔒 미승인 · 십신(十神)</span><span class="priority-tag">우선순위 3 · ★★☆☆☆</span>
         <h4>십신 — "명리학판 MBTI"</h4>
         <div class="preview">
           <div class="chip-row">
@@ -1040,7 +1159,7 @@
       </div>
 
       <div class="concept-card">
-        <span class="gate-ribbon">🔒 미승인 · 용신(用神)</span><span class="priority-tag">우선순위 7 · ★★☆☆☆(학파 논쟁 주의)</span>
+        <span class="gate-ribbon">🔒 미승인 · 용신(用神)</span><span class="priority-tag">우선순위 5 · ★★☆☆☆(학파 논쟁 주의)</span>
         <h4>용신 — 오행 라이프 코칭</h4>
         <div class="preview">
           <p style="font-size:12px;font-weight:800;margin:0 0 4px;color:var(--app-water);">💧 당신에게 가장 필요한 기운은 수(水)예요</p>
@@ -1050,7 +1169,7 @@
       </div>
 
       <div class="concept-card">
-        <span class="gate-ribbon">🔒 미승인 · 대운/세운</span><span class="priority-tag">우선순위 9 · 대운★★★★☆(최난, 정밀 절기 필요)</span>
+        <span class="gate-ribbon">🔒 미승인 · 대운/세운</span><span class="priority-tag">우선순위 7 · 대운★★★★☆(최난, 정밀 절기 필요)</span>
         <h4>대운 — 인생 단계의 일기예보</h4>
         <div class="preview">
           <div class="timeline-row">
@@ -1061,7 +1180,7 @@
       </div>
 
       <div class="concept-card">
-        <span class="gate-ribbon">🔒 미승인 · 십이운성(十二運星)</span><span class="priority-tag">우선순위 3 · ★★☆☆☆</span>
+        <span class="gate-ribbon">🔒 미승인 · 십이운성(十二運星)</span><span class="priority-tag">우선순위 1 · ★★☆☆☆(최우선)</span>
         <h4>십이운성 — 기운의 12단계</h4>
         <div class="preview">
           <div class="stage-track">
@@ -1073,7 +1192,7 @@
       </div>
 
       <div class="concept-card">
-        <span class="gate-ribbon">🔒 미승인 · 신살(神殺)</span><span class="priority-tag">우선순위 6 · ★★☆☆☆</span>
+        <span class="gate-ribbon">🔒 미승인 · 신살(神殺)</span><span class="priority-tag">우선순위 4 · ★★☆☆☆</span>
         <h4>신살 — 도화살 자가진단</h4>
         <div class="preview">
           <ul class="check-list">
@@ -1089,17 +1208,7 @@
       </div>
 
       <div class="concept-card">
-        <span class="gate-ribbon">🔒 미승인 · 공망(空亡)</span><span class="priority-tag">우선순위 1 · ★☆☆☆☆(최우선)</span>
-        <h4>공망 — 결핍이 아닌 여백</h4>
-        <div class="preview">
-          <div class="chip-row"><span class="chip on">戌 술</span><span class="chip on">亥 해</span></div>
-          <p style="font-size:10.5px;color:var(--app-ink-soft);font-weight:600;margin:8px 0 0;">비어 있기에 채울 수 있고, 없기에 덜 집착할 수 있는 자유예요</p>
-        </div>
-        <p class="copy">"부정적 인식 인정 → 극단적 해석 경계 → 양면 재해석" 3단 톤 구조. 경쟁 앱들은 "공망 제공" 배지 수준에 그쳐 정교한 카피로 차별화 여지가 있다는 조사 결과.</p>
-      </div>
-
-      <div class="concept-card">
-        <span class="gate-ribbon">🔒 미승인 · 신강신약(身强身弱)</span><span class="priority-tag">우선순위 4 · ★★☆☆☆</span>
+        <span class="gate-ribbon">🔒 미승인 · 신강신약(身强身弱)</span><span class="priority-tag">우선순위 2 · ★★☆☆☆</span>
         <h4>신강신약 — 기가 센 사주 vs 여린 사주</h4>
         <div class="preview">
           <div class="gauge-track"><div class="gauge-fill" style="width:62%;background:linear-gradient(90deg, var(--app-water), var(--app-fire));"></div></div>
@@ -1109,17 +1218,7 @@
       </div>
 
       <div class="concept-card">
-        <span class="gate-ribbon">🔒 미승인 · 납음오행(納音五行)</span><span class="priority-tag">우선순위 2 · ★☆☆☆☆</span>
-        <h4>납음오행 — 기둥마다 붙는 이름표</h4>
-        <div class="preview">
-          <div class="chip-row"><span class="chip on">일주 · 대해수(大海水)</span></div>
-          <p style="font-size:10.5px;color:var(--app-ink-soft);font-weight:600;margin:8px 0 0;">큰 바다처럼 포용력 있는 기운이에요</p>
-        </div>
-        <p class="copy">60갑자를 2개씩 묶은 30가지 시적인 이름(대해수·벽력화 등). 핵심 분석이 아니라 기둥 카드에 가볍게 얹는 뱃지형 부가 정보로 적합 — 고법이라 쓰임이 적다는 점도 정직하게 고지 권장.</p>
-      </div>
-
-      <div class="concept-card">
-        <span class="gate-ribbon">🔒 미승인 · 궁합(宮合)</span><span class="priority-tag">우선순위 8 · ★★★☆☆(2인 입력 UX 필요)</span>
+        <span class="gate-ribbon">🔒 미승인 · 궁합(宮合)</span><span class="priority-tag">우선순위 6 · ★★★☆☆(2인 입력 UX 필요)</span>
         <h4>궁합 — 점수 + 5단계 등급</h4>
         <div class="preview">
           <div class="chip-row" style="margin-bottom:9px;">
@@ -1135,16 +1234,16 @@
       </div>
 
       <div class="concept-card">
-        <span class="gate-ribbon">🔒 미승인 · 결제/구독</span><span class="priority-tag">우선순위 10 · 게이트 최우선 확정 필요</span>
-        <h4>상세 리포트 — 무료/유료 경계선</h4>
+        <span class="gate-ribbon">🔒 미승인 · 결제/구독</span><span class="priority-tag">우선순위 8 · 게이트 최우선 확정 필요</span>
+        <h4>무료/유료 경계선 — 광고 다음 단계</h4>
         <div class="preview">
-          <p style="font-size:11px;font-weight:800;margin:0 0 6px;">STEP 4 결과(무료)</p>
-          <div class="chip-row"><span class="chip on">4기둥</span><span class="chip on">오행 밸런스</span><span class="chip on">4개 카테고리 한 줄</span></div>
+          <p style="font-size:11px;font-weight:800;margin:0 0 6px;">STEP 4 결과(무료) → STEP 5·6 상세 리포트(<span style="color:var(--app-accent)">광고 시청, 2026-07-18 확정</span>)</p>
+          <div class="chip-row"><span class="chip on">4기둥</span><span class="chip on">오행 밸런스</span></div>
           <div style="height:1px;background:var(--app-border);margin:10px 0;"></div>
-          <p style="font-size:11px;font-weight:800;margin:0 0 6px;">STEP 5 상세 리포트(<span style="color:var(--app-accent)">유료 후보</span>)</p>
-          <div class="chip-row"><span class="chip">오행별 상세 풀이</span><span class="chip">카테고리별 확장 문구</span></div>
+          <p style="font-size:11px;font-weight:800;margin:0 0 6px;">그 이상(<span style="color:var(--app-accent)">유료 후보, 미확정</span>)</p>
+          <div class="chip-row"><span class="chip">광고 없이 바로 보기</span><span class="chip">궁합·심층 콘텐츠 추가 열람</span></div>
         </div>
-        <p class="copy">결제/구독은 그 자체로 별도 게이트 항목입니다 — 어디까지 무료로 열어둘지는 디자인 판단이 아니라 사업 결정이라 이 목업에서 실제 경계선을 확정하지 않습니다. 위 구분은 "결과=무료 요약, 상세 리포트=유료 후보"라는 가장 흔한 경쟁 앱 패턴을 그대로 옮긴 예시일 뿐입니다. <b style="color:var(--app-ink);">시장 참고가(확정 아님)</b> — 포스텔러 궁합 프리미엄 리포트 22,000원, 3강 전체 가격대는 990원 소액부터 10만원대 종합 패키지까지 폭넓게 분포(<code>docs/research/운세/시장_현황.md</code>).</p>
+        <p class="copy">STEP 4(무료)→STEP 5·6(광고 시청)까지는 이미 방향이 정해졌습니다(2026-07-18). 남은 게이트는 그 다음 단계 — "광고 없이 바로 보기" 같은 유료 옵션을 만들지, 만든다면 어디까지 유료화할지는 여전히 디자인 판단이 아니라 사업 결정이라 이 목업에서 확정하지 않습니다. <b style="color:var(--app-ink);">시장 참고가(확정 아님)</b> — 포스텔러 궁합 프리미엄 리포트 22,000원, 3강 전체 가격대는 990원 소액부터 10만원대 종합 패키지까지 폭넓게 분포(<code>docs/research/운세/시장_현황.md</code>).</p>
       </div>
 
     </div>
@@ -1152,8 +1251,8 @@
 
   <footer class="notes">
     <p><b>참고 근거</b> — 브랜드 CTA는 별도의 코랄 핑크(#FF6B8A) 하나로 고정하고, 오행 5색은 데이터를 나타내는 의미색으로 분리했습니다. 배경은 순백 대신 아이보리(#FFFBF5)를 써서 "만세력 종이"처럼 은은한 톤을 냈습니다 — 사용자 후기 조사의 "부드러운 색조가 낫다"는 의견 반영.</p>
-    <p><b>이번 갱신에서 실제 구현·검증된 내용 반영</b> — ① STEP 2 입력 화면: 날짜/시간을 고르지 않으면 제출 버튼이 비활성화되는 실제 동작(2026-07-17 버그 수정) 반영, 이름(선택) 필드 추가, ② STEP 4·5·6: 건강운 디스클레이머 문구를 실제 코드(<code>ohaeng_readings.dart</code>)와 동일하게 표기, ③ STEP 5·6 신설(상세 리포트·심층 분석) — 지금까지 텍스트 링크로만 존재하던 두 화면을 처음으로 시안화, ④ STEP 6 MBTI 박스는 오행색 재사용 금지 결론(<code>docs/research/MBTI/현황.md</code>)에 따라 브랜드 중립색만 사용.</p>
-    <p><b>🔒 승인 대기 콘텐츠 개념 시안</b> — 십신·용신·대운/세운·십이운성·신살·공망·신강신약·납음오행·궁합·유료 경계선 10종을 위 별도 섹션에 "논의용" 시안과 우선순위 제안까지 포함해 추가했습니다. 예시 수치·카피는 리서치에서 확인한 실제 사례를 참고했을 뿐, 어떤 것도 구현이 확정된 게 아니며 각 개념의 실제 채택 여부·정확한 카피·계산 방식은 여전히 사람 승인과 <code>saju-planner</code> 검토를 거쳐야 합니다. (CLAUDE.md 규칙 8번에 따라, 목업 단계의 세부 판단은 되묻지 않고 바로 반영했습니다 — 결제/구독처럼 게이트 항목 자체인 결정만 "🔒 미승인" 표시로 남겼습니다.)</p>
+    <p><b>2026-07-18 구조 리팩터 (/grill-me 합의)</b> — ① STEP 2 입력 화면: 이름·성별·생년월일·시간·혈액형을 전부 필수로 바꾸고(시간은 "몰라요" 체크 시에도 대략적 선택은 필수), 날짜/시간 선택 UI를 pill+팝업 달력에서 3열 스크롤 휠 피커로 교체(위 "생년월일 선택 UI" 섹션 참고). ② STEP 4 결과 화면: 타이틀을 "내 사주결과"로 바꾸고 오행 설명을 조금 더 상세히 풀어썼으며, 연애·재물·건강·성격 카드를 제거해 명식·오행 중심으로 간결화 — 이 4개는 STEP 5 관심사 선택으로 그대로 이전(성격 포함 5종). ③ STEP 5·6: 기존 "상세 리포트"·"심층 분석" 두 화면을 광고 시청 → 관심사 선택 → 통합 상세 리포트 하나의 흐름으로 합침. ④ 공망·납음오행은 사람 승인을 받아 실제 코드에 구현된 상태라 STEP 6 상세 리포트 안에 정식 배지로 포함(아래 게이트 목록에서는 제외).</p>
+    <p><b>🔒 승인 대기 콘텐츠 개념 시안</b> — 십신·용신·대운/세운·십이운성·신살·신강신약·궁합·유료 경계선 8종을 위 별도 섹션에 "논의용" 시안과 우선순위 제안까지 포함해 추가했습니다. 예시 수치·카피는 리서치에서 확인한 실제 사례를 참고했을 뿐, 어떤 것도 구현이 확정된 게 아니며 각 개념의 실제 채택 여부·정확한 카피·계산 방식은 여전히 사람 승인과 <code>saju-planner</code> 검토를 거쳐야 합니다. (CLAUDE.md 규칙 8번에 따라, 목업 단계의 세부 판단은 되묻지 않고 바로 반영했습니다 — 결제/구독처럼 게이트 항목 자체인 결정만 "🔒 미승인" 표시로 남겼습니다.)</p>
     <p><b>확정 원칙</b> — 사주 계산 자체(명식·오행 분포 등)는 입력이 같으면 언제나 동일해야 하는 고정 데이터이고, 위 개념 시안들은 전부 그 위에 얹는 "풀이"일 뿐 계산 자체를 흔드는 로테이션/무작위 요소가 아닙니다(CLAUDE.md 규칙 7번).</p>
     <p><b>계산 엔진 참고</b> — 위 화면들이 요구하는 계산(사주 원문·십신·십이운성·신살·용신·대운/세운 등)을 이미 우리와 같은 언어(Dart)로 구현해둔 오픈소스 후보가 존재한다는 조사 결과가 있습니다(<code>docs/research/사주팔자/오픈소스_라이브러리.md</code>) — 목업의 시각적 결정과는 무관하지만, 위 게이트 개념들이 "언젠가 구현 가능한 시안"에 그치지 않고 참고 구현체가 있다는 근거로 남겨둡니다. 실제 채택 여부는 별도 사람 결정 대기입니다.</p>
   </footer>
@@ -1163,11 +1262,17 @@
 <script>
   // pill toggle groups (visual only)
   document.querySelectorAll('.pill-row').forEach(function(group){
+    var multi = group.classList.contains('pill-row-multi');
     group.addEventListener('click', function(e){
       var btn = e.target.closest('.pill');
       if(!btn || !group.contains(btn)) return;
-      group.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('is-active'); });
-      btn.classList.add('is-active');
+      if(multi){
+        // 관심사 선택처럼 여러 개를 동시에 고를 수 있는 그룹은 클릭한 항목만 토글
+        btn.classList.toggle('is-active');
+      } else {
+        group.querySelectorAll('.pill').forEach(function(p){ p.classList.remove('is-active'); });
+        btn.classList.add('is-active');
+      }
     });
   });
 
