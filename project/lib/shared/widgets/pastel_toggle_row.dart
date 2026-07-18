@@ -26,49 +26,51 @@ class PastelToggleRow<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final row = Row(
+    // 목업(`.pill-row`)은 `gap:8px`로 항목 "사이"에만 간격을 두고 넘치면 줄바꿈하는데,
+    // 지금까지는 각 버튼을 `Padding(right: 10)`으로 감싸 마지막 항목 뒤에도 불필요한
+    // 여백이 남았다 — `Wrap(spacing/runSpacing: 8)`로 교체(2026-07-18 오버나이트 대조 발견).
+    final row = Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: options.entries.map((entry) {
         final isActive = entry.key == value;
-        return Padding(
-          padding: const EdgeInsets.only(right: 10),
-          child: Semantics(
-            button: true,
-            selected: isActive,
-            label: entry.value,
-            // excludeSemantics로 자식(InkWell)의 자동 시맨틱스를 대체하므로, 탭 액션도
-            // 여기서 직접 다시 선언해야 스크린 리더의 "두 번 탭해서 활성화"가 동작한다.
+        return Semantics(
+          button: true,
+          selected: isActive,
+          label: entry.value,
+          // excludeSemantics로 자식(InkWell)의 자동 시맨틱스를 대체하므로, 탭 액션도
+          // 여기서 직접 다시 선언해야 스크린 리더의 "두 번 탭해서 활성화"가 동작한다.
+          onTap: () => onChanged(entry.key),
+          // 자식 Text가 만드는 자동 라벨과 병합되면 "라벨\n라벨"처럼 중복되므로 대체한다.
+          excludeSemantics: true,
+          child: InkWell(
             onTap: () => onChanged(entry.key),
-            // 자식 Text가 만드는 자동 라벨과 병합되면 "라벨\n라벨"처럼 중복되므로 대체한다.
-            excludeSemantics: true,
-            child: InkWell(
-              onTap: () => onChanged(entry.key),
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                // 목업(`.pill`)은 padding:9px 14px인데 지금까지는 20/12였다
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              // 목업(`.pill`)은 padding:9px 14px인데 지금까지는 20/12였다
+              // (2026-07-07 대조 발견).
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                // 목업(docs/mockups/01-pastel-cute.html)의 `.pill.is-active`는 배경을
+                // 진한 accent가 아니라 옅은 accentSoft로, 글자도 흰색이 아니라 진한
+                // accentText로 쓴다 — 2026-07-06까지는 브랜드 CTA 버튼(.btn-primary)과
+                // 같은 조합(accent+흰 글자)을 잘못 써서 WCAG AA 텍스트 대비(4.5:1) 미달
+                // 문제가 있었는데, 목업 그대로 맞추면서 자연히 해결됨(accentText는 이미
+                // accentSoft 위에서 4.5:1 이상 통과하도록 설계돼 있음, app_colors.dart 참고).
+                color: isActive ? AppColors.accentSoft : AppColors.bgCard,
+                borderRadius: BorderRadius.circular(12),
+                // 목업(`.pill`)은 1.5px 테두리를 쓰는데 지금까지는 기본값인 1px이었다
                 // (2026-07-07 대조 발견).
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                decoration: BoxDecoration(
-                  // 목업(docs/mockups/01-pastel-cute.html)의 `.pill.is-active`는 배경을
-                  // 진한 accent가 아니라 옅은 accentSoft로, 글자도 흰색이 아니라 진한
-                  // accentText로 쓴다 — 2026-07-06까지는 브랜드 CTA 버튼(.btn-primary)과
-                  // 같은 조합(accent+흰 글자)을 잘못 써서 WCAG AA 텍스트 대비(4.5:1) 미달
-                  // 문제가 있었는데, 목업 그대로 맞추면서 자연히 해결됨(accentText는 이미
-                  // accentSoft 위에서 4.5:1 이상 통과하도록 설계돼 있음, app_colors.dart 참고).
-                  color: isActive ? AppColors.accentSoft : AppColors.bgCard,
-                  borderRadius: BorderRadius.circular(12),
-                  // 목업(`.pill`)은 1.5px 테두리를 쓰는데 지금까지는 기본값인 1px이었다
-                  // (2026-07-07 대조 발견).
-                  border: Border.all(
-                    color: isActive ? AppColors.accent : AppColors.border,
-                    width: 1.5,
-                  ),
+                border: Border.all(
+                  color: isActive ? AppColors.accent : AppColors.border,
+                  width: 1.5,
                 ),
-                child: Text(
-                  entry.value,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: isActive ? AppColors.accentText : AppColors.ink,
-                  ),
+              ),
+              child: Text(
+                entry.value,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: isActive ? AppColors.accentText : AppColors.ink,
                 ),
               ),
             ),
