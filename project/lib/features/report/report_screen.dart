@@ -10,6 +10,7 @@ import '../../shared/widgets/pastel_card.dart';
 import '../birth_input/birth_info.dart';
 import '../result/meta_line.dart';
 import '../result/ohaeng_readings.dart';
+import 'report_readings.dart';
 
 /// 오행별 의미. 참고: docs/mockups/01-pastel-cute.html "오행 컬러 시스템" 섹션.
 /// 한자 값은 core/saju/ganzhi.dart의 공용 상수 `ohaengHanja`를 재사용한다(화면마다
@@ -157,25 +158,38 @@ class _PillarBreakdownTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rows = [
-      ('년주', pillars.year),
-      ('월주', pillars.month),
-      ('일주', pillars.day),
-      ('시주', pillars.hour),
+      ('년주', pillars.year, false),
+      ('월주', pillars.month, false),
+      // 공망(空亡)은 일주(일간·일지) 기준으로 다른 기둥의 지지를 판별하는
+      // 개념이라 일주 자신은 공망 여부를 따지지 않는다 — isDayPillar만 true.
+      ('일주', pillars.day, true),
+      ('시주', pillars.hour, false),
     ];
+    // 일주 기준으로 딱 한 번만 계산하면 되는 고정 배치(순중공망) — 년/월/시주 각
+    // 지지가 이 2개 중 하나와 같으면 공망 배지를 붙인다.
+    final voidBranches = voidBranchIndices(
+      dayStemIndex: pillars.day.stemIndex,
+      dayBranchIndex: pillars.day.branchIndex,
+    );
 
     return PastelCard(
       child: Column(
         children: [
           for (var i = 0; i < rows.length; i++) ...[
             if (i > 0) const Divider(height: 24, color: AppColors.border),
-            _pillarRow(rows[i].$1, rows[i].$2),
+            _pillarRow(rows[i].$1, rows[i].$2, isDayPillar: rows[i].$3, voidBranches: voidBranches),
           ],
         ],
       ),
     );
   }
 
-  Widget _pillarRow(String label, GanzhiPillar? pillar) {
+  Widget _pillarRow(
+    String label,
+    GanzhiPillar? pillar, {
+    required bool isDayPillar,
+    required List<int> voidBranches,
+  }) {
     if (pillar == null) {
       // 입력 온보딩 설계(docs/research/운세/입력_온보딩_설계.md)의 권장안 — 시주를
       // 계산하지 않았다는 안내 뒤에 재입력을 유도하는 넛지 문구를 덧붙인다. 이 화면엔
@@ -216,26 +230,40 @@ class _PillarBreakdownTable extends StatelessWidget {
     final semanticLabel = '$label. 천간 ${pillar.stem}, 오행 ${stemOhaeng(pillar.stemIndex)}. '
         '지지 ${pillar.branch}, 오행 ${branchOhaeng(pillar.branchIndex)}.';
 
-    return Semantics(
-      label: semanticLabel,
-      excludeSemantics: true,
-      container: true,
-      child: Row(
-        children: [
-          SizedBox(
-            width: 44,
-            // 위 null-분기(시주 없음 안내)와 같은 이유 — FittedBox로 감싸 폰트 확대 시
-            // 조용히 잘리지 않게 한다.
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
-            ),
+    final nayin = nayinFor(pillar.ganzhiIndex60);
+    final isVoid = !isDayPillar && voidBranches.contains(pillar.branchIndex % 12);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 기존 병합 시맨틱스(천간·지지 값)는 그대로 두고, 납음오행·공망 배지는
+        // 아래 별도 위젯(_PillarExtras)의 독립된 Semantics 노드로 덧붙인다 —
+        // 한 노드에 다 합치면 문장이 지나치게 길어지고, 기존에 이 라벨 값을
+        // 그대로 검증하던 테스트도 매번 깨지기 쉬워진다.
+        Semantics(
+          label: semanticLabel,
+          excludeSemantics: true,
+          container: true,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 44,
+                // 위 null-분기(시주 없음 안내)와 같은 이유 — FittedBox로 감싸 폰트 확대 시
+                // 조용히 잘리지 않게 한다.
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink)),
+                ),
+              ),
+              Expanded(child: _charCell('천간', pillar.stem, stemOhaeng(pillar.stemIndex))),
+              const SizedBox(width: 8),
+              Expanded(child: _charCell('지지', pillar.branch, branchOhaeng(pillar.branchIndex))),
+            ],
           ),
-          Expanded(child: _charCell('천간', pillar.stem, stemOhaeng(pillar.stemIndex))),
-          const SizedBox(width: 8),
-          Expanded(child: _charCell('지지', pillar.branch, branchOhaeng(pillar.branchIndex))),
-        ],
-      ),
+        ),
+        const SizedBox(height: 8),
+        _PillarExtras(label: label, nayin: nayin, isVoid: isVoid),
+      ],
     );
   }
 
@@ -252,6 +280,83 @@ class _PillarBreakdownTable extends StatelessWidget {
           Text(hanja, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 15)),
           const SizedBox(height: 2),
           Text('$kind · $ohaeng', style: const TextStyle(fontSize: 10, color: AppColors.inkSoft)),
+        ],
+      ),
+    );
+  }
+}
+
+/// 각 기둥(년/월/일/시)의 납음오행 이름표 + 공망(空亡) 배지.
+///
+/// 계산은 이미 순수 조회형으로 고정돼 있고([nayinFor]/[voidBranchIndices] 참고,
+/// docs/research/사주팔자/납음오행.md·공망.md 교차검증 완료), 이 위젯이 담당하는 건
+/// 그 값을 목업(`docs/mockups/01-pastel-cute.html`의 "납음오행"/"공망" 개념 시안)
+/// 톤에 맞춰 짧은 캐주얼 카피로 보여주는 것뿐이다.
+class _PillarExtras extends StatelessWidget {
+  const _PillarExtras({required this.label, required this.nayin, required this.isVoid});
+
+  final String label;
+  final Nayin nayin;
+  final bool isVoid;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = AppColors.ohaengTextColors[nayin.ohaeng] ?? AppColors.ink;
+    final caption = isVoid
+        ? '${nayinReadingFor(nayin.name)} $gongmangReadingCaption'
+        : nayinReadingFor(nayin.name);
+
+    // 배지 2개(납음오행 + 선택적 공망)와 카피 문구를 하나로 병합해 스크린 리더가
+    // 자연스러운 한 문장으로 읽게 한다 — 위 _pillarRow의 병합 라벨과는 별개 노드다
+    // (container:true로 감싼 형제 위젯이라 서로 섞이지 않는다).
+    final semanticLabel = StringBuffer('$label 납음오행 ${nayin.name}(${nayin.hanja}).');
+    if (isVoid) {
+      semanticLabel.write(' 공망(空亡)에 해당해요.');
+    }
+    semanticLabel.write(' $caption');
+
+    return Semantics(
+      label: semanticLabel.toString(),
+      excludeSemantics: true,
+      container: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.ohaengSoftColors[nayin.ohaeng],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '$label · ${nayin.name}(${nayin.hanja})',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: color),
+                ),
+              ),
+              if (isVoid)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.border.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    '공망',
+                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.inkSoft),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            caption,
+            style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, color: AppColors.inkSoft),
+          ),
         ],
       ),
     );

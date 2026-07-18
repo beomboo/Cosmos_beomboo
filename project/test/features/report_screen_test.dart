@@ -3,8 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cosmos_saju/app/router.dart';
 import 'package:cosmos_saju/app/theme/app_colors.dart';
+import 'package:cosmos_saju/core/saju/four_pillars.dart';
+import 'package:cosmos_saju/core/saju/ganzhi.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_input_screen.dart';
+import 'package:cosmos_saju/features/report/report_readings.dart';
 import 'package:cosmos_saju/features/report/report_screen.dart';
 import 'package:cosmos_saju/features/result/ohaeng_readings.dart';
 import 'package:cosmos_saju/features/result/result_screen.dart';
@@ -152,6 +155,132 @@ void main() {
     );
 
     semantics.dispose();
+  });
+
+  group('납음오행·공망(_PillarExtras)', () {
+    // 1998-08-15 14시 픽스처(년주 무인·월주 경신·일주 갑자·시주 신미)는 일주 기준
+    // 공망 지지가 [술,해]라 년/월/시주 중 공망에 해당하는 기둥이 하나도 없다 — 이
+    // 그룹에서는 순수하게 납음오행 배지·카피만 검증하는 용도로 쓴다. GanzhiPillar.
+    // ganzhiIndex60 + nayinFor()로 테스트 안에서 직접 계산해 대조한다(하드코딩 문자열을
+    // core/saju/ganzhi.dart·features/report/report_readings.dart와 별개로 다시 베껴 쓰면
+    // 그 자체가 동어반복이 되므로, 계산 함수를 그대로 호출해 "실제 계산값"과 비교한다).
+    final pillars1998 = calculateFourPillars(birthDate: DateTime(1998, 8, 15), birthHour: 14);
+    final nayin1998 = {
+      '년주': nayinFor(pillars1998.year.ganzhiIndex60),
+      '월주': nayinFor(pillars1998.month.ganzhiIndex60),
+      '일주': nayinFor(pillars1998.day.ganzhiIndex60),
+      '시주': nayinFor(pillars1998.hour!.ganzhiIndex60),
+    };
+
+    testWidgets('각 기둥 행에 실제 계산된 납음오행 이름(한글+한자)이 배지로 표시된다', (tester) async {
+      await useReportViewport(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ReportScreen(
+            birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+      );
+
+      for (final entry in nayin1998.entries) {
+        final badgeText = '${entry.key} · ${entry.value.name}(${entry.value.hanja})';
+        expect(find.text(badgeText), findsOneWidget, reason: '${entry.key} 납음오행 배지');
+      }
+    });
+
+    testWidgets('납음오행·공망 정보가 스크린 리더에 "라벨 납음오행 ..." 하나의 병합 문장으로 들린다 (공망 없는 픽스처)',
+        (tester) async {
+      // 1998 픽스처는 공망 기둥이 하나도 없으므로, 병합 라벨에 "공망(空亡)에 해당해요"
+      // 문장이 붙지 않고 "$label 납음오행 이름(한자). 카피"로만 구성돼야 한다.
+      final semantics = tester.ensureSemantics();
+      await useReportViewport(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ReportScreen(
+            birthInfo: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+      );
+
+      for (final entry in nayin1998.entries) {
+        final badgeText = '${entry.key} · ${entry.value.name}(${entry.value.hanja})';
+        final expectedLabel =
+            '${entry.key} 납음오행 ${entry.value.name}(${entry.value.hanja}). ${nayinReadingFor(entry.value.name)}';
+        expect(
+          tester.getSemantics(find.text(badgeText)),
+          matchesSemantics(label: expectedLabel),
+          reason: '${entry.key} 병합 시맨틱스',
+        );
+      }
+
+      semantics.dispose();
+    });
+
+    testWidgets(
+        '일주 자신에는 절대 공망 배지가 붙지 않고, 공망 지지를 가진 기둥에만 공망 배지·카피가 붙는다 (공망이 실제로 있는 픽스처)',
+        (tester) async {
+      // 1998 픽스처는 우연히 공망 기둥이 없어(voidBranchIndices가 [술,해]인데 년/월/
+      // 시주 지지가 인/신/미), 공망 배지 자체가 뜨는 경로를 전혀 검증하지 못한다.
+      // voidBranchIndices()로 역산해 실제로 공망이 존재하는 1990-01-01 00시 픽스처
+      // (년주 기사·월주 정축·일주 병신·시주 무자, 일주 기준 공망 지지=[진,사])를 쓴다 —
+      // 년주 지지 '사'가 공망에 해당하고, 월/일/시주는 해당하지 않는다.
+      final semantics = tester.ensureSemantics();
+      final pillars1990 = calculateFourPillars(birthDate: DateTime(1990, 1, 1), birthHour: 0);
+      final voidBranches = voidBranchIndices(
+        dayStemIndex: pillars1990.day.stemIndex,
+        dayBranchIndex: pillars1990.day.branchIndex,
+      );
+      // 픽스처 자체가 실제로 "년주만 공망"인 조건을 만족하는지 먼저 확인한다 — 픽스처가
+      // 바뀌거나 계산 로직이 바뀌어도 이 테스트가 조용히 무의미해지지 않도록 하는 안전장치.
+      expect(voidBranches.contains(pillars1990.year.branchIndex % 12), isTrue);
+      expect(voidBranches.contains(pillars1990.month.branchIndex % 12), isFalse);
+      expect(voidBranches.contains(pillars1990.day.branchIndex % 12), isFalse);
+      expect(voidBranches.contains(pillars1990.hour!.branchIndex % 12), isFalse);
+
+      final nayin1990 = {
+        '년주': nayinFor(pillars1990.year.ganzhiIndex60),
+        '월주': nayinFor(pillars1990.month.ganzhiIndex60),
+        '일주': nayinFor(pillars1990.day.ganzhiIndex60),
+        '시주': nayinFor(pillars1990.hour!.ganzhiIndex60),
+      };
+
+      await useReportViewport(tester);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ReportScreen(
+            birthInfo: BirthInfo(date: DateTime(1990, 1, 1), hour: 0, isLunar: false),
+          ),
+        ),
+      );
+
+      // 화면 전체에 "공망" 배지 Text가 정확히 1개(년주 몫)만 있어야 한다.
+      expect(find.text('공망'), findsOneWidget);
+
+      // 년주 행 — 납음오행 배지 뒤에 공망(空亡) 문장 + 공망 재해석 카피가 이어붙는다.
+      final yearBadgeText = '년주 · ${nayin1990['년주']!.name}(${nayin1990['년주']!.hanja})';
+      final expectedYearLabel = '년주 납음오행 ${nayin1990['년주']!.name}(${nayin1990['년주']!.hanja}). '
+          '공망(空亡)에 해당해요. ${nayinReadingFor(nayin1990['년주']!.name)} $gongmangReadingCaption';
+      expect(
+        tester.getSemantics(find.text(yearBadgeText)),
+        matchesSemantics(label: expectedYearLabel),
+      );
+
+      // 월/일/시주 행 — 공망에 해당하지 않으므로 "공망" 문장이 전혀 붙지 않아야 한다.
+      // 특히 일주는 공망 판별 기준 자체(일간·일지)라 절대 자기 자신에게 배지를 붙이면
+      // 안 된다 — 다른 두 기둥과 같은 방식으로 검증해 예외 취급하지 않는다.
+      for (final label in const ['월주', '일주', '시주']) {
+        final nayin = nayin1990[label]!;
+        final badgeText = '$label · ${nayin.name}(${nayin.hanja})';
+        final expectedLabel = '$label 납음오행 ${nayin.name}(${nayin.hanja}). ${nayinReadingFor(nayin.name)}';
+        expect(
+          tester.getSemantics(find.text(badgeText)),
+          matchesSemantics(label: expectedLabel),
+          reason: '$label 병합 시맨틱스 (공망 아님)',
+        );
+      }
+
+      semantics.dispose();
+    });
   });
 
   testWidgets('명식 breakdown 행 라벨(년주/월주/일주/시주)이 FittedBox로 감싸져 폰트 확대 시 잘리지 않는다',
