@@ -19,15 +19,19 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  // **2026-07-17 버그 수정 이후**: birth_input_screen.dart의 _birthDate/_birthTime이
+  // **2026-07-17/19 버그 수정 이후**: birth_input_screen.dart의 _birthDate/_birthTime이
   // 처음부터 유효한 기본값(1998-08-15/14:30)으로 채워지지 않고 null(미선택)로 시작하도록
-  // 바뀌어, 제출 버튼도 날짜(그리고 시간-모름이 아니면 시간)를 실제로 고르기 전까지
-  // 비활성화된다 — 아래 여정 테스트들은 "아무것도 안 건드리고 제출"이 더 이상
-  // 가능하지 않으므로, 제출 전에 날짜/시간 피커를 열어 "확인"으로 명시적으로 확정하는
-  // 이 헬퍼를 거쳐야 한다. 두 피커 모두 값이 없을 때 initialDate/initialTime을 각각
+  // 바뀌었고, 이름·성별·혈액형도 새로 필수값이 됐다 — 제출 버튼도 이 다섯 항목을 실제로
+  // 채우기 전까지 비활성화된다. 아래 여정 테스트들은 "아무것도 안 건드리고 제출"이 더
+  // 이상 가능하지 않으므로, 제출 전에 다섯 항목을 모두 명시적으로 채우는 이 헬퍼를
+  // 거쳐야 한다. 두 피커 모두 값이 없을 때 initialDate/initialTime을 각각
   // DateTime(2000,1,1)/TimeOfDay(14,30)로 잡아두므로("확인"만 눌러도 그 값이 그대로
-  // 반영됨), 제출 결과는 "2000.01.01 · 오후 2시 30분"이 된다.
+  // 반영됨), 제출 결과는 "2000.01.01 · 오후 2시 30분"이 된다. 이름은 "민지", 성별은
+  // "여성"(기존 여정 테스트들이 기대하는 메타 라인 "· 여성"과 일치), 혈액형은 "A형"으로
+  // 채운다 — 혈액형 자체는 결과 화면 메타 라인에 표시되지 않으므로 어떤 값이든 무방하다.
   Future<void> pickDefaultBirthDateAndTime(WidgetTester tester) async {
+    await tester.enterText(find.byType(TextField).first, '민지');
+
     await tester.tap(find.text('날짜를 선택해주세요'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('확인'));
@@ -37,6 +41,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('확인'));
     await tester.pumpAndSettle();
+
+    await tester.tap(find.text('여성'));
+    await tester.pump();
+    await tester.tap(find.text('A형'));
+    await tester.pump();
   }
 
   testWidgets('저장된 정보가 없으면 온보딩 화면이 타이틀과 시작 버튼을 보여준다', (WidgetTester tester) async {
@@ -151,9 +160,12 @@ void main() {
 
       // 입력했던 생년월일시가 실제 계산·표시까지 그대로 이어졌는지 확인한다.
       Finder findInResult(String text) => findInScrollView('resultScrollView', text);
-      expect(findInResult('회원님의 사주팔자 ✨'), findsOneWidget);
-      // birth_input의 성별 기본값은 여성이고 timePicker 기본값은 오후 2시 30분이라
-      // (둘 다 실제로 제출되는 값), 메타 라인에도 분까지 그대로 반영된다.
+      // 2026-07-19: 이름이 필수값이 되면서 pickDefaultBirthDateAndTime이 이름("민지")도
+      // 채운다 — result_screen.dart는 이름이 있으면 "회원님" 대신 그 이름을 헤더에
+      // 쓰므로("$displayName의 사주팔자 ✨") 기대값도 그에 맞춰 바뀐다.
+      expect(findInResult('민지의 사주팔자 ✨'), findsOneWidget);
+      // birth_input에서 이번에 "여성"을 명시적으로 골랐고 timePicker 기본값은 오후 2시
+      // 30분이라(둘 다 실제로 제출되는 값), 메타 라인에도 분까지 그대로 반영된다.
       expect(findInResult('2000.01.01 · 오후 2시 30분生 · 양력 · 여성'), findsOneWidget);
       expect(findInResult('년주'), findsOneWidget);
       expect(findInResult('시주'), findsOneWidget);
@@ -163,7 +175,9 @@ void main() {
       await tester.tap(find.text('상세 리포트 보기 (무료)'));
       await tester.pumpAndSettle();
 
-      expect(find.text('회원님의 상세 리포트'), findsOneWidget);
+      // 상세 리포트 헤더도 결과 화면과 같은 이유("$displayName의 상세 리포트")로
+      // "민지의 상세 리포트"가 된다.
+      expect(find.text('민지의 상세 리포트'), findsOneWidget);
       expect(find.text('2000.01.01 · 오후 2시 30분生 · 양력 · 여성'), findsOneWidget);
       expect(find.text('명식 한 글자씩 뜯어보기'), findsOneWidget);
     },

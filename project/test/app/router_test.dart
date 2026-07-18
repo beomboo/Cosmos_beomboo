@@ -104,8 +104,9 @@ void main() {
         ),
       );
 
-      // 2026-07-17 버그 수정 이후 날짜/시간을 실제로 고르기 전까지는 제출 버튼이
-      // 비활성화된다 — 먼저 "확인"으로 확정해 활성화시킨다.
+      // 2026-07-17/19 버그 수정 이후 이름·날짜·시간·성별·혈액형을 실제로 채우기
+      // 전까지는 제출 버튼이 비활성화된다 — 다섯 항목을 모두 채워 활성화시킨다.
+      await tester.enterText(find.byType(TextField).first, '민지');
       await tester.tap(find.text('날짜를 선택해주세요'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('확인'));
@@ -114,6 +115,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('확인'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('여성'));
+      await tester.pump();
+      await tester.tap(find.text('A형'));
+      await tester.pump();
 
       await tester.tap(find.text('사주 보러가기 🔮'));
       // _submit()이 BirthInfoStore.save()/DeepDiveInfoStore.save()를 await한 뒤에야

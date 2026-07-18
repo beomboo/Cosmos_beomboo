@@ -75,7 +75,39 @@ void main() {
     await pickTime(tester);
   }
 
-  group('_canSubmit — 날짜/시간 미선택 시 제출 버튼 비활성화 (2026-07-17 버그 수정)', () {
+  // 2026-07-19: 이름·성별·혈액형이 새로 필수값이 되면서(입력 화면 필수값 확장) 날짜/
+  // 시간만 채우던 위 헬퍼로는 더 이상 제출 버튼이 활성화되지 않는다 — 나머지 세
+  // 필수 항목을 각각/한 번에 채우는 헬퍼를 추가한다.
+  Future<void> fillName(WidgetTester tester, String name) async {
+    await tester.enterText(find.byType(TextField).first, name);
+    await tester.pump();
+  }
+
+  Future<void> pickGender(WidgetTester tester, {bool male = false}) async {
+    await tester.tap(find.text(male ? '남성' : '여성'));
+    await tester.pump();
+  }
+
+  Future<void> pickBloodType(WidgetTester tester, {String label = 'A형'}) async {
+    await tester.tap(find.text(label));
+    await tester.pump();
+  }
+
+  /// 이름·날짜·시간·성별·혈액형 다섯 필수 항목을 한 번에 채운다 — 대부분의 제출
+  /// 관련 테스트가 "필수값은 다 채웠다"는 전제를 재사용할 수 있게 한다.
+  Future<void> fillAllRequired(
+    WidgetTester tester, {
+    String name = '민지',
+    bool male = false,
+    String bloodType = 'A형',
+  }) async {
+    await fillName(tester, name);
+    await pickDateAndTime(tester);
+    await pickGender(tester, male: male);
+    await pickBloodType(tester, label: bloodType);
+  }
+
+  group('_canSubmit — 날짜/시간/이름/성별/혈액형 미선택 시 제출 버튼 비활성화 (2026-07-17/19 버그 수정)', () {
     // "아무런 데이터를 입력하지 않은 상태에서는 사주팔자 결과보기로 넘어가면 안 됨"
     // 리포트의 핵심 — 날짜와 시간(또는 "몰라요" 체크) 중 하나라도 비어 있으면
     // ElevatedButton.onPressed가 null이어야 한다. 버튼 스타일이나 tester.tap()의
@@ -101,21 +133,98 @@ void main() {
       expect(submitButton(tester).onPressed, isNull);
     });
 
-    testWidgets('날짜와 시간을 모두 고르면 제출 버튼이 활성화된다(onPressed != null)', (tester) async {
+    testWidgets('날짜와 시간을 모두 고르고 이름/성별/혈액형까지 채우면 제출 버튼이 활성화된다(onPressed != null)',
+        (tester) async {
+      // 2026-07-19: 날짜/시간만으로는 더 이상 충분하지 않다 — 이름·성별·혈액형까지
+      // 채워야 활성화된다.
       await useTallViewport(tester);
       await tester.pumpWidget(buildApp());
 
-      await pickDateAndTime(tester);
+      await fillAllRequired(tester);
 
       expect(submitButton(tester).onPressed, isNotNull);
     });
 
-    testWidgets('날짜만 고르고 "태어난 시간을 몰라요"를 체크하면 시간 없이도 활성화된다', (tester) async {
+    testWidgets(
+        '날짜만 고르고 "태어난 시간을 몰라요"를 체크해도 이름/성별/혈액형까지 채우면 시간 없이 활성화된다',
+        (tester) async {
       await useTallViewport(tester);
       await tester.pumpWidget(buildApp());
 
+      await fillName(tester, '민지');
       await pickDate(tester);
       await tester.tap(find.text('태어난 시간을 몰라요'));
+      await tester.pump();
+      await pickGender(tester);
+      await pickBloodType(tester);
+
+      expect(submitButton(tester).onPressed, isNotNull);
+    });
+
+    testWidgets('이름만 비어있으면(날짜·시간·성별·혈액형을 모두 채워도) 제출 버튼이 비활성화된다', (tester) async {
+      // 2026-07-19 신규 필수값(이름) 자체를 직접 겨냥한다 — 나머지 네 항목을 모두
+      // 채워도 이름이 비어있으면 여전히 비활성이어야 한다.
+      await useTallViewport(tester);
+      await tester.pumpWidget(buildApp());
+
+      await pickDateAndTime(tester);
+      await pickGender(tester);
+      await pickBloodType(tester);
+      // 이름은 일부러 채우지 않는다.
+
+      expect(submitButton(tester).onPressed, isNull);
+    });
+
+    testWidgets('성별을 고르지 않으면(나머지를 모두 채워도) 제출 버튼이 비활성화된다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(buildApp());
+
+      await fillName(tester, '민지');
+      await pickDateAndTime(tester);
+      await pickBloodType(tester);
+      // 성별은 일부러 고르지 않는다.
+
+      expect(submitButton(tester).onPressed, isNull);
+    });
+
+    testWidgets('혈액형을 고르지 않으면(나머지를 모두 채워도) 제출 버튼이 비활성화된다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(buildApp());
+
+      await fillName(tester, '민지');
+      await pickDateAndTime(tester);
+      await pickGender(tester);
+      // 혈액형은 일부러 고르지 않는다.
+
+      expect(submitButton(tester).onPressed, isNull);
+    });
+
+    testWidgets('이름·날짜·시간·성별·혈액형을 모두 채우면 제출 버튼이 활성화된다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(buildApp());
+
+      await fillAllRequired(tester);
+
+      expect(submitButton(tester).onPressed, isNotNull);
+    });
+
+    testWidgets(
+        '이름 필드에 타이핑만 해도(포커스를 잃지 않아도) 제출 버튼 활성화 상태가 실시간으로 갱신된다 '
+        '(리스너 누락 버그 회귀 방지)', (tester) async {
+      // 2026-07-19 버그 수정: _nameController에 리스너가 없으면 이름을 타이핑해도
+      // setState가 호출되지 않아, 우연히 다른 필드를 건드려 화면이 다시 그려지기
+      // 전까지는 버튼이 계속 비활성 상태로 보인다 — 날짜/시간/성별/혈액형을 먼저 다
+      // 채운 뒤 이름만 enterText()로 입력하고 pump() 한 번만으로 버튼이 곧바로
+      // 활성화되는지 확인한다(다른 위젯은 추가로 건드리지 않음).
+      await useTallViewport(tester);
+      await tester.pumpWidget(buildApp());
+
+      await pickDateAndTime(tester);
+      await pickGender(tester);
+      await pickBloodType(tester);
+      expect(submitButton(tester).onPressed, isNull, reason: '이름을 아직 입력하지 않았다');
+
+      await tester.enterText(find.byType(TextField).first, '민지');
       await tester.pump();
 
       expect(submitButton(tester).onPressed, isNotNull);
@@ -146,11 +255,18 @@ void main() {
     await tester.pumpWidget(buildApp());
 
     expect(find.text('생년월일시를 알려주세요'), findsOneWidget);
-    expect(find.text('이름 (선택)'), findsOneWidget);
+    // 2026-07-19: 이름이 필수값이 되면서 "(선택)" 표기 대신 accent색 "*" 접미사가
+    // 붙는다(_FieldLabel(required: true) → Text.rich("이름 *")).
+    expect(find.text('이름 *'), findsOneWidget);
     expect(find.text('양력'), findsOneWidget);
     expect(find.text('음력'), findsOneWidget);
     expect(find.text('여성'), findsOneWidget);
     expect(find.text('남성'), findsOneWidget);
+    // 2026-07-19 신규: 혈액형 필수 토글(A/B/AB/O형).
+    expect(find.text('A형'), findsOneWidget);
+    expect(find.text('B형'), findsOneWidget);
+    expect(find.text('AB형'), findsOneWidget);
+    expect(find.text('O형'), findsOneWidget);
     expect(find.text('태어난 시간을 몰라요'), findsOneWidget);
     expect(find.text('MBTI를 알고 있어요'), findsOneWidget);
     expect(find.text('사주 보러가기 🔮'), findsOneWidget);
@@ -162,34 +278,41 @@ void main() {
     // 2026-07-16 오버나이트 대조 수정: 목업(`.field label`)은
     // font-size:11px/font-weight:800/letter-spacing:.02em(≈0.22px)인데 지금까지는
     // 13px/700/자간 없음이었다 — 이 값 자체를 확인하는 테스트가 지금까지 없었다.
-    // _FieldLabel은 5개 필드(이름·태어난 날짜·태어난 시간·성별·태어난 곳)에 재사용되는
-    // 공용 위젯이라, 대표로 두 곳(첫 필드·마지막 필드)만 확인해도 공용 스타일 정의
-    // 자체의 회귀는 충분히 잡을 수 있다.
+    // _FieldLabel은 6개 필드(이름·태어난 날짜·태어난 시간·성별·혈액형·태어난 곳)에
+    // 재사용되는 공용 위젯이라, 대표로 두 곳만 확인해도 공용 스타일 정의 자체의
+    // 회귀는 충분히 잡을 수 있다 — 2026-07-19: required 아닌 라벨(태어난 곳)은 여전히
+    // 단순 Text이지만, required 라벨(이름)은 Text.rich(TextSpan)로 바뀌어 스타일이
+    // Text.style이 아니라 textSpan.style에 실린다.
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    for (final label in ['이름 (선택)', '태어난 곳 (선택)']) {
-      final text = tester.widget<Text>(find.text(label));
-      expect(text.style!.fontSize, 11, reason: '$label fontSize');
-      expect(text.style!.fontWeight, FontWeight.w800, reason: '$label fontWeight');
-      expect(text.style!.letterSpacing, 0.22, reason: '$label letterSpacing');
-    }
+    final placeText = tester.widget<Text>(find.text('태어난 곳 (선택)'));
+    expect(placeText.style!.fontSize, 11, reason: '태어난 곳 fontSize');
+    expect(placeText.style!.fontWeight, FontWeight.w800, reason: '태어난 곳 fontWeight');
+    expect(placeText.style!.letterSpacing, 0.22, reason: '태어난 곳 letterSpacing');
+
+    final nameText = tester.widget<Text>(find.text('이름 *'));
+    final nameSpan = nameText.textSpan! as TextSpan;
+    expect(nameSpan.style!.fontSize, 11, reason: '이름 fontSize');
+    expect(nameSpan.style!.fontWeight, FontWeight.w800, reason: '이름 fontWeight');
+    expect(nameSpan.style!.letterSpacing, 0.22, reason: '이름 letterSpacing');
   });
 
-  testWidgets('필드 라벨 아래 여백이 목업 값(7px)과 일치한다 (5개 필드 전부)', (tester) async {
+  testWidgets('필드 라벨 아래 여백이 목업 값(7px)과 일치한다 (6개 필드 전부)', (tester) async {
     // 2026-07-16 오버나이트 대조 수정: 목업(`.field label`)은 margin-bottom:7px인데
     // 지금까지는 8px이었다 — 이 값 자체를 확인하는 테스트가 지금까지 없었다.
     // height:7인 SizedBox는 이 화면에서 필드 라벨(이름·태어난 날짜·태어난 시간·성별·
-    // 태어난 곳) 5곳 뒤에만 쓰이므로, 개수(5개)를 세는 것만으로 5곳 전부에
+    // 혈액형·태어난 곳) 6곳 뒤에만 쓰이므로, 개수(6개)를 세는 것만으로 6곳 전부에
     // 일관되게 적용됐는지 확인할 수 있다(대표 1~2곳만 값으로 확인하는 위 스타일
     // 테스트와 달리, 간격은 위젯을 공유하지 않는 리터럴이라 개수 확인이 필요하다).
+    // 2026-07-19: 혈액형 필드가 추가되며 5개 → 6개로 늘었다.
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
     final sevenHeightBoxes = tester.widgetList<SizedBox>(
       find.byWidgetPredicate((widget) => widget is SizedBox && widget.height == 7),
     );
-    expect(sevenHeightBoxes.length, 5);
+    expect(sevenHeightBoxes.length, 6);
   });
 
   testWidgets('"사주 보러가기 🔮" 버튼의 스크린 리더 라벨은 이모지 없이 "사주 보러가기"만 읽힌다', (tester) async {
@@ -206,16 +329,18 @@ void main() {
   });
 
   testWidgets(
-      '"이름 없이도 괜찮아요 →"/"건너뛰어도 괜찮아요 →" 안내 문구의 스크린 리더 라벨은 화살표 없이 읽힌다',
+      '"건너뛰어도 괜찮아요 →" 안내 문구의 스크린 리더 라벨은 화살표 없이 읽힌다',
       (tester) async {
     // 2026-07-16 오버나이트 접근성 정리: 장식용 화살표(→)는 스크린 리더가 "오른쪽
     // 화살표"처럼 유니코드 이름으로 그대로 읽어 혼란을 준다 — 위 "사주 보러가기 🔮"
     // 버튼과 같은 패턴으로 semanticsLabel을 화살표 없는 값으로 교체했는지 확인한다.
+    // 2026-07-19: 이름이 필수값으로 바뀌면서 "이름 없이도 괜찮아요 →" 안내 문구
+    // 자체가 삭제됐다 — 이제 남아있는 출생지("건너뛰어도 괜찮아요 →")만 확인한다.
     final semantics = tester.ensureSemantics();
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    expect(tester.getSemantics(find.text('이름 없이도 괜찮아요 →')).label, '이름 없이도 괜찮아요');
+    expect(find.text('이름 없이도 괜찮아요 →'), findsNothing);
     expect(tester.getSemantics(find.text('건너뛰어도 괜찮아요 →')).label, '건너뛰어도 괜찮아요');
 
     semantics.dispose();
@@ -246,16 +371,17 @@ void main() {
   });
 
   testWidgets('날짜/시간을 고르고 제출하면 그 값 그대로 BirthInfo가 계산 화면으로 전달된다', (tester) async {
-    // **2026-07-17 버그 수정 이후**: _birthDate/_birthTime이 더 이상 기본값으로 채워져
-    // 있지 않아, 제출하려면 먼저 날짜/시간을 실제로 골라 확정해야 한다(안 그러면
-    // 버튼이 비활성화돼 탭이 무시된다 — 위 "_canSubmit" 그룹 참고).
+    // **2026-07-17/19 버그 수정 이후**: _birthDate/_birthTime이 더 이상 기본값으로
+    // 채워져 있지 않고, 이름·성별·혈액형도 필수값이 됐다 — 제출하려면 다섯 항목을
+    // 모두 실제로 채워야 한다(안 그러면 버튼이 비활성화돼 탭이 무시된다 — 위
+    // "_canSubmit" 그룹 참고).
     await useTallViewport(tester);
     BirthInfo? captured;
     await tester.pumpWidget(buildApp(
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
-    await pickDateAndTime(tester);
+    await fillAllRequired(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -268,7 +394,10 @@ void main() {
     // 30분生"처럼 분까지 보여주는 것과 어긋나던 부분이라 minute 필드를 추가해 맞췄다.
     expect(captured!.minute, 30);
     expect(captured!.isLunar, isFalse);
-    expect(captured!.name, isNull);
+    // 2026-07-19: 이름이 필수값이 되면서 더 이상 null일 수 없다.
+    expect(captured!.name, '민지');
+    expect(captured!.gender, Gender.female);
+    expect(captured!.bloodType, BloodType.a);
   });
 
   testWidgets('"사주 보러가기"를 빠르게 두 번 연속 눌러도 calculating 화면으로 한 번만 이동한다',
@@ -286,9 +415,9 @@ void main() {
       onCalculatingRoute: (_) => calculatingPushCount++,
     ));
 
-    // 날짜/시간을 먼저 골라 확정해야 onPressed가 null이 아니게 된다(2026-07-17
+    // 필수 항목을 먼저 모두 채워야 onPressed가 null이 아니게 된다(2026-07-17/19
     // 버그 수정 이후 — 안 그러면 아래 button.onPressed!()가 널 체크에서 바로 예외를 던진다).
-    await pickDateAndTime(tester);
+    await fillAllRequired(tester);
 
     final button =
         tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '사주 보러가기 🔮'));
@@ -311,7 +440,7 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    await pickDateAndTime(tester);
+    await fillAllRequired(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
     expect(find.text('CALCULATING_STUB'), findsOneWidget);
@@ -322,18 +451,21 @@ void main() {
 
   testWidgets('날짜를 고르고 "태어난 시간을 몰라요"를 체크해 제출하면 hour·minute 모두 null로 전달된다',
       (tester) async {
-    // _canSubmit은 시간-모름이면 날짜만 있어도 되지만, 날짜는 항상 필수다 —
-    // 날짜를 먼저 고르지 않으면 버튼이 여전히 비활성화된 채라 이 흐름 자체가
-    // 성립하지 않는다(2026-07-17 버그 수정 이후).
+    // _canSubmit은 시간-모름이면 시간 자체는 없어도 되지만, 날짜·이름·성별·혈액형은
+    // 여전히 필수다 — 이들을 먼저 채우지 않으면 버튼이 비활성화된 채라 이 흐름 자체가
+    // 성립하지 않는다(2026-07-17/19 버그 수정 이후).
     await useTallViewport(tester);
     BirthInfo? captured;
     await tester.pumpWidget(buildApp(
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
+    await fillName(tester, '민지');
     await pickDate(tester);
     await tester.tap(find.text('태어난 시간을 몰라요'));
     await tester.pump();
+    await pickGender(tester);
+    await pickBloodType(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -356,7 +488,7 @@ void main() {
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
-    await pickDateAndTime(tester);
+    await fillAllRequired(tester);
 
     await tester.tap(find.text('태어난 시간을 몰라요'));
     await tester.pump();
@@ -382,7 +514,7 @@ void main() {
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
-    await pickDateAndTime(tester);
+    await fillAllRequired(tester);
     await tester.tap(find.text('음력'));
     await tester.pump();
     await tester.tap(find.text('사주 보러가기 🔮'));
@@ -400,6 +532,8 @@ void main() {
 
     await tester.enterText(find.byType(TextField).first, '민지');
     await pickDateAndTime(tester);
+    await pickGender(tester);
+    await pickBloodType(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -413,8 +547,11 @@ void main() {
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
+    await fillName(tester, '민지');
     await tester.enterText(find.byType(TextField).last, '서울특별시');
     await pickDateAndTime(tester);
+    await pickGender(tester);
+    await pickBloodType(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -428,21 +565,27 @@ void main() {
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
-    await pickDateAndTime(tester);
+    await fillAllRequired(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
     expect(captured!.birthPlace, isNull);
   });
 
-  testWidgets('기본값(여성)으로 제출하면 BirthInfo.gender에 female이 전달된다', (tester) async {
+  testWidgets('"여성"을 선택하고 제출하면 BirthInfo.gender에 female이 전달된다', (tester) async {
+    // 2026-07-19: 성별이 nullable(초기값 null)로 바뀌면서 "기본값(여성)"이라는
+    // 표현이 더 이상 맞지 않는다 — "여성"도 명시적으로 골라야 한다.
     await useTallViewport(tester);
     BirthInfo? captured;
     await tester.pumpWidget(buildApp(
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
+    await fillName(tester, '민지');
     await pickDateAndTime(tester);
+    await tester.tap(find.text('여성'));
+    await tester.pump();
+    await pickBloodType(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -456,16 +599,22 @@ void main() {
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
+    await fillName(tester, '민지');
     await tester.tap(find.text('남성'));
     await tester.pump();
     await pickDateAndTime(tester);
+    await pickBloodType(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
     expect(captured!.gender, Gender.male);
   });
 
-  testWidgets('이름 필드에 공백만 입력하면 name은 null로 전달된다', (tester) async {
+  testWidgets('이름 필드에 공백만 입력하면(trim 후 빈 문자열) 제출 버튼이 비활성화된 채로 남는다',
+      (tester) async {
+    // 2026-07-19: 이름이 필수값이 되면서 "공백만 입력 → name null로 제출됨"이라는
+    // 예전 동작 자체가 더 이상 성립하지 않는다 — trim 후 빈 문자열이면 _canSubmit이
+    // false가 돼 애초에 제출(navigator push) 자체가 일어나지 않는다.
     await useTallViewport(tester);
     BirthInfo? captured;
     await tester.pumpWidget(buildApp(
@@ -474,10 +623,16 @@ void main() {
 
     await tester.enterText(find.byType(TextField).first, '   ');
     await pickDateAndTime(tester);
+    await pickGender(tester);
+    await pickBloodType(tester);
+
+    final button =
+        tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '사주 보러가기 🔮'));
+    expect(button.onPressed, isNull);
+
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
-
-    expect(captured!.name, isNull);
+    expect(captured, isNull);
   });
 
   testWidgets('태어난 곳 필드에 공백만 입력하면 birthPlace는 null로 전달된다', (tester) async {
@@ -490,8 +645,8 @@ void main() {
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
+    await fillAllRequired(tester);
     await tester.enterText(find.byType(TextField).at(1), '   ');
-    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -509,6 +664,8 @@ void main() {
     // 겹칠 수 있어 maxLength로 제한해뒀다 — 실제로 그 이상은 입력되지 않는지 검증.
     await tester.enterText(find.byType(TextField).first, '가' * 25);
     await pickDateAndTime(tester);
+    await pickGender(tester);
+    await pickBloodType(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -525,8 +682,8 @@ void main() {
       onCalculatingRoute: (settings) => captured = settings.arguments as BirthInfo?,
     ));
 
+    await fillAllRequired(tester);
     await tester.enterText(find.byType(TextField).at(1), '가' * 35);
-    await pickDateAndTime(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -600,14 +757,21 @@ void main() {
     expect(find.text('시간을 선택해주세요'), findsOneWidget);
   });
 
-  testWidgets('성별 토글에서 "남성"을 누르면 선택 상태가 바뀐다', (tester) async {
+  testWidgets('성별 토글은 초기 상태에서 둘 다 선택돼있지 않다가, "남성"을 누르면 그것만 선택된다',
+      (tester) async {
+    // 2026-07-19: _gender가 더 이상 기본값(여성)으로 채워지지 않고 null에서
+    // 시작한다 — "아직 아무것도 안 고른" 상태를 실제로 확인한다.
     final semantics = tester.ensureSemantics();
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
     expect(
       tester.getSemantics(find.text('여성')).flagsCollection.isSelected,
-      Tristate.isTrue,
+      Tristate.isFalse,
+    );
+    expect(
+      tester.getSemantics(find.text('남성')).flagsCollection.isSelected,
+      Tristate.isFalse,
     );
 
     await tester.tap(find.text('남성'));
@@ -806,7 +970,7 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    await pickDateAndTime(tester);
+    await fillAllRequired(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -845,7 +1009,7 @@ void main() {
     await tester.tap(find.text('MBTI를 알고 있어요'));
     await tester.pump();
 
-    await pickDateAndTime(tester);
+    await fillAllRequired(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -867,7 +1031,7 @@ void main() {
     await tester.tap(find.text('N · 직관'));
     await tester.pump();
 
-    await pickDateAndTime(tester);
+    await fillAllRequired(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -898,7 +1062,7 @@ void main() {
     await tester.tap(find.text('P · 인식'));
     await tester.pump();
 
-    await pickDateAndTime(tester);
+    await fillAllRequired(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 
@@ -1083,12 +1247,17 @@ void main() {
     // 내비게이션 자체를 재현하지 않고(그건 result_screen_test.dart 영역), 이 화면
     // 단독으로 "제출 시점에 이미 좁혀진 관심사가 저장돼 있으면 그대로 유지되는지"만
     // 확인한다 — 좁혀진 값을 미리 저장해두고 제출한 뒤 값이 그대로인지 본다.
+    // 2026-07-19: 이름/성별/혈액형이 필수값이 되면서, 이 필드들을 채우지 않으면
+    // _canSubmit이 false라 탭이 그냥 무시된다 — 그러면 이 테스트는 애초에 제출이
+    // 일어나지 않아도(사전에 저장해둔 값이 그대로 남아있을 뿐이라) 우연히 통과해버려
+    // 실제로 아무것도 검증하지 못하는 상태였다. fillAllRequired로 제출이 실제로
+    // 일어나게 해야 이 테스트가 의미가 있다.
     await DeepDiveInfoStore.save(const DeepDiveInfo(interests: {Interest.love}));
 
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    await pickDateAndTime(tester);
+    await fillAllRequired(tester);
     await tester.tap(find.text('사주 보러가기 🔮'));
     await tester.pumpAndSettle();
 

@@ -94,6 +94,54 @@ void main() {
       expect(loaded.isLunar, isTrue);
     });
 
+    test('혈액형(BloodType)도 Gender와 같은 방식으로 정확히 저장/복원된다 (round-trip)', () async {
+      // 2026-07-19 추가: BloodType이 BirthInfo에 새로 생긴 필드(W1) — Gender와
+      // 나란한 enum-name 기반 저장 방식을 그대로 따르는지 값으로 확인한다. 네 값
+      // 모두(A/B/AB/O) 저장 → 로드 후 정확히 같은 값으로 돌아오는지 확인한다.
+      for (final bloodType in BloodType.values) {
+        final info = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false, bloodType: bloodType);
+
+        await BirthInfoStore.save(info);
+        final loaded = await BirthInfoStore.load();
+
+        expect(loaded!.bloodType, bloodType, reason: '$bloodType round-trip');
+      }
+    });
+
+    test('혈액형을 지정하지 않으면(null) 저장/복원 후에도 null이다', () async {
+      final info = BirthInfo(date: DateTime(2000, 1, 1), hour: null, isLunar: false);
+
+      await BirthInfoStore.save(info);
+      final loaded = await BirthInfoStore.load();
+
+      expect(loaded!.bloodType, isNull);
+    });
+
+    test('clear() 이후에는 혈액형도 함께 지워진다', () async {
+      await BirthInfoStore.save(
+        BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false, bloodType: BloodType.ab),
+      );
+      expect((await BirthInfoStore.load())!.bloodType, BloodType.ab);
+
+      await BirthInfoStore.clear();
+      expect(await BirthInfoStore.load(), isNull);
+    });
+
+    test('저장된 혈액형 문자열이 현재 BloodType enum 값과 일치하지 않으면 예외 없이 null로 복원된다', () async {
+      // 위 "저장된 성별 문자열이..." 테스트와 같은 이유(Gender.asNameMap과 동일한
+      // 안전한 조회 방식을 BloodType에도 그대로 적용했는지 확인).
+      SharedPreferences.setMockInitialValues({
+        'birth_info.date_millis': DateTime(1998, 8, 15).millisecondsSinceEpoch,
+        'birth_info.is_lunar': false,
+        'birth_info.blood_type': 'legacy_value_not_in_enum',
+      });
+
+      final loaded = await BirthInfoStore.load();
+
+      expect(loaded, isNotNull);
+      expect(loaded!.bloodType, isNull);
+    });
+
     test('저장된 성별 문자열이 현재 Gender enum 값과 일치하지 않으면 예외 없이 null로 복원된다', () async {
       // load()는 `Gender.values.asNameMap()[genderName]`로 성별을 복원하는데, 이건
       // Map 조회라 못 찾으면 null을 돌려줄 뿐 예외를 던지지 않는다 — 만약 나중에 누군가
