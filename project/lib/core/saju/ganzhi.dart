@@ -96,6 +96,76 @@ class GanzhiPillar {
 
   List<String> get ohaeng => [stemOhaeng(stemIndex), branchOhaeng(branchIndex)];
 
+  /// 60갑자 인덱스(0~59) — 천간 인덱스(0~9)·지지 인덱스(0~11) 조합으로부터 역으로
+  /// 찾는다(CRT). `calculateFourPillars()`는 각 기둥을 원래 60갑자 인덱스에서
+  /// `% 10`/`% 12`로 쪼개 만들지만, `GanzhiPillar` 자체는 stem/branch 인덱스만
+  /// 들고 있어(원본 60갑자 인덱스를 따로 저장하지 않음) [nayinFor]가 필요로 하는
+  /// 60갑자 인덱스를 여기서 다시 복원한다.
+  int get ganzhiIndex60 {
+    final s = stemIndex % 10;
+    final b = branchIndex % 12;
+    for (var i = 0; i < 60; i++) {
+      if (i % 10 == s && i % 12 == b) return i;
+    }
+    // 천간·지지 홀짝이 서로 다르면(예: 양간+음지) 애초에 존재할 수 없는 조합이라
+    // 정상적인 사주 계산 결과에서는 이 분기에 도달하지 않는다.
+    throw StateError('유효하지 않은 천간·지지 조합: stem=$s, branch=$b');
+  }
+
   @override
   String toString() => label;
+}
+
+/// 공망(空亡) 지지 2개의 인덱스(자=0~해=11 기준) — 일간·일지 인덱스만으로 정해지는
+/// 고정 배치다(순중공망旬中空亡). 60갑자를 10개씩 묶은 6개 "순(旬)"마다 짝을 이루지
+/// 못해 비는 지지 2개가 그 순 전체의 공망이 된다.
+///
+/// 참고: docs/research/사주팔자/공망.md — `saju`(Dart) 패키지 `core/sinsals.dart`와
+/// manseryeok `void-branches.ts` 양쪽 오픈소스 구현이 (겉보기엔 다른 방식이지만 수학적으로
+/// 동치임을 확인하며) 교차검증한 공식을 그대로 옮겼다.
+List<int> voidBranchIndices({required int dayStemIndex, required int dayBranchIndex}) {
+  final diff = (dayBranchIndex % 12 - dayStemIndex % 10 + 12) % 12;
+  return [(diff + 10) % 12, (diff + 11) % 12];
+}
+
+/// 납음오행(納音五行) 이름 30가지 — 60갑자를 2개씩 묶은 조 이름(한글·한자·오행).
+/// 참고: docs/research/사주팔자/납음오행.md — 사자사주abc 블로그·표준국어대사전·
+/// `saju`(Dart) 패키지 `core/nayin.dart` 세 출처가 모두 일치함을 확인한 조견표.
+/// 인덱스 0은 갑자·을축(해중금), 인덱스 29는 임술·계해(대해수)에 대응한다.
+const _nayinNames = [
+  '해중금', '노중화', '대림목', '노방토', '검봉금',
+  '산두화', '간하수', '성두토', '백랍금', '양류목',
+  '천중수', '옥상토', '벽력화', '송백목', '장류수',
+  '사중금', '산하화', '평지목', '벽상토', '금박금',
+  '복등화', '천하수', '대역토', '채천금', '상자목',
+  '대계수', '사중토', '천상화', '석류목', '대해수',
+];
+
+const _nayinHanja = [
+  '海中金', '爐中火', '大林木', '路傍土', '劍鋒金',
+  '山頭火', '澗下水', '城頭土', '白蠟金', '楊柳木',
+  '泉中水', '屋上土', '霹靂火', '松柏木', '長流水',
+  '砂中金', '山下火', '平地木', '壁上土', '金箔金',
+  '覆燈火', '天河水', '大驛土', '釵釧金', '桑柘木',
+  '大溪水', '砂中土', '天上火', '石榴木', '大海水',
+];
+
+const _nayinOhaeng = [
+  '금', '화', '목', '토', '금',
+  '화', '수', '토', '금', '목',
+  '수', '토', '화', '목', '수',
+  '금', '화', '목', '토', '금',
+  '화', '수', '토', '금', '목',
+  '수', '토', '화', '목', '수',
+];
+
+/// [nayinFor]의 반환 타입 — 이름(한글)·한자·오행 3필드.
+typedef Nayin = ({String name, String hanja, String ohaeng});
+
+/// [ganzhiIndex60](60갑자 인덱스, 0~59)에 대응하는 납음오행을 조회한다.
+/// `~/ 2`로 60개를 30개 조로 묶고(같은 조 2개 간지는 항상 같은 납음), 범위를
+/// 벗어난 값이 들어와도 안전하도록 `% 30`으로 한 번 더 접는다.
+Nayin nayinFor(int ganzhiIndex60) {
+  final idx = (ganzhiIndex60 ~/ 2) % 30;
+  return (name: _nayinNames[idx], hanja: _nayinHanja[idx], ohaeng: _nayinOhaeng[idx]);
 }

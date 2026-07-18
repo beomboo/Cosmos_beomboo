@@ -128,4 +128,114 @@ void main() {
       expect(() => ohaengRelationOf('목', '알수없음'), throwsArgumentError);
     });
   });
+
+  group('GanzhiPillar.ganzhiIndex60', () {
+    test('갑자(stem=0, branch=0)는 60갑자 인덱스 0이다', () {
+      const pillar = GanzhiPillar(stemIndex: 0, branchIndex: 0);
+      expect(pillar.ganzhiIndex60, 0);
+    });
+
+    test('임신(stem=8, branch=8)은 60갑자 인덱스 8이다', () {
+      const pillar = GanzhiPillar(stemIndex: 8, branchIndex: 8);
+      expect(pillar.ganzhiIndex60, 8);
+    });
+
+    test('경신(stem=6, branch=8)은 60갑자 인덱스 56이다', () {
+      const pillar = GanzhiPillar(stemIndex: 6, branchIndex: 8);
+      expect(pillar.ganzhiIndex60, 56);
+    });
+
+    test('임술·계해(60갑자 마지막 두 간지)는 각각 인덱스 58, 59다', () {
+      const imsul = GanzhiPillar(stemIndex: 8, branchIndex: 10);
+      const gyehae = GanzhiPillar(stemIndex: 9, branchIndex: 11);
+      expect(imsul.ganzhiIndex60, 58);
+      expect(gyehae.ganzhiIndex60, 59);
+    });
+
+    test('stem/branch가 60을 넘는 배수여도(순환) 같은 인덱스로 정규화된다', () {
+      const pillar = GanzhiPillar(stemIndex: 60, branchIndex: 72); // 60%10=0, 72%12=0 → 갑자
+      expect(pillar.ganzhiIndex60, 0);
+    });
+
+    test('60갑자 인덱스 0~59 전부가 서로 다른 (stem,branch) 조합에서 정확히 역산된다', () {
+      // calculateFourPillars()가 실제로 만드는 방식(원본 인덱스 % 10, % 12)과 반대
+      // 방향의 역산이 항상 원래 인덱스로 돌아오는지 60개 전부 확인한다.
+      for (var i = 0; i < 60; i++) {
+        final pillar = GanzhiPillar(stemIndex: i % 10, branchIndex: i % 12);
+        expect(pillar.ganzhiIndex60, i, reason: '60갑자 인덱스 $i');
+      }
+    });
+  });
+
+  group('voidBranchIndices — 공망(空亡)', () {
+    // docs/research/사주팔자/공망.md의 6개 순(旬) 중 세 개를 표와 대조한다
+    // (saju-dart core/sinsals.dart · manseryeok void-branches.ts 교차검증 공식).
+    test('갑자(일간=갑0, 일지=자0)의 공망은 술(10)·해(11)다', () {
+      expect(
+        voidBranchIndices(dayStemIndex: 0, dayBranchIndex: 0),
+        [10, 11],
+      );
+    });
+
+    test('갑술(일간=갑0, 일지=술10)의 공망은 신(8)·유(9)다', () {
+      expect(
+        voidBranchIndices(dayStemIndex: 0, dayBranchIndex: 10),
+        [8, 9],
+      );
+    });
+
+    test('갑인(일간=갑0, 일지=인2)의 공망은 자(0)·축(1)다', () {
+      expect(
+        voidBranchIndices(dayStemIndex: 0, dayBranchIndex: 2),
+        [0, 1],
+      );
+    });
+
+    test('같은 순(旬)에 속한 일주는 모두 같은 공망 2지지를 공유한다', () {
+      // 갑자순 10개 간지(갑자~계유, stem 0~9·branch 0~9)는 전부 술해(10,11) 공망이어야 한다.
+      for (var i = 0; i < 10; i++) {
+        expect(
+          voidBranchIndices(dayStemIndex: i, dayBranchIndex: i),
+          [10, 11],
+          reason: '갑자순 $i번째 간지',
+        );
+      }
+    });
+  });
+
+  group('nayinFor — 납음오행(納音五行)', () {
+    test('60갑자 인덱스 0(갑자)은 해중금(금)이다', () {
+      final nayin = nayinFor(0);
+      expect(nayin.name, '해중금');
+      expect(nayin.hanja, '海中金');
+      expect(nayin.ohaeng, '금');
+    });
+
+    test('60갑자 인덱스 8(임신, 검봉금)과 9(계유)는 같은 조라 같은 납음이다', () {
+      final a = nayinFor(8);
+      final b = nayinFor(9);
+      expect(a, (name: '검봉금', hanja: '劍鋒金', ohaeng: '금'));
+      expect(a, b);
+    });
+
+    test('60갑자 인덱스 56(경신)은 석류목(목)이다', () {
+      final nayin = nayinFor(56);
+      expect(nayin.name, '석류목');
+      expect(nayin.hanja, '石榴木');
+      expect(nayin.ohaeng, '목');
+    });
+
+    test('60갑자 인덱스 59(계해, 마지막)는 대해수(수)다', () {
+      final nayin = nayinFor(59);
+      expect(nayin.name, '대해수');
+      expect(nayin.hanja, '大海水');
+      expect(nayin.ohaeng, '수');
+    });
+
+    test('60갑자 인덱스 7(신미)은 노방토(토)다', () {
+      final nayin = nayinFor(7);
+      expect(nayin.name, '노방토');
+      expect(nayin.ohaeng, '토');
+    });
+  });
 }
