@@ -1,5 +1,6 @@
 import 'dart:ui' show Tristate;
 
+import 'package:flutter/cupertino.dart' show CupertinoDatePicker;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -1073,23 +1074,31 @@ void main() {
 
   // 2026-07-15: 리서치(docs/research/운세/입력_온보딩_설계.md)가 짚은 23시~01시(자시)
   // 경계 안내 문구 — 계산 로직(관법)은 그대로 두고 정보성 안내만 노출한다.
-  Future<void> setTimeViaTextInput(WidgetTester tester, {required String hour, required String minute, required bool pm}) async {
+  //
+  // 2026-07-19 재작성: 시간 피커가 Material `showTimePicker`(키보드 입력 전환 아이콘
+  // 지원)에서 `CupertinoDatePicker`(순수 스크롤 휠, 텍스트 입력 모드 자체가 없음)로
+  // 바뀌면서(wheel_date_picker_sheet.dart) 기존 "키보드 아이콘 탭 → 시/분 TextField
+  // 입력" 경로가 더 이상 성립하지 않는다. 자시 경계값(23:00·00:30·22:59·01:00)처럼
+  // "정확히 이 시:분이 선택된다"를 보장해야 하는 테스트 의도를 지키기 위해, 실제
+  // 스크롤 제스처로 휠을 특정 인덱스까지 드래그하는 대신(itemExtent·offset 계산이
+  // 필요해 취약하고 간접적) 시트가 화면에 뜬 상태에서 그 안의 `CupertinoDatePicker`
+  // 위젯을 직접 찾아 `onDateTimeChanged` 콜백을 원하는 DateTime으로 호출한다 —
+  // 이 콜백은 wheel_date_picker_sheet.dart의 `_showWheelPickerSheet`가 "확인" 버튼이
+  // 반환할 `current` 값을 갱신하는 유일한 통로이므로, 이렇게 호출한 뒤 "확인"을 실제로
+  // 탭하면 그 값이 그대로 _birthTime에 반영되는 전체 배선(콜백 연결 → 확인 버튼 →
+  // setState)을 그대로 검증한다 — 다만 실제 손가락 스크롤 제스처 자체(휠이 정확히
+  // 그 위치까지 물리적으로 도달하는지)는 이 경로로는 검증되지 않는다(스크롤 자체는
+  // wheel_date_picker_sheet_test.dart에서 별도로 확인).
+  Future<void> setTimeViaWheel(WidgetTester tester, {required int hour24, required int minute}) async {
     // 2026-07-17 버그 수정 이후 _birthTime이 처음엔 null이라 pill에 플레이스홀더
     // 문구("시간을 선택해주세요")가 보인다 — 예전엔 이 자리가 "오후 2시 30분"이었다.
     await tester.tap(find.text('시간을 선택해주세요'));
     await tester.pumpAndSettle();
-    // 다이얼 대신 텍스트 입력 모드로 바꿔 정확한 시:분을 직접 입력한다(23:00/00:30처럼
-    // 다이얼 제스처로는 안정적으로 재현하기 어려운 값들을 결정적으로 넣기 위함).
-    await tester.tap(find.byIcon(Icons.keyboard_outlined));
-    await tester.pumpAndSettle();
-    // 이 화면 자체에 이미 이름/출생지 TextField 두 개가 있어(피커가 열려도 그 아래
-    // 화면은 그대로 마운트돼 있음), find.byType(TextField)의 인덱스 0·1은 그 두
-    // 필드를 가리킨다 — 시간 피커의 시:분 입력 필드는 2·3번째로 뒤에 붙는다
-    // (실측 확인: TextField 총 4개, 이름·출생지·시·분 순).
-    await tester.enterText(find.byType(TextField).at(2), hour);
-    await tester.enterText(find.byType(TextField).at(3), minute);
-    await tester.tap(find.text(pm ? '오후' : '오전'));
-    await tester.pumpAndSettle();
+
+    final picker = tester.widget<CupertinoDatePicker>(find.byType(CupertinoDatePicker));
+    picker.onDateTimeChanged(DateTime(2020, 1, 1, hour24, minute));
+    await tester.pump();
+
     await tester.tap(find.text('확인'));
     await tester.pumpAndSettle();
   }
@@ -1100,7 +1109,7 @@ void main() {
 
     expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsNothing);
 
-    await setTimeViaTextInput(tester, hour: '11', minute: '00', pm: true);
+    await setTimeViaWheel(tester, hour24: 23, minute: 0);
 
     expect(find.text('오후 11시 00분'), findsOneWidget);
     expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsOneWidget);
@@ -1110,7 +1119,7 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    await setTimeViaTextInput(tester, hour: '12', minute: '30', pm: false);
+    await setTimeViaWheel(tester, hour24: 0, minute: 30);
 
     expect(find.text('오전 12시 30분'), findsOneWidget);
     expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsOneWidget);
@@ -1129,7 +1138,7 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    await setTimeViaTextInput(tester, hour: '11', minute: '00', pm: true);
+    await setTimeViaWheel(tester, hour24: 23, minute: 0);
     expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsOneWidget);
 
     await tester.tap(find.text('태어난 시간을 몰라요'));
@@ -1145,7 +1154,7 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    await setTimeViaTextInput(tester, hour: '10', minute: '59', pm: true);
+    await setTimeViaWheel(tester, hour24: 22, minute: 59);
 
     expect(find.text('오후 10시 59분'), findsOneWidget);
     expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsNothing);
@@ -1160,7 +1169,7 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    await setTimeViaTextInput(tester, hour: '1', minute: '00', pm: false);
+    await setTimeViaWheel(tester, hour24: 1, minute: 0);
 
     expect(find.text('오전 1시 00분'), findsOneWidget);
     expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsNothing);
@@ -1176,7 +1185,7 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    await setTimeViaTextInput(tester, hour: '11', minute: '00', pm: true);
+    await setTimeViaWheel(tester, hour24: 23, minute: 0);
 
     // 시간 pill의 라벨은 여전히 "태어난 시간 오후 11시 00분"뿐이어야 한다 — 안내
     // 문구가 섞여 들어가 중복 낭독되면 안 된다.
@@ -1207,7 +1216,7 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    await setTimeViaTextInput(tester, hour: '11', minute: '00', pm: true);
+    await setTimeViaWheel(tester, hour24: 23, minute: 0);
 
     final noticeNode = tester.getSemantics(find.textContaining('앱마다 계산 방식이 조금씩 달라요'));
     expect(noticeNode.getSemanticsData().flagsCollection.isLiveRegion, isTrue);
@@ -1224,7 +1233,7 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(buildApp());
 
-    await setTimeViaTextInput(tester, hour: '11', minute: '00', pm: true);
+    await setTimeViaWheel(tester, hour24: 23, minute: 0);
     expect(find.textContaining('앱마다 계산 방식이 조금씩 달라요'), findsOneWidget);
 
     await tester.tap(find.text('태어난 시간을 몰라요'));
