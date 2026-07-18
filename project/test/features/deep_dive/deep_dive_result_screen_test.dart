@@ -150,7 +150,9 @@ void main() {
       ),
     );
 
-    expect(findContainingInDeepDiveResult('INTJ'), findsOneWidget);
+    // 목업(docs/mockups/01-pastel-cute.html)의 "ENFP · 스파크 메이커"처럼 타입
+    // 라벨(코드+별칭)과 코멘트가 두 줄로 분리돼 렌더링된다.
+    expect(findInDeepDiveResult('INTJ · ${mbtiNicknames['INTJ']}'), findsOneWidget);
     expect(findContainingInDeepDiveResult(mbtiComments['INTJ']!), findsOneWidget);
 
     // 2026-07-16 발견: deep_dive_share_card.dart의 쌍둥이 MBTI 강조 박스
@@ -163,7 +165,7 @@ void main() {
     // 검증 패턴을 그대로 가져와 화면 쪽 커버리지 비대칭을 없앤다.
     final mbtiBox = tester.widget<Container>(
       find.ancestor(
-        of: findContainingInDeepDiveResult('INTJ —'),
+        of: findInDeepDiveResult('INTJ · ${mbtiNicknames['INTJ']}'),
         matching: find.byType(Container),
       ).first,
     );

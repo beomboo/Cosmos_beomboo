@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cosmos_saju/app/theme/app_colors.dart';
+import 'package:cosmos_saju/features/deep_dive/deep_dive_readings.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_share_card.dart';
 import 'package:cosmos_saju/shared/widgets/pastel_card.dart';
 
@@ -55,12 +56,13 @@ void main() {
       ),
     );
 
-    // 콘텐츠 스왑 점검: 코드-코멘트 순서가 뒤바뀌면 이 정확한 문자열은 매칭되지 않는다.
-    expect(find.text('INTJ — 치밀하게 그림을 그리고 움직이는 전략가 타입이에요'), findsOneWidget);
+    // 콘텐츠 스왑 점검: 타입 라벨(코드·별칭)과 코멘트가 두 줄로 분리되어 각각 정확히 매칭돼야 한다.
+    expect(find.text('INTJ · ${mbtiNicknames['INTJ']}'), findsOneWidget);
+    expect(find.text('치밀하게 그림을 그리고 움직이는 전략가 타입이에요'), findsOneWidget);
 
     final box = tester.widget<Container>(
       find.ancestor(
-        of: find.textContaining('INTJ —'),
+        of: find.text('INTJ · ${mbtiNicknames['INTJ']}'),
         matching: find.byType(Container),
       ).first,
     );
@@ -82,7 +84,7 @@ void main() {
       ),
     );
 
-    expect(find.textContaining('INTJ —'), findsNothing);
+    expect(find.textContaining('INTJ'), findsNothing);
   });
 
   testWidgets('MBTI를 입력하지 않았으면(둘 다 null) 강조 박스 자체가 없다', (tester) async {
@@ -98,7 +100,15 @@ void main() {
       ),
     );
 
-    expect(find.textContaining(' — '), findsNothing);
+    // MBTI 강조 박스는 accentSoft 배경이 유일하게 쓰이는 곳이다(관심사 카드는 기본
+    // PastelCard 색인 bgCard) — 박스가 없으면 accentSoft를 쓰는 Container도 없어야 한다.
+    final accentSoftContainers = find.byWidgetPredicate(
+      (widget) =>
+          widget is Container &&
+          widget.decoration is BoxDecoration &&
+          (widget.decoration! as BoxDecoration).color == AppColors.accentSoft,
+    );
+    expect(accentSoftContainers, findsNothing);
   });
 
   testWidgets('관심사가 5개를 넘겨도 최대 4개까지만 그린다(카드 높이 640 고정)', (tester) async {

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
+import 'package:cosmos_saju/features/deep_dive/deep_dive_readings.dart';
 import 'package:cosmos_saju/features/deep_dive/deep_dive_share_text.dart';
 import 'package:cosmos_saju/features/result/meta_line.dart';
 
@@ -23,7 +24,10 @@ void main() {
 
       expect(text, contains('✨ 민지의 심층 분석 ✨'));
       expect(text, contains(buildMetaLine(birthInfo)));
-      expect(text, contains('INTJ — 치밀하게 그림을 그리고 움직이는 전략가 타입이에요'));
+      // 목업(docs/mockups/01-pastel-cute.html)의 "ENFP · 스파크 메이커"처럼 타입
+      // 라벨(코드·별칭)과 코멘트가 별도 줄로 나온다.
+      expect(text, contains('INTJ · ${mbtiNicknames['INTJ']}'));
+      expect(text, contains('치밀하게 그림을 그리고 움직이는 전략가 타입이에요'));
       expect(text, contains('💘 연애운: 연애운 설명'));
       expect(text, contains('💼 직장운: 직장운 설명'));
       expect(text, contains('#사주랑 #심층분석 #MBTI'));
@@ -38,8 +42,13 @@ void main() {
         items: const [('💘', '연애운', '연애운 설명')],
       );
 
-      // MBTI 줄의 유일한 " — " 구분자이므로, 이게 없으면 MBTI 줄 자체가 생략된 것.
-      expect(text, isNot(contains(' — ')));
+      // MBTI 코드·별칭 어느 것도 텍스트에 등장하면 안 된다(MBTI 줄 자체가 생략된 것).
+      for (final code in mbtiNicknames.keys) {
+        expect(text, isNot(contains(code)), reason: code);
+      }
+      for (final nickname in mbtiNicknames.values) {
+        expect(text, isNot(contains(nickname)), reason: nickname);
+      }
     });
 
     test('관심사를 하나도 고르지 않았으면 관심사 줄이 없다', () {
@@ -98,18 +107,21 @@ void main() {
       expect(text, isNot(contains('💰 재물운: AAA')));
     });
 
-    test('MBTI 줄은 항상 "코드 — 코멘트" 순서다(코멘트가 먼저 오지 않는다)', () {
+    test('MBTI 줄은 항상 "코드 · 별칭"이 코멘트보다 먼저 온다', () {
       final birthInfo = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false);
+      const comment = '치밀하게 그림을 그리고 움직이는 전략가 타입이에요';
 
       final text = buildDeepDiveShareText(
         birthInfo: birthInfo,
         displayName: '회원님',
-        mbti: ('INTJ', '치밀하게 그림을 그리고 움직이는 전략가 타입이에요'),
+        mbti: ('INTJ', comment),
         items: const [],
       );
 
-      expect(text, contains('INTJ — 치밀하게 그림을 그리고 움직이는 전략가 타입이에요'));
-      expect(text, isNot(contains('치밀하게 그림을 그리고 움직이는 전략가 타입이에요 — INTJ')));
+      final typeLabel = 'INTJ · ${mbtiNicknames['INTJ']}';
+      expect(text, contains(typeLabel));
+      expect(text, contains(comment));
+      expect(text.indexOf(typeLabel), lessThan(text.indexOf(comment)));
     });
   });
 }

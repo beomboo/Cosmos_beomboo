@@ -232,4 +232,51 @@ void main() {
       }
     });
   });
+
+  group('mbtiNicknameFor', () {
+    test('16개 유형 전부 서로 다른 별칭을 갖는다', () {
+      const eiValues = MbtiEi.values;
+      const snValues = MbtiSn.values;
+      const tfValues = MbtiTf.values;
+      const jpValues = MbtiJp.values;
+
+      final codes = <String>{};
+      for (final ei in eiValues) {
+        for (final sn in snValues) {
+          for (final tf in tfValues) {
+            for (final jp in jpValues) {
+              codes.add(Mbti(ei: ei, sn: sn, tf: tf, jp: jp).code);
+            }
+          }
+        }
+      }
+
+      expect(codes.length, 16);
+      final nicknames = codes.map((code) => mbtiNicknameFor(code)).toSet();
+      expect(nicknames.length, 16, reason: '16개 코드 전부 별칭이 있어야 하고, 서로 달라야 한다');
+      expect(nicknames.contains(null), isFalse);
+    });
+
+    test('mbtiCode가 null이면 별칭도 null이다(MBTI를 모르는 경우)', () {
+      expect(mbtiNicknameFor(null), isNull);
+    });
+
+    test('알 수 없는 코드면 별칭도 null이다', () {
+      expect(mbtiNicknameFor('XXXX'), isNull);
+    });
+
+    test('ENFP는 목업(docs/mockups/01-pastel-cute.html)과 동일하게 "스파크 메이커"다', () {
+      const mbti = Mbti(ei: MbtiEi.e, sn: MbtiSn.n, tf: MbtiTf.f, jp: MbtiJp.p);
+      expect(mbti.code, 'ENFP');
+      expect(mbtiNicknameFor(mbti.code), '스파크 메이커');
+    });
+
+    test('16개 유형 별칭이 실제 값과 정확히 일치한다', () {
+      // mbtiCommentFor의 동어반복 테스트와 같은 이유 — 두 유형끼리 별칭이 통째로
+      // 뒤바뀌어도 "서로 다른 16개"는 여전히 참이라 위 유일성 테스트만으로는 못 잡는다.
+      for (final entry in mbtiNicknames.entries) {
+        expect(mbtiNicknameFor(entry.key), entry.value, reason: '${entry.key} 별칭');
+      }
+    });
+  });
 }
