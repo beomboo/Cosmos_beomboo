@@ -51,11 +51,13 @@ class ShareCard extends StatelessWidget {
           Row(
             children: [
               _pillarChip('년주', pillars.year.label, pillars.year.stemIndex),
-              const SizedBox(width: 8),
+              // 목업(`.pillars`)은 gap:7px인데 지금까지는 8px이었다
+              // (2026-07-18 오버나이트 대조 발견).
+              const SizedBox(width: 7),
               _pillarChip('월주', pillars.month.label, pillars.month.stemIndex),
-              const SizedBox(width: 8),
+              const SizedBox(width: 7),
               _pillarChip('일주', pillars.day.label, pillars.day.stemIndex),
-              const SizedBox(width: 8),
+              const SizedBox(width: 7),
               _pillarChip('시주', pillars.hour?.label ?? '모름', pillars.hour?.stemIndex),
             ],
           ),

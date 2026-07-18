@@ -227,11 +227,13 @@ class _ResultScreenState extends State<ResultScreen> {
                 Row(
                   children: [
                     _PillarCard(label: '년주', pillar: pillars.year),
-                    const SizedBox(width: 8),
+                    // 목업(`.pillars`)은 gap:7px인데 지금까지는 8px이었다
+                    // (2026-07-18 오버나이트 대조 발견).
+                    const SizedBox(width: 7),
                     _PillarCard(label: '월주', pillar: pillars.month),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 7),
                     _PillarCard(label: '일주', pillar: pillars.day),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 7),
                     _PillarCard(label: '시주', pillar: pillars.hour),
                   ],
                 ),
