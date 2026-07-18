@@ -1,5 +1,6 @@
 import '../birth_input/birth_info.dart';
 import '../result/meta_line.dart';
+import 'deep_dive_readings.dart';
 
 /// 심층 분석 결과를 텍스트로 요약한다 (OS 공유 시트에 전달할 본문).
 /// `deep_dive_result_screen.dart`의 `_handleShare`에서 사용하며, `DeepDiveShareCard`
@@ -20,9 +21,11 @@ String buildDeepDiveShareText({
     ..writeln(buildMetaLine(birthInfo));
 
   if (mbti != null) {
+    final nickname = mbtiNicknameFor(mbti.$1);
     buffer
       ..writeln()
-      ..writeln('${mbti.$1} — ${mbti.$2}');
+      ..writeln(nickname != null ? '${mbti.$1} · $nickname' : mbti.$1)
+      ..writeln(mbti.$2);
   }
 
   for (final item in items) {

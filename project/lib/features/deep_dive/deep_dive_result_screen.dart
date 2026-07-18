@@ -44,6 +44,7 @@ class _DeepDiveResultScreenState extends State<DeepDiveResultScreen> {
     final displayName = displayNameFor(birthInfo);
     final metaLine = buildMetaLine(birthInfo);
     final mbtiComment = mbtiCommentFor(deepDiveInfo.mbti?.code);
+    final mbtiNickname = mbtiNicknameFor(deepDiveInfo.mbti?.code);
     // Interest.values 선언 순서(연애·재물·직장·건강)를 고정해 화면 카드 순서와
     // 공유 카드/텍스트 순서가 항상 일치하도록 한다 — deepDiveInfo.interests는
     // Set이라 삽입 순서를 보장하지 않는다.
@@ -90,9 +91,33 @@ class _DeepDiveResultScreenState extends State<DeepDiveResultScreen> {
                       borderRadius: 16,
                       color: AppColors.accentSoft,
                       showBorder: false,
-                      child: Text(
-                        '${deepDiveInfo.mbti!.code} — $mbtiComment',
-                        style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, height: 1.4),
+                      child: Semantics(
+                        label:
+                            '${deepDiveInfo.mbti!.code}'
+                            '${mbtiNickname != null ? ' · $mbtiNickname' : ''}. $mbtiComment',
+                        excludeSemantics: true,
+                        container: true,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              mbtiNickname != null
+                                  ? '${deepDiveInfo.mbti!.code} · $mbtiNickname'
+                                  : deepDiveInfo.mbti!.code,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.accentText,
+                                fontSize: 12,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              mbtiComment,
+                              style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink, height: 1.4),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

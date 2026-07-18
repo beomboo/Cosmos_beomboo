@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme/app_colors.dart';
 import '../../shared/widgets/pastel_card.dart';
 import '../../shared/widgets/share_card_scaffold.dart';
+import 'deep_dive_readings.dart';
 
 /// 심층 분석 결과 공유용 9:16 카드 — `result_screen.dart`의 `ShareCard`와 같은 고정
 /// 크기 규격(360x640)을 공용 `ShareCardScaffold`로 그대로 재사용하고, 이 위젯은 그 위에
@@ -38,6 +39,7 @@ class DeepDiveShareCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final visibleItems = items.take(4).toList();
     final hasMbti = mbtiCode != null && mbtiComment != null;
+    final mbtiNickname = mbtiNicknameFor(mbtiCode);
 
     return ShareCardScaffold(
       title: '$displayName의 심층 분석 ✨',
@@ -55,15 +57,30 @@ class DeepDiveShareCard extends StatelessWidget {
                 borderRadius: 16,
                 color: AppColors.accentSoft,
                 showBorder: false,
-                child: Text(
-                  '$mbtiCode — $mbtiComment',
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.ink,
-                    height: 1.4,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      mbtiNickname != null ? '$mbtiCode · $mbtiNickname' : '$mbtiCode',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.accentText,
+                        fontSize: 12,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$mbtiComment',
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.ink,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

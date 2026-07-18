@@ -64,3 +64,30 @@ const Map<String, String> mbtiComments = {
 
 /// [mbtiCode]("INTJ" 등)에 해당하는 코멘트. null이거나 알 수 없는 코드면 null.
 String? mbtiCommentFor(String? mbtiCode) => mbtiCode == null ? null : mbtiComments[mbtiCode];
+
+/// MBTI 16유형별 짧은 별칭 — 목업(`docs/mockups/01-pastel-cute.html`)의 "ENFP · 스파크
+/// 메이커"처럼 타입 코드 옆에 붙여 쓰는 2차 라벨이다. 16Personalities의 "형용사+역할
+/// 은유" 네이밍(INTJ=Architect, ENFP=Campaigner 등) 관행을 참고하되, 실제 영단어를
+/// 그대로 옮기지 않고 우리 앱 톤(캐주얼하되 존댓말·과장 없는 톤)에 맞는 한국어 별칭으로
+/// 새로 지었다.
+const Map<String, String> mbtiNicknames = {
+  'INTJ': '전략가',
+  'INTP': '아이디어 뱅크',
+  'ENTJ': '추진력 대장',
+  'ENTP': '발상 전환러',
+  'INFJ': '통찰가',
+  'INFP': '감성 소신파',
+  'ENFJ': '인싸 리더',
+  'ENFP': '스파크 메이커',
+  'ISTJ': '원칙주의자',
+  'ISFJ': '든든한 버팀목',
+  'ESTJ': '실행대장',
+  'ESFJ': '분위기 조율사',
+  'ISTP': '만능 해결사',
+  'ISFP': '마이웨이 아티스트',
+  'ESTP': '액션파',
+  'ESFP': '무대 체질',
+};
+
+/// [mbtiCode]("INTJ" 등)에 해당하는 별칭. null이거나 알 수 없는 코드면 null.
+String? mbtiNicknameFor(String? mbtiCode) => mbtiCode == null ? null : mbtiNicknames[mbtiCode];
