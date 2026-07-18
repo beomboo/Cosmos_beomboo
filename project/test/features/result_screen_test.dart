@@ -8,6 +8,7 @@ import 'package:cosmos_saju/core/saju/ganzhi.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
 import 'package:cosmos_saju/features/birth_input/birth_input_screen.dart';
 import 'package:cosmos_saju/features/result/result_screen.dart';
+import 'package:cosmos_saju/shared/widgets/pastel_card.dart';
 
 import '../support/scoped_finders.dart';
 import '../support/test_viewport.dart';
@@ -193,6 +194,54 @@ void main() {
     );
     final sizedBox = column.children[1] as SizedBox;
     expect(sizedBox.height, 4, reason: '_PillarCard 한자↔라벨 간격');
+  });
+
+  testWidgets('4기둥 카드(년주/월주/일주/시주) 사이의 실제 렌더 간격이 목업 값(gap:7px)과 일치한다',
+      (WidgetTester tester) async {
+    // 2026-07-18: 4기둥 카드 나열의 `SizedBox(width: 8)` 세 군데를 목업(`.pillars`
+    // gap:7px)에 맞춰 `SizedBox(width: 7)`로 수정(58a4041) — 지금까지 이 카드 사이
+    // 간격을 실제 렌더 좌표(픽셀)로 확인하는 테스트가 없었다. 값 자체(예: "무인"
+    // 텍스트 색상)만 확인하는 테스트로는 간격 수치가 실수로 되돌아가도 잡을 수 없다.
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (_) => const ResultScreen(),
+          settings: RouteSettings(
+            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+          ),
+        ),
+        initialRoute: '/',
+      ),
+    );
+
+    // 각 기둥 카드의 실제 시각적 경계는 `_PillarCard`가 내부에서 감싸는 공용
+    // `PastelCard`(그 자체가 padding/decoration을 가진 Container를 그려낸다).
+    Rect cardRectOf(String hanja) => tester.getRect(
+          find.ancestor(of: findInBody(hanja), matching: find.byType(PastelCard)).first,
+        );
+
+    // 1998-08-15 14시의 4주: 년주 무인, 월주 경신, 일주 갑자, 시주 신미(위 다른
+    // 테스트와 같은 조합).
+    final yearRect = cardRectOf('무인');
+    final monthRect = cardRectOf('경신');
+    final dayRect = cardRectOf('갑자');
+    final hourRect = cardRectOf('신미');
+
+    expect(
+      monthRect.left - yearRect.right,
+      closeTo(7, 0.5),
+      reason: '년주↔월주 카드 사이 간격은 목업(.pillars gap:7px)과 같이 7px이어야 한다',
+    );
+    expect(
+      dayRect.left - monthRect.right,
+      closeTo(7, 0.5),
+      reason: '월주↔일주 카드 사이 간격은 목업(.pillars gap:7px)과 같이 7px이어야 한다',
+    );
+    expect(
+      hourRect.left - dayRect.right,
+      closeTo(7, 0.5),
+      reason: '일주↔시주 카드 사이 간격은 목업(.pillars gap:7px)과 같이 7px이어야 한다',
+    );
   });
 
   testWidgets('"공유하기" 버튼이 목업대로 accent→metal 그라데이션 배경을 쓴다', (WidgetTester tester) async {

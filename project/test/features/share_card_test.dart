@@ -5,6 +5,7 @@ import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/core/saju/four_pillars.dart';
 import 'package:cosmos_saju/core/saju/ganzhi.dart';
 import 'package:cosmos_saju/features/result/share_card.dart';
+import 'package:cosmos_saju/shared/widgets/pastel_card.dart';
 
 void main() {
   testWidgets('ShareCard가 이름/기둥/오행 밸런스를 렌더링한다', (tester) async {
@@ -182,6 +183,61 @@ void main() {
     expectChipPairs('월주', '경신');
     expectChipPairs('일주', '갑자');
     expectChipPairs('시주', '신미');
+  });
+
+  testWidgets('4기둥 칩 사이의 실제 렌더 간격이 목업 값(gap:7px)과 일치한다', (tester) async {
+    // 2026-07-18: result_screen.dart와 함께 이 공유 카드의 4기둥 칩 나열
+    // `SizedBox(width: 8)` 세 군데도 목업(`.pillars` gap:7px)에 맞춰 `SizedBox(width: 7)`로
+    // 수정(58a4041) — 지금까지 실제 렌더 좌표(픽셀)로 칩 사이 간격을 확인하는 테스트가
+    // 없었다.
+    final pillars = calculateFourPillars(birthDate: DateTime(1998, 8, 15), birthHour: 14);
+    final ohaengCount = pillars.ohaengCount;
+    final total = ohaengCount.values.fold<int>(0, (a, b) => a + b);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShareCard(
+            displayName: '민지',
+            metaLine: '1998.08.15 · 오후 2시生 · 양력',
+            pillars: pillars,
+            dominant: '금',
+            calloutHanja: '金',
+            calloutEmoji: '✨',
+            calloutText: '원칙적이고 결단력 있어요',
+            ohaengCount: ohaengCount,
+            total: total,
+          ),
+        ),
+      ),
+    );
+
+    // 각 기둥 칩의 실제 시각적 경계는 `_pillarChip`이 내부에서 감싸는 공용
+    // `PastelCard`(padding/decoration을 가진 Container를 그려낸다).
+    Rect chipRectOf(String hanja) => tester.getRect(
+          find.ancestor(of: find.text(hanja), matching: find.byType(PastelCard)).first,
+        );
+
+    final yearRect = chipRectOf('무인');
+    final monthRect = chipRectOf('경신');
+    final dayRect = chipRectOf('갑자');
+    final hourRect = chipRectOf('신미');
+
+    expect(
+      monthRect.left - yearRect.right,
+      closeTo(7, 0.5),
+      reason: '년주↔월주 칩 사이 간격은 목업(.pillars gap:7px)과 같이 7px이어야 한다',
+    );
+    expect(
+      dayRect.left - monthRect.right,
+      closeTo(7, 0.5),
+      reason: '월주↔일주 칩 사이 간격은 목업(.pillars gap:7px)과 같이 7px이어야 한다',
+    );
+    expect(
+      hourRect.left - dayRect.right,
+      closeTo(7, 0.5),
+      reason: '일주↔시주 칩 사이 간격은 목업(.pillars gap:7px)과 같이 7px이어야 한다',
+    );
   });
 
   testWidgets('오행 밸런스 바 각 행의 한자·진행바 색상이 오행별 ohaengTextColors와 정확히 일치한다 (색상 스왑 방지)',

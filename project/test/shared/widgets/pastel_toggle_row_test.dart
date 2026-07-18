@@ -9,6 +9,8 @@ import 'package:cosmos_saju/shared/widgets/pastel_toggle_row.dart';
 
 enum _Option { a, b }
 
+enum _Option3 { a, b, c }
+
 void main() {
   testWidgets('선택된 옵션에 스크린 리더용 selected 시맨틱스가 붙는다', (tester) async {
     // addTearDown은 testWidgets 콜백이 끝난 뒤 실행되는데, 시맨틱스 핸들이 열려있는지
@@ -160,5 +162,58 @@ void main() {
     expect(inactiveDecoration.color, AppColors.bgCard);
     expect(inactiveDecoration.border!.top.color, AppColors.border);
     expect(tester.widget<Text>(find.text('음력')).style!.color, AppColors.ink);
+  });
+
+  testWidgets('인접한 pill 사이의 실제 렌더 간격이 목업 값(gap:8px)과 일치하고 마지막 pill 뒤에는 여백이 남지 않는다',
+      (tester) async {
+    // 2026-07-18: `Row`+`Padding(right: 10)` 방식(마지막 항목 뒤에도 10px 트레일링
+    // 여백이 남고 사이 간격도 10px)을 `Wrap(spacing/runSpacing: 8)`로 교체한 수정
+    // (fbeabda) — 지금까지 이 위젯의 어떤 테스트도 실제 렌더 좌표(픽셀 간격)를 확인한
+    // 적이 없었다. `decorationOf`처럼 텍스트 색·배경만 값으로 확인하는 테스트로는
+    // 간격이 8px이 아니라 10px이어도, 혹은 트레일링 여백이 남아있어도 잡을 수 없다.
+    // 옵션 3개로 인접 쌍 2개(가↔나, 나↔다)를 모두 확인한다.
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PastelToggleRow<_Option3>(
+            value: _Option3.a,
+            options: const {_Option3.a: '가', _Option3.b: '나', _Option3.c: '다'},
+            onChanged: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    // 각 pill의 실제 시각적 경계는 padding/decoration을 가진 Container 자신이다
+    // (위 색상 검증 테스트의 `decorationOf`와 같은 방식으로 찾는다).
+    Rect pillRectOf(String text) => tester.getRect(
+          find.ancestor(of: find.text(text), matching: find.byType(Container)).first,
+        );
+
+    final rectA = pillRectOf('가');
+    final rectB = pillRectOf('나');
+    final rectC = pillRectOf('다');
+
+    expect(
+      rectB.left - rectA.right,
+      closeTo(8, 0.5),
+      reason: '가↔나 pill 사이 간격은 목업(.pill-row gap:8px)과 같이 8px이어야 한다',
+    );
+    expect(
+      rectC.left - rectB.right,
+      closeTo(8, 0.5),
+      reason: '나↔다 pill 사이 간격은 목업(.pill-row gap:8px)과 같이 8px이어야 한다',
+    );
+
+    // Wrap은 (Row와 달리) 남는 공간을 채우지 않고 콘텐츠 폭만큼만 차지하므로, 마지막
+    // pill 뒤에 불필요한 트레일링 여백이 없다면 Wrap 전체의 오른쪽 끝과 마지막 pill('다')의
+    // 오른쪽 끝이 거의 일치해야 한다 — 과거 Padding(right:10) 방식이었다면 그 10px만큼
+    // Wrap(당시엔 Row) 오른쪽 끝이 '다' pill보다 더 멀리 있었을 것이다.
+    final wrapRect = tester.getRect(find.byType(Wrap));
+    expect(
+      wrapRect.right - rectC.right,
+      closeTo(0, 0.5),
+      reason: '마지막 pill 뒤에 불필요한 트레일링 여백이 남지 않아야 한다',
+    );
   });
 }
