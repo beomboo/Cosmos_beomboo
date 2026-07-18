@@ -274,7 +274,31 @@ void main() {
     test('16개 유형 별칭이 실제 값과 정확히 일치한다', () {
       // mbtiCommentFor의 동어반복 테스트와 같은 이유 — 두 유형끼리 별칭이 통째로
       // 뒤바뀌어도 "서로 다른 16개"는 여전히 참이라 위 유일성 테스트만으로는 못 잡는다.
-      for (final entry in mbtiNicknames.entries) {
+      // (수정 이력: 이 테스트는 원래 mbtiNicknames.entries를 그대로 순회하며
+      // mbtiNicknameFor(key)와 비교했는데, mbtiNicknameFor가 결국 mbtiNicknames[key]를
+      // 반환하는 구조라 이는 mbtiNicknames[key] == mbtiNicknames[key]인 동어반복이었다 —
+      // 맵의 값이 통째로 뒤바뀌어도 항상 통과했다. mbtiCommentFor의 위 테스트처럼
+      // deep_dive_readings.dart를 참조하지 않는 독립 하드코딩 문자열과 대조한다.)
+      const expected = {
+        'INTJ': '전략가',
+        'INTP': '아이디어 뱅크',
+        'ENTJ': '추진력 대장',
+        'ENTP': '발상 전환러',
+        'INFJ': '통찰가',
+        'INFP': '감성 소신파',
+        'ENFJ': '인싸 리더',
+        'ENFP': '스파크 메이커',
+        'ISTJ': '원칙주의자',
+        'ISFJ': '든든한 버팀목',
+        'ESTJ': '실행대장',
+        'ESFJ': '분위기 조율사',
+        'ISTP': '만능 해결사',
+        'ISFP': '마이웨이 아티스트',
+        'ESTP': '액션파',
+        'ESFP': '무대 체질',
+      };
+
+      for (final entry in expected.entries) {
         expect(mbtiNicknameFor(entry.key), entry.value, reason: '${entry.key} 별칭');
       }
     });
