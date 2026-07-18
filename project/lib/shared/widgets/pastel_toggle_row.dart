@@ -13,7 +13,12 @@ class PastelToggleRow<T> extends StatelessWidget {
     this.semanticLabel,
   });
 
-  final T value;
+  // 2026-07-19: 성별·혈액형이 필수값으로 바뀌면서 "아직 아무것도 안 고른" 상태를
+  // 표현할 필요가 생겼다 — 기존값을 항상 non-null 기본값(예: 여성)으로 미리 채워두면
+  // 사용자가 실제로 고르지 않아도 선택된 것처럼 보여 제출 검증이 무의미해진다.
+  // nullable로 바꿔도 기존 호출부(양력/음력, MBTI 네 축처럼 항상 값이 있는 토글)는
+  // non-null 값을 그대로 넘기면 되므로 하위 호환된다.
+  final T? value;
   final Map<T, String> options;
   final ValueChanged<T> onChanged;
 

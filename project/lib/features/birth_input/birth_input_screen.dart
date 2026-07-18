@@ -33,7 +33,11 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
   TimeOfDay? _birthTime;
   bool _timeUnknown = false;
   _Calendar _calendar = _Calendar.solar;
-  Gender _gender = Gender.female;
+  // 2026-07-19: 성별·혈액형이 목업(`.field-required`)대로 필수값이 됐다 — 이름/날짜/
+  // 시간처럼 "아직 아무것도 안 고르지 않은 상태"를 실제로 표현해야 하므로, 조용히
+  // 유효한 기본값(예: 여성)으로 미리 채워두지 않고 둘 다 null에서 시작한다.
+  Gender? _gender;
+  BloodType? _bloodType;
   final _nameController = TextEditingController();
   final _birthPlaceController = TextEditingController();
 
@@ -53,7 +57,20 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
   MbtiJp _jp = MbtiJp.j;
 
   @override
+  void initState() {
+    super.initState();
+    // 2026-07-19 버그 수정: 이름이 이제 필수값이라 `_canSubmit`이 이름 입력 여부를
+    // 봐야 하는데, `_nameController`에 리스너가 없어서 타이핑을 해도 위젯이 다시
+    // 그려지지 않아(setState 없음) 제출 버튼이 계속 비활성 상태로 보였다(실제로는
+    // 다른 필드를 모두 채우고 나서야 뒤늦게 갱신되는 식으로 드러남).
+    _nameController.addListener(_onNameChanged);
+  }
+
+  void _onNameChanged() => setState(() {});
+
+  @override
   void dispose() {
+    _nameController.removeListener(_onNameChanged);
     _nameController.dispose();
     _birthPlaceController.dispose();
     super.dispose();
@@ -118,10 +135,17 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
     return '$period $hour12시 ${time.minute.toString().padLeft(2, '0')}분';
   }
 
-  // 날짜는 반드시 골라야 하고, 시간은 "태어난 시간을 몰라요"에 체크했거나 실제로
-  // 시간을 고른 경우에만 제출을 허용한다 — 성별은 이미 명시적 토글 선택 상태(기본값이
-  // 있어도 사용자가 건드리지 않은 "미입력"과 구분하기 어려움)라 이번 검증 범위에서 제외.
-  bool get _canSubmit => _birthDate != null && (_timeUnknown || _birthTime != null);
+  // 2026-07-19: 목업(`.field-required` 이름/태어난 날짜/태어난 시간/성별/혈액형)에 맞춰
+  // 다섯 항목을 전부 필수로 재정의했다 — 날짜는 반드시 골라야 하고, 시간은 "태어난
+  // 시간을 몰라요"에 체크했더라도 대략적인 시간대 선택 자체는 여전히 필요하다(7번
+  // 안내 문구 참고). 이름은 trim 후 빈 문자열이면 미입력으로 취급, 성별/혈액형은
+  // null이 아니어야 한다(둘 다 더 이상 조용한 기본값을 갖지 않는다).
+  bool get _canSubmit =>
+      _birthDate != null &&
+      (_timeUnknown || _birthTime != null) &&
+      _nameController.text.trim().isNotEmpty &&
+      _gender != null &&
+      _bloodType != null;
 
   Future<void> _submit() async {
     if (_isSubmitting || !_canSubmit) return;
@@ -132,7 +156,8 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
 
     final trimmedName = _nameController.text.trim();
     final trimmedBirthPlace = _birthPlaceController.text.trim();
-    // _canSubmit이 이미 널 아님을 보장한다(날짜는 항상, 시간은 시간-모름이 아닐 때만).
+    // _canSubmit이 이미 널 아님을 보장한다(날짜·이름·성별·혈액형은 항상, 시간은
+    // 시간-모름이 아닐 때만).
     final birthDate = _birthDate!;
     final birthTime = _birthTime;
     final birthInfo = BirthInfo(
@@ -140,9 +165,10 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
       hour: _timeUnknown ? null : birthTime!.hour,
       minute: _timeUnknown ? null : birthTime!.minute,
       isLunar: _calendar == _Calendar.lunar,
-      name: trimmedName.isEmpty ? null : trimmedName,
+      name: trimmedName,
       birthPlace: trimmedBirthPlace.isEmpty ? null : trimmedBirthPlace,
       gender: _gender,
+      bloodType: _bloodType,
     );
     // 저장은 "다음에 열 때 바로 보여주기 위한" 부가 기능일 뿐이므로, 저장이 실패해도
     // (플랫폼 채널 오류 등) 지금 이 세션의 진행은 막지 않는다.
@@ -195,16 +221,18 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
           // 24/8/24/24였다(2026-07-07 대조 발견).
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
           children: [
-            _FieldLabel('이름 (선택)'),
+            // 2026-07-19: 목업(`.field-required` "이름")대로 필수값으로 바뀌면서
+            // "(선택)" 표기와 그 아래 "이름 없이도 괜찮아요 →" 안내 문구를 함께 제거했다.
+            const _FieldLabel('이름', required: true),
             // 목업(`.field label`)은 margin-bottom:7px인데 지금까지는 8px이었다
             // (2026-07-16 오버나이트 대조 발견).
             const SizedBox(height: 7),
             // hintText만으로는 스크린 리더가 "예: 민지"를 필드 이름으로 잘못 읽는다(필드가
             // 비어 있을 때 hintText가 시맨틱 label로 그대로 노출됨 — 실제 확인함). 위의
             // _FieldLabel은 시각적으로만 보이고 이 TextField와 시맨틱으로 연결되지 않으므로,
-            // excludeSemantics 없는 Semantics(label:)로 감싸 "이름 (선택)"과 병합되게 한다.
+            // excludeSemantics 없는 Semantics(label:)로 감싸 "이름"과 병합되게 한다.
             Semantics(
-              label: '이름 (선택)',
+              label: '이름',
               child: TextField(
                 controller: _nameController,
                 maxLength: 20,
@@ -213,19 +241,10 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
                 decoration: const InputDecoration(hintText: '예: 민지', counterText: ''),
               ),
             ),
-            const SizedBox(height: 6),
-            // 목업(`.skip`)은 11px/font-weight 700인데 지금까지는 13px에 기본 굵기였다
-            // (2026-07-07 대조 발견) — 아래 "건너뛰어도 괜찮아요 →"(태어난 곳)와 같은
-            // 안내 문구 패턴이라 같은 스타일로 통일한다.
-            const Text(
-              '이름 없이도 괜찮아요 →',
-              semanticsLabel: '이름 없이도 괜찮아요',
-              style: TextStyle(color: AppColors.inkSoft, fontSize: 11, fontWeight: FontWeight.w700),
-            ),
             // 목업(`.field`)은 margin-bottom:14px인데 지금까지는 20px이었다
             // (2026-07-07 대조 발견) — 이하 필드 그룹 사이 간격 전부 동일하게 수정.
             const SizedBox(height: 14),
-            _FieldLabel('태어난 날짜'),
+            const _FieldLabel('태어난 날짜', required: true),
             // 목업(`.field label`)은 margin-bottom:7px인데 지금까지는 8px이었다
             // (2026-07-16 오버나이트 대조 발견).
             const SizedBox(height: 7),
@@ -250,7 +269,7 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
               semanticLabel: '양력 또는 음력',
             ),
             const SizedBox(height: 14),
-            _FieldLabel('태어난 시간'),
+            const _FieldLabel('태어난 시간', required: true),
             // 목업(`.field label`)은 margin-bottom:7px인데 지금까지는 8px이었다
             // (2026-07-16 오버나이트 대조 발견).
             const SizedBox(height: 7),
@@ -290,8 +309,18 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
               value: _timeUnknown,
               onChanged: (v) => setState(() => _timeUnknown = v ?? false),
             ),
+            // 2026-07-19: "몰라요"에 체크해도 시간 선택 자체는 그대로 필요하다는 걸
+            // 분명히 하는 안내 문구(목업 `.jasi-tip`의 새 워딩과 같은 취지) — 이 체크는
+            // "정확한 시간까지는 모른다"는 뜻일 뿐, 대략적인 시간대조차 안 골라도 된다는
+            // 뜻이 아니다.
+            const SizedBox(height: 6),
+            const Text(
+              '체크해도 시간 선택은 필요해요 — 그래도 대략적인 시간대라도 골라주시면 '
+              '그 안에서 최대한 정확하게 봐드릴게요',
+              style: TextStyle(color: AppColors.inkSoft, fontSize: 11, fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 14),
-            _FieldLabel('성별'),
+            const _FieldLabel('성별', required: true),
             // 목업(`.field label`)은 margin-bottom:7px인데 지금까지는 8px이었다
             // (2026-07-16 오버나이트 대조 발견).
             const SizedBox(height: 7),
@@ -302,7 +331,24 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
               semanticLabel: '성별 선택',
             ),
             const SizedBox(height: 14),
-            _FieldLabel('태어난 곳 (선택)'),
+            // 2026-07-19 추가: 목업(`.field-required` "혈액형")대로 성별과 같은 필수
+            // 토글 패턴으로 A/B/AB/O형을 고르게 한다 — 사주 계산과는 무관한 순수 저장
+            // 필드(BloodType, birth_info.dart 참고).
+            const _FieldLabel('혈액형', required: true),
+            const SizedBox(height: 7),
+            PastelToggleRow<BloodType>(
+              value: _bloodType,
+              options: const {
+                BloodType.a: 'A형',
+                BloodType.b: 'B형',
+                BloodType.ab: 'AB형',
+                BloodType.o: 'O형',
+              },
+              onChanged: (v) => setState(() => _bloodType = v),
+              semanticLabel: '혈액형 선택',
+            ),
+            const SizedBox(height: 14),
+            const _FieldLabel('태어난 곳 (선택)'),
             // 목업(`.field label`)은 margin-bottom:7px인데 지금까지는 8px이었다
             // (2026-07-16 오버나이트 대조 발견).
             const SizedBox(height: 7),
@@ -364,15 +410,23 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                // 날짜(그리고 시간-모름이 아니면 시간)를 실제로 고르기 전까지는 버튼을
-                // 비활성화한다 — "아무 데이터도 입력하지 않은 상태에서는 결과 화면으로
-                // 넘어가면 안 됨" 버그 수정.
+                // 이름·날짜·시간·성별·혈액형을 모두 채우기 전까지는 버튼을 비활성화한다
+                // — "아무 데이터도 입력하지 않은 상태에서는 결과 화면으로 넘어가면
+                // 안 됨" 버그 수정(2026-07-17), 2026-07-19 필수값 확장에 맞춰 조건 갱신.
                 onPressed: _canSubmit && !_isSubmitting ? _submit : null,
                 child: const Text(
                   '사주 보러가기 🔮',
                   semanticsLabel: '사주 보러가기',
                 ),
               ),
+            ),
+            // 목업(`.input-hint`)과 같은 안내 문구 — 제출 버튼이 왜 안 눌리는지
+            // 궁금해할 사용자를 위해 어떤 필드가 필수인지 알려준다(2026-07-19 추가).
+            const SizedBox(height: 6),
+            const Text(
+              '이름 · 날짜 · 시간 · 성별 · 혈액형을 다 채워야 눌러져요',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.inkSoft, fontSize: 11, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -382,20 +436,34 @@ class _BirthInputScreenState extends State<BirthInputScreen> {
 }
 
 class _FieldLabel extends StatelessWidget {
-  const _FieldLabel(this.text);
+  const _FieldLabel(this.text, {this.required = false});
   final String text;
+
+  /// true면 목업(`.field-required::after{content:" *"}`)처럼 라벨 뒤에 accent 색
+  /// `*`를 붙인다 — 2026-07-19 필수값 확장(이름/날짜/시간/성별/혈액형)에 맞춰 추가.
+  final bool required;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        // 목업(`.field label`)은 font-size:11px/font-weight:800/letter-spacing:.02em인데
-        // 지금까지는 13px/700/자간 없음이었다(2026-07-16 오버나이트 대조 발견).
-        fontWeight: FontWeight.w800,
-        fontSize: 11,
-        letterSpacing: 0.22,
-        color: AppColors.inkSoft,
+    // 목업(`.field label`)은 font-size:11px/font-weight:800/letter-spacing:.02em인데
+    // 지금까지는 13px/700/자간 없음이었다(2026-07-16 오버나이트 대조 발견).
+    const baseStyle = TextStyle(
+      fontWeight: FontWeight.w800,
+      fontSize: 11,
+      letterSpacing: 0.22,
+      color: AppColors.inkSoft,
+    );
+    if (!required) return Text(text, style: baseStyle);
+    // 목업(`.field-required::after{content:" *"; color:var(--app-accent)}`)처럼
+    // `*`만 accent 색으로 강조한다 — 순수 텍스트 접미사(별도 위젯/장식 없이 TextSpan
+    // 하나만 색을 달리함)로 충분하다는 지시에 따름.
+    return Text.rich(
+      TextSpan(
+        text: text,
+        style: baseStyle,
+        children: const [
+          TextSpan(text: ' *', style: TextStyle(color: AppColors.accent)),
+        ],
       ),
     );
   }
