@@ -4,14 +4,18 @@ import '../../app/theme/app_colors.dart';
 import '../../core/storage/deep_dive_info_store.dart';
 import '../birth_input/birth_info.dart';
 import 'deep_dive_info.dart';
+import 'deep_dive_readings.dart';
 import 'deep_dive_result_screen.dart';
 
 /// 관심사 입력 화면 — 상세 리포트의 "MBTI·관심사로 심층 분석 받기"에서 진입.
-/// 목업에는 없는 화면이라(1단계 신규 기능), 파스텔 큐트 톤에 맞춘 커스텀 칩(`_InterestChip`)으로
-/// 관심사를 다중 선택한다.
 /// **2026-07-07 변경(사용자 요청)**: MBTI 질문 자체는 birth_input_screen.dart로
 /// 옮겨졌다 — 이 화면에는 더 이상 체크박스가 없고, 그때 저장된 MBTI를 다시 묻지
 /// 않고 그대로 이어받아(`_mbti`) 관심사와 함께 저장만 한다.
+/// **2026-07-19 변경(목업 STEP 5 리팩터, `/grill-me` 합의)**: 실제 광고 SDK 연동
+/// 없이, 화면 상단에 목업(`.ad-gate-card`)과 같은 그라데이션 게이트 카드를 추가했다
+/// — "광고 보고 계속하기"를 탭하면(`_adWatched`) 그 아래 MBTI 확인 뱃지+관심사
+/// 선택+제출 버튼이 자연스럽게 나타나는 UI만 구현한다(실제 광고 시청/보상형 광고
+/// 연동은 별도 작업).
 class DeepDiveInputScreen extends StatefulWidget {
   const DeepDiveInputScreen({super.key, this.birthInfo});
 
@@ -25,6 +29,12 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
   // 관심사는 기본 전체 선택 — 먼저 다 보여주고 원하지 않는 것만 빼는 편이
   // 하나하나 골라 담는 것보다 진입 장벽이 낮다.
   Set<Interest> _interests = {...Interest.values};
+
+  /// 상단 광고 게이트 카드(`_AdGateCard`)의 "광고 보고 계속하기"를 탭했는지 여부.
+  /// 실제 광고 SDK 연동은 아직 없어 탭 즉시 true가 된다 — MBTI 확인 뱃지·관심사
+  /// 선택·제출 버튼은 전부 이 값이 true일 때만 보여, 광고 시청이 그 다음 단계를
+  /// 여는 자연스러운 흐름처럼 보이게 한다(2026-07-19).
+  bool _adWatched = false;
 
   // birth_input_screen.dart에서 이미 물어본 MBTI를 그대로 이어받아 저장할 때만
   // 쓴다 — 이 화면에서 새로 입력받거나 고칠 수 있는 값이 아니다.
@@ -131,65 +141,87 @@ class _DeepDiveInputScreenState extends State<DeepDiveInputScreen> {
     final birthInfo = widget.birthInfo ??
         (ModalRoute.of(context)?.settings.arguments as BirthInfo?) ??
         BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false);
+    final mbtiNickname = mbtiNicknameFor(_mbti?.code);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('조금 더 깊이 볼까요?')),
+      appBar: AppBar(title: const Text('더 자세히 알아보기')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
           children: [
-            // pastel_toggle_row.dart의 semanticLabel과 같은 이유(2026-07-13 발견) — 안내
-            // Text가 칩 Wrap 바로 앞에 있어도, 스크린 리더 사용자가 순서대로 읽지 않고
-            // (explore-by-touch 등) 칩으로 곧장 이동하면 이 안내를 놓칠 수 있다. 그룹의
-            // container Semantics 자체에는 excludeSemantics를 안 줘서 각 칩의
-            // selected/button 개별 상태는 그대로 유지한다 — 그룹 라벨과 개별 칩 상태를
-            // 둘 다 들려주기 위함(pastel_toggle_row.dart 82~89행과 동일한 방식).
-            Semantics(
-              container: true,
-              label: '관심 있는 영역 선택',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 안내 Text 자체는 액션이 없는 순수 라벨이라 excludeSemantics 없이 그냥
-                  // 두면 Flutter가 이 노드를 부모(그룹) 노드로 병합해버려, 위 그룹
-                  // label과 이 Text의 자동 라벨이 한 노드 안에 줄바꿈으로 이어 붙어
-                  // "관심 있는 영역 선택\n관심 있는 영역을 골라주세요"처럼 같은 안내를
-                  // 두 번 들려주게 된다(실측 확인) — 이 Text가 전달하려던 내용은 이미
-                  // 위 그룹 label에 담겨 있으므로 ExcludeSemantics로 중복 병합만 막는다.
-                  const ExcludeSemantics(
-                    child: Text(
-                      '관심 있는 영역을 골라주세요',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.inkSoft),
+            const Text(
+              '명식·오행 상세 풀이부터 관심사별 이야기까지, 짧은 광고 하나면 전부 확인할 수 있어요',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5, color: AppColors.inkSoft, height: 1.5),
+            ),
+            const SizedBox(height: 14),
+            _AdGateCard(watched: _adWatched, onWatch: _handleWatchAd),
+            if (_adWatched) ...[
+              const SizedBox(height: 14),
+              if (_mbti != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: _MbtiKnownChip(code: _mbti!.code, nickname: mbtiNickname),
+                ),
+              const SizedBox(height: 14),
+              // pastel_toggle_row.dart의 semanticLabel과 같은 이유(2026-07-13 발견) — 안내
+              // Text가 칩 Wrap 바로 앞에 있어도, 스크린 리더 사용자가 순서대로 읽지 않고
+              // (explore-by-touch 등) 칩으로 곧장 이동하면 이 안내를 놓칠 수 있다. 그룹의
+              // container Semantics 자체에는 excludeSemantics를 안 줘서 각 칩의
+              // selected/button 개별 상태는 그대로 유지한다 — 그룹 라벨과 개별 칩 상태를
+              // 둘 다 들려주기 위함(pastel_toggle_row.dart 82~89행과 동일한 방식).
+              Semantics(
+                container: true,
+                label: '관심 있는 영역 선택',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 안내 Text 자체는 액션이 없는 순수 라벨이라 excludeSemantics 없이 그냥
+                    // 두면 Flutter가 이 노드를 부모(그룹) 노드로 병합해버려, 위 그룹
+                    // label과 이 Text의 자동 라벨이 한 노드 안에 줄바꿈으로 이어 붙어
+                    // "관심 있는 영역 선택\n관심 있는 영역을 골라주세요"처럼 같은 안내를
+                    // 두 번 들려주게 된다(실측 확인) — 이 Text가 전달하려던 내용은 이미
+                    // 위 그룹 label에 담겨 있으므로 ExcludeSemantics로 중복 병합만 막는다.
+                    const ExcludeSemantics(
+                      child: Text(
+                        '무엇이 가장 궁금하세요? (하나 이상 선택)',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.inkSoft),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final interest in Interest.values)
-                        _InterestChip(
-                          interest: interest,
-                          selected: _interests.contains(interest),
-                          onTap: () => _toggleInterest(interest),
-                        ),
-                    ],
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final interest in Interest.values)
+                          _InterestChip(
+                            interest: interest,
+                            selected: _interests.contains(interest),
+                            onTap: () => _toggleInterest(interest),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => _saveAndContinue(context, birthInfo),
-                child: const Text('심층 분석 보기'),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _saveAndContinue(context, birthInfo),
+                  child: const Text('결과 보기'),
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  /// 상단 광고 게이트 카드의 "광고 보고 계속하기" 콜백. 실제 광고 SDK 연동은
+  /// 없어 탭 즉시 그 아래(MBTI 뱃지+관심사 선택+제출 버튼)가 드러난다.
+  void _handleWatchAd() {
+    setState(() => _adWatched = true);
   }
 }
 
@@ -240,6 +272,82 @@ class _InterestChip extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// 목업(`.ad-gate-card`)의 광고 시청 게이트 카드 — accentSoft→metalSoft 그라데이션
+/// 배경에 안내 문구+"광고 보고 계속하기" 버튼. 실제 광고 SDK 연동 전이라 [onWatch]는
+/// 탭 즉시 호출되고, [watched]가 true가 되면(부모의 `_adWatched`) 버튼 문구만
+/// "시청 완료"로 바뀌어 다시 눌러도 무해하다는 걸 보여준다.
+class _AdGateCard extends StatelessWidget {
+  const _AdGateCard({required this.watched, required this.onWatch});
+
+  final bool watched;
+  final VoidCallback onWatch;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [AppColors.accentSoft, AppColors.metalSoft],
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            '🎬 15초 광고 하나만 보면\n상세 리포트가 열려요',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.ink, height: 1.5),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.ink,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                padding: const EdgeInsets.symmetric(vertical: 13),
+              ),
+              onPressed: onWatch,
+              child: Text(watched ? '✅ 시청 완료' : '광고 보고 계속하기'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 목업(`.mbti-known-chip`)의 "✅ ENFP · 스파크 메이커" 확인 뱃지 — birth_input에서
+/// 이미 MBTI를 골라뒀을 때만(`_mbti` non-null) 표시한다. 별칭(`nickname`)이 없는
+/// 코드(알 수 없는 값)면 코드만 보여준다.
+class _MbtiKnownChip extends StatelessWidget {
+  const _MbtiKnownChip({required this.code, required this.nickname});
+
+  final String code;
+  final String? nickname;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = nickname != null ? '$code · $nickname' : code;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.bgCard,
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '✅ $label',
+        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11.5, color: AppColors.ink),
       ),
     );
   }
