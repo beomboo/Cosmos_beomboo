@@ -31,12 +31,21 @@ void main() {
 
   final birthInfo = BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false);
 
-  testWidgets('관심사 4개가 기본으로 전부 선택된 상태로 보인다', (tester) async {
+  /// 2026-07-19 광고 게이트 카드(`_AdGateCard`) 추가 이후, 그 아래 MBTI 확인
+  /// 뱃지·관심사 선택 칩·제출 버튼은 "광고 보고 계속하기"를 탭해야만 나타난다 —
+  /// 대부분의 상호작용 테스트가 공통으로 거쳐야 하는 준비 단계라 헬퍼로 뽑는다.
+  Future<void> tapAdGate(WidgetTester tester) async {
+    await tester.tap(find.text('광고 보고 계속하기'));
+    await tester.pump();
+  }
+
+  testWidgets('관심사 5개가 기본으로 전부 선택된 상태로 보인다', (tester) async {
     final semantics = tester.ensureSemantics();
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tapAdGate(tester);
 
-    for (final label in const ['💘 연애운', '💰 재물운', '💼 직장운', '🌱 건강운']) {
+    for (final label in const ['💘 연애운', '💼 직장운', '💰 재물운', '🌱 건강운', '🎭 성격']) {
       expect(
         tester.getSemantics(find.text(label)).flagsCollection.isSelected,
         Tristate.isTrue,
@@ -56,6 +65,7 @@ void main() {
     final semantics = tester.ensureSemantics();
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tapAdGate(tester);
 
     expect(
       find.bySemanticsLabel('관심 있는 영역 선택'),
@@ -65,7 +75,7 @@ void main() {
 
     // 그룹 라벨이 추가됐다고 해서 각 칩의 개별 selected/button 상태가 사라지면 안 된다
     // (excludeSemantics를 주면 안 되는 이유) — 기존 칩 상태 검증과 동일하게 확인한다.
-    for (final label in const ['💘 연애운', '💰 재물운', '💼 직장운', '🌱 건강운']) {
+    for (final label in const ['💘 연애운', '💼 직장운', '💰 재물운', '🌱 건강운', '🎭 성격']) {
       expect(
         tester.getSemantics(find.text(label)).flagsCollection.isSelected,
         Tristate.isTrue,
@@ -79,6 +89,7 @@ void main() {
     final semantics = tester.ensureSemantics();
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tapAdGate(tester);
 
     await tester.tap(find.text('💼 직장운'));
     await tester.pump();
@@ -99,8 +110,9 @@ void main() {
   testWidgets('MBTI를 미리 저장해두지 않고 제출하면 심층 분석 화면에 MBTI 코멘트가 없다', (tester) async {
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tapAdGate(tester);
 
-    await tester.tap(find.text('심층 분석 보기'));
+    await tester.tap(find.text('결과 보기'));
     await tester.pumpAndSettle();
 
     expect(find.byType(DeepDiveResultScreen), findsOneWidget);
@@ -118,8 +130,9 @@ void main() {
     // 다음 화면까지 이어지는지 메타 라인으로 확인한다.
     await useTallViewport(tester);
     await tester.pumpWidget(const MaterialApp(home: DeepDiveInputScreen()));
+    await tapAdGate(tester);
 
-    await tester.tap(find.text('심층 분석 보기'));
+    await tester.tap(find.text('결과 보기'));
     await tester.pumpAndSettle();
 
     // 2026-07-15: 심층 분석 결과 화면에 공유 카드(DeepDiveShareCard)가 추가되면서,
@@ -148,9 +161,10 @@ void main() {
         home: DeepDiveInputScreen(birthInfo: birthInfo),
       ),
     );
+    await tapAdGate(tester);
 
     final button =
-        tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '심층 분석 보기'));
+        tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '결과 보기'));
     button.onPressed!();
     button.onPressed!();
     await tester.pumpAndSettle();
@@ -176,17 +190,20 @@ void main() {
         home: DeepDiveInputScreen(birthInfo: birthInfo),
       ),
     );
+    await tapAdGate(tester);
 
-    await tester.tap(find.text('심층 분석 보기'));
+    await tester.tap(find.text('결과 보기'));
     await tester.pumpAndSettle();
     expect(pushedRoutes.length, 1);
 
     final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
     navigator.pop();
     await tester.pumpAndSettle();
-    expect(find.text('심층 분석 보기'), findsOneWidget);
+    // 화면 인스턴스가 스택에 그대로 남아있어(push, replace 아님) _adWatched도 계속
+    // true로 유지된다 — 게이트를 다시 탭할 필요 없이 곧바로 "결과 보기"가 보인다.
+    expect(find.text('결과 보기'), findsOneWidget);
 
-    await tester.tap(find.text('심층 분석 보기'));
+    await tester.tap(find.text('결과 보기'));
     await tester.pumpAndSettle();
 
     expect(pushedRoutes.length, 2);
@@ -209,10 +226,12 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
     await tester.pumpAndSettle();
 
-    // 이 화면 자체에는 MBTI 관련 텍스트가 전혀 없다(체크박스·토글 모두 삭제됨).
+    // 이 화면 자체에는 MBTI 관련 텍스트가 전혀 없다(체크박스·토글 모두 삭제됨,
+    // MBTI 확인 뱃지는 코드+별칭만 보여줄 뿐 "MBTI"라는 글자를 쓰지 않는다).
     expect(find.textContaining('MBTI'), findsNothing);
 
-    await tester.tap(find.text('심층 분석 보기'));
+    await tapAdGate(tester);
+    await tester.tap(find.text('결과 보기'));
     await tester.pumpAndSettle();
 
     // 위 테스트와 같은 이유(2026-07-15, 공유 카드 추가로 화면 밖에 같은 텍스트가 하나
@@ -232,6 +251,7 @@ void main() {
     final semantics = tester.ensureSemantics();
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tapAdGate(tester);
 
     await tester.tap(find.text('💼 직장운'));
     await tester.pump();
@@ -263,6 +283,7 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
     await tester.pumpAndSettle();
+    await tapAdGate(tester);
 
     // 저장된 관심사(건강운)만 선택돼 있고, 나머지는 꺼져 있어야 한다.
     expect(
@@ -302,6 +323,9 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
     await tester.pump();
+    // 광고 게이트는 로드 완료 여부와 무관한 독립 상태라, 로드가 막혀 있어도 먼저
+    // 탭해 관심사 UI를 드러낼 수 있다.
+    await tapAdGate(tester);
     // 로드가 아직 loadGate에 막혀 안 끝난 시점 — 기본값(전체 선택)이 보여야 한다.
     expect(
       tester.getSemantics(find.text('💰 재물운')).flagsCollection.isSelected,
@@ -356,10 +380,12 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
     await tester.pump();
+    // 광고 게이트를 먼저 탭해야 제출 버튼이 드러난다(로드 완료 여부와는 무관).
+    await tapAdGate(tester);
 
     // 로드가 아직 loadGate에 막혀 안 끝난 시점에 곧바로 제출 버튼을 누른다.
     final button =
-        tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '심층 분석 보기'));
+        tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '결과 보기'));
     button.onPressed!();
     await tester.pump();
 
@@ -394,13 +420,14 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
     await tester.pumpAndSettle();
+    await tapAdGate(tester);
 
     // 로드 실패는 조용히 흡수돼 기본값(전체 선택)이 그대로 유지돼야 한다.
-    for (final label in const ['💘 연애운', '💰 재물운', '💼 직장운', '🌱 건강운']) {
+    for (final label in const ['💘 연애운', '💼 직장운', '💰 재물운', '🌱 건강운', '🎭 성격']) {
       expect(find.text(label), findsOneWidget);
     }
 
-    await tester.tap(find.text('심층 분석 보기'));
+    await tester.tap(find.text('결과 보기'));
     await tester.pumpAndSettle();
 
     // 로드 실패든 아니든 제출 자체는 정상적으로 결과 화면까지 이어져야 하고, 테스트
@@ -439,11 +466,13 @@ void main() {
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
     await tester.pump();
+    // 광고 게이트를 먼저 탭해야 제출 버튼이 드러난다(로드 완료 여부와는 무관).
+    await tapAdGate(tester);
 
     // 로드가 아직 안 끝난 시점에 제출을 누른다 — _saveAndContinue가 _loadFuture를
     // 기다리기 시작한다.
     final button =
-        tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '심층 분석 보기'));
+        tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, '결과 보기'));
     button.onPressed!();
     await tester.pump();
 
@@ -469,16 +498,19 @@ void main() {
   testWidgets('제출하면 선택한 관심사·MBTI가 저장되어 다음에 열 때 이어서 보인다', (tester) async {
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tapAdGate(tester);
 
-    // 기본 전체 선택에서 재물운만 남기고 나머지 셋을 끈다.
+    // 기본 전체 선택(연애·직장·재물·건강·성격)에서 재물운만 남기고 나머지 넷을 끈다.
     await tester.tap(find.text('💘 연애운'));
     await tester.pump();
     await tester.tap(find.text('💼 직장운'));
     await tester.pump();
     await tester.tap(find.text('🌱 건강운'));
     await tester.pump();
+    await tester.tap(find.text('🎭 성격'));
+    await tester.pump();
 
-    await tester.tap(find.text('심층 분석 보기'));
+    await tester.tap(find.text('결과 보기'));
     await tester.pumpAndSettle();
 
     final saved = await DeepDiveInfoStore.load();
@@ -487,11 +519,11 @@ void main() {
     expect(saved.mbti, isNull);
   });
 
-  testWidgets('관심사 4개를 전부 해제하고 제출해도(빈 Set) 다음에 열 때 다시 전체 선택으로 되돌아가지 않는다',
+  testWidgets('관심사 5개를 전부 해제하고 제출해도(빈 Set) 다음에 열 때 다시 전체 선택으로 되돌아가지 않는다',
       (tester) async {
     // deep_dive_info_store_test.dart에는 "관심사를 전부 꺼서 저장해도(빈 Set) — 첫
     // 방문(null)과 구분된다"는 저장소 단위 테스트가 이미 있지만, 그건 DeepDiveInfoStore를
-    // 직접 호출한 것이었을 뿐 실제 화면에서 사용자가 칩 4개를 전부 탭으로 꺼서 제출하는
+    // 직접 호출한 것이었을 뿐 실제 화면에서 사용자가 칩 5개를 전부 탭으로 꺼서 제출하는
     // 경로로는 한 번도 검증된 적이 없었다 — 위 테스트("제출하면 선택한 관심사·MBTI가
     // 저장되어...")도 재물운 하나는 남겨둔 채라 이 "전부 해제" 경계값을 화면 단으로는
     // 못 잡는다. 화면을 새로 열었을 때 _loadSaved()가 "저장된 적 없음(null)"과
@@ -499,13 +531,14 @@ void main() {
     final semantics = tester.ensureSemantics();
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tapAdGate(tester);
 
-    for (final label in ['💘 연애운', '💰 재물운', '💼 직장운', '🌱 건강운']) {
+    for (final label in ['💘 연애운', '💼 직장운', '💰 재물운', '🌱 건강운', '🎭 성격']) {
       await tester.tap(find.text(label));
       await tester.pump();
     }
 
-    await tester.tap(find.text('심층 분석 보기'));
+    await tester.tap(find.text('결과 보기'));
     await tester.pumpAndSettle();
 
     // 결과 화면에는 관심사를 하나도 안 고른 경우의 안내 문구가 보여야 한다.
@@ -524,8 +557,9 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
     await tester.pumpAndSettle();
+    await tapAdGate(tester);
 
-    for (final label in ['💘 연애운', '💰 재물운', '💼 직장운', '🌱 건강운']) {
+    for (final label in ['💘 연애운', '💼 직장운', '💰 재물운', '🌱 건강운', '🎭 성격']) {
       expect(
         tester.getSemantics(find.text(label)).flagsCollection.isSelected,
         Tristate.isFalse,
@@ -547,6 +581,7 @@ void main() {
     final semantics = tester.ensureSemantics();
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tapAdGate(tester);
 
     final node = tester.getSemantics(find.text('💼 직장운'));
     expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
@@ -568,6 +603,9 @@ void main() {
     // 높이+큰 글자 조합 RenderFlex overflow가 이 화면에도 있는지 지금까지 확인한
     // 적이 없었다 — 관심사 칩은 Wrap(내용에 맞춰 줄바꿈), MBTI 토글은 PastelToggleRow
     // (고정 높이 없음)라 실제로는 재현되지 않음을 확인(코드 변경 없이 회귀 방지용으로 고정).
+    // 광고 게이트 카드까지 게이트를 탭해 펼친 상태(MBTI 뱃지+관심사 5종+제출 버튼)로
+    // 확장해 확인한다 — 게이트 이전 상태만 보고 넘어가면 새로 추가된 위젯들의
+    // overflow는 검증하지 못한다.
     await useTallViewport(tester);
     await tester.pumpWidget(
       MediaQuery(
@@ -576,6 +614,7 @@ void main() {
       ),
     );
     await tester.pump();
+    await tapAdGate(tester);
 
     expect(tester.takeException(), isNull);
   });
@@ -588,6 +627,7 @@ void main() {
     // 두 위젯이 각자 같은 로직을 중복 구현하면서 한쪽만 값이 잠겨있던 비대칭 공백.
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tapAdGate(tester);
 
     // 기본으로 전체 선택 상태이니 하나만 꺼서 선택/비선택 대조군을 만든다.
     await tester.tap(find.text('💼 직장운'));
@@ -617,6 +657,7 @@ void main() {
     // 지금까지 검증한 적이 없었다.
     await useTallViewport(tester);
     await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+    await tapAdGate(tester);
 
     final node = tester.getSemantics(find.text('💘 연애운'));
     expect(node.label, '연애운');
@@ -632,6 +673,102 @@ void main() {
 
     final listView = tester.widget<ListView>(find.byType(ListView));
     expect(listView.padding, const EdgeInsets.fromLTRB(20, 14, 20, 18));
+  });
+
+  group('2026-07-19 광고 게이트 카드(W6)', () {
+    testWidgets('광고 게이트를 탭하기 전에는 관심사 선택 UI와 제출 버튼이 보이지 않는다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+
+      // 게이트 카드 자체는 처음부터 보여야 한다.
+      expect(find.text('광고 보고 계속하기'), findsOneWidget);
+      // 관심사 칩·안내 문구·제출 버튼은 게이트를 탭하기 전엔 트리에 아예 없다.
+      for (final label in const ['💘 연애운', '💼 직장운', '💰 재물운', '🌱 건강운', '🎭 성격']) {
+        expect(find.text(label), findsNothing);
+      }
+      expect(find.text('무엇이 가장 궁금하세요? (하나 이상 선택)'), findsNothing);
+      expect(find.text('결과 보기'), findsNothing);
+    });
+
+    testWidgets('광고 게이트를 탭하면 관심사 선택 UI와 제출 버튼이 나타난다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+
+      await tester.tap(find.text('광고 보고 계속하기'));
+      await tester.pump();
+
+      // 게이트 버튼 문구도 "시청 완료"로 바뀐다.
+      expect(find.text('✅ 시청 완료'), findsOneWidget);
+      expect(find.text('무엇이 가장 궁금하세요? (하나 이상 선택)'), findsOneWidget);
+      for (final label in const ['💘 연애운', '💼 직장운', '💰 재물운', '🌱 건강운', '🎭 성격']) {
+        expect(find.text(label), findsOneWidget);
+      }
+      expect(find.text('결과 보기'), findsOneWidget);
+    });
+
+    testWidgets('birth_input에서 MBTI를 미리 골라뒀으면 게이트를 탭한 뒤 코드+별칭 확인 뱃지가 보인다',
+        (tester) async {
+      await DeepDiveInfoStore.save(
+        const DeepDiveInfo(
+          mbti: Mbti(ei: MbtiEi.i, sn: MbtiSn.n, tf: MbtiTf.t, jp: MbtiJp.j),
+          interests: {...Interest.values},
+        ),
+      );
+
+      await useTallViewport(tester);
+      await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+      await tester.pumpAndSettle();
+      await tapAdGate(tester);
+
+      expect(find.text('✅ INTJ · 전략가'), findsOneWidget);
+    });
+
+    testWidgets('MBTI가 저장돼 있지 않으면 게이트를 탭해도 MBTI 확인 뱃지가 전혀 보이지 않는다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+      await tapAdGate(tester);
+
+      // MBTI 확인 뱃지는 "코드 · 별칭" 형식이라 '·' 구분자를 포함하는 텍스트로
+      // 식별한다("✅"만으로는 게이트 카드의 "✅ 시청 완료"와 구분이 안 된다).
+      expect(find.textContaining(' · '), findsNothing);
+    });
+
+    testWidgets('"성격" 관심사 칩을 선택해 제출하면 DeepDiveInfo.interests에 personality가 포함된다',
+        (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+      await tapAdGate(tester);
+
+      // 기본 전체 선택에서 성격만 남기고 나머지 넷을 끈다.
+      for (final label in const ['💘 연애운', '💼 직장운', '💰 재물운', '🌱 건강운']) {
+        await tester.tap(find.text(label));
+        await tester.pump();
+      }
+      expect(
+        tester.getSemantics(find.text('🎭 성격')).flagsCollection.isSelected,
+        Tristate.isTrue,
+      );
+
+      await tester.tap(find.text('결과 보기'));
+      await tester.pumpAndSettle();
+
+      final saved = await DeepDiveInfoStore.load();
+      expect(saved, isNotNull);
+      expect(saved!.interests, {Interest.personality});
+    });
+
+    testWidgets('관심사 5개가 목업 순서(연애·직장·재물·건강·성격)대로 노출된다', (tester) async {
+      await useTallViewport(tester);
+      await tester.pumpWidget(MaterialApp(home: DeepDiveInputScreen(birthInfo: birthInfo)));
+      await tapAdGate(tester);
+
+      final wrap = tester.widget<Wrap>(find.byType(Wrap));
+      final labels = [
+        for (final child in wrap.children)
+          (tester.widget<Text>(find.descendant(of: find.byWidget(child), matching: find.byType(Text))).data),
+      ];
+      expect(labels, ['💘 연애운', '💼 직장운', '💰 재물운', '🌱 건강운', '🎭 성격']);
+    });
   });
 }
 

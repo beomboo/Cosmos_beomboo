@@ -261,11 +261,16 @@ void main() {
 
       await tester.tap(find.text('MBTI·관심사로 심층 분석 받기 →'));
       await tester.pumpAndSettle();
-      expect(find.text('조금 더 깊이 볼까요?'), findsOneWidget);
+      expect(find.text('더 자세히 알아보기'), findsOneWidget);
+
+      // **2026-07-19 W6 리팩터**: 관심사 선택·제출 버튼은 상단 광고 게이트 카드의
+      // "광고 보고 계속하기"를 탭해야 나타난다.
+      await tester.tap(find.text('광고 보고 계속하기'));
+      await tester.pump();
 
       // 관심사는 기본 전체 선택, MBTI는 birth_input에서 입력하지 않았으니(테스트가
       // BirthInfoStore를 직접 넘겨 시작해 birth_input 자체를 거치지 않음) 그대로 제출한다.
-      await tester.tap(find.text('심층 분석 보기'));
+      await tester.tap(find.text('결과 보기'));
       await tester.pumpAndSettle();
 
       // 2026-07-15: 심층 분석 결과 화면에 공유 카드(DeepDiveShareCard)가 추가되면서,
@@ -278,7 +283,7 @@ void main() {
           findTextContainingInScrollView('deepDiveResultScrollView', text);
 
       expect(findInDeepDiveResult('회원님의 심층 분석 ✨'), findsOneWidget);
-      // 관심사 4개(연애·재물·직장·건강) 전부 우세 오행(금) 기준 풀이가 실제로 보인다.
+      // 관심사 5개(연애·직장·재물·건강·성격) 전부 우세 오행(금) 기준 풀이가 실제로 보인다.
       // 1998-08-15/14시 조합의 2순위 오행은 '목'(개수 2) — four_pillars_test.dart의
       // 분포({목:2,화:0,토:2,금:3,수:1})에서 금을 뺀 나머지 중 목화토금수 순서상
       // 목(2)이 토(2)와 동률이어도 먼저 나온다.
@@ -333,10 +338,20 @@ void main() {
 
       await tester.tap(find.text('MBTI·관심사로 심층 분석 받기 →'));
       await tester.pumpAndSettle();
-      // 심층 분석 입력 화면 자체에는 MBTI 관련 UI가 전혀 없다(이미 birth_input에서 받음).
+      // 심층 분석 입력 화면 자체에는 MBTI 관련 UI가 전혀 없다(이미 birth_input에서 받음,
+      // MBTI 확인 뱃지는 코드+별칭만 보여줄 뿐 "MBTI"라는 글자를 쓰지 않는다).
       expect(find.textContaining('MBTI'), findsNothing);
 
-      await tester.tap(find.text('심층 분석 보기'));
+      // **2026-07-19 W6 리팩터**: 관심사 선택·제출 버튼은 상단 광고 게이트 카드의
+      // "광고 보고 계속하기"를 탭해야 나타난다.
+      await tester.tap(find.text('광고 보고 계속하기'));
+      await tester.pump();
+
+      // birth_input에서 골라둔 MBTI(기본 E·S·T·J에서 I·N만 바꿔 INTJ)가
+      // 코드+별칭 확인 뱃지로 보여야 한다.
+      expect(find.textContaining('INTJ'), findsOneWidget);
+
+      await tester.tap(find.text('결과 보기'));
       await tester.pumpAndSettle();
 
       // 기본값(E·S·T·J)에서 I·N만 바꿨으니 "INTJ"로 반영돼야 한다. 위 테스트와 같은
