@@ -3,10 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 
+import 'package:cosmos_saju/app/router.dart';
 import 'package:cosmos_saju/app/theme/app_colors.dart';
 import 'package:cosmos_saju/core/saju/ganzhi.dart';
 import 'package:cosmos_saju/features/birth_input/birth_info.dart';
 import 'package:cosmos_saju/features/birth_input/birth_input_screen.dart';
+import 'package:cosmos_saju/features/report/report_screen.dart';
 import 'package:cosmos_saju/features/result/result_screen.dart';
 import 'package:cosmos_saju/shared/widgets/pastel_card.dart';
 
@@ -134,7 +136,8 @@ void main() {
       ),
     );
 
-    expect(findInBody('회원님의 사주팔자 ✨'), findsOneWidget);
+    // 목업 STEP 4 리팩터(2026-07-19)로 개인화 제목 대신 고정 문구 "내 사주결과"를 쓴다.
+    expect(findInBody('내 사주결과'), findsOneWidget);
     expect(findInBody('년주'), findsOneWidget);
     expect(findInBody('월주'), findsOneWidget);
     expect(findInBody('일주'), findsOneWidget);
@@ -160,7 +163,7 @@ void main() {
       ),
     );
 
-    final titleText = tester.widget<Text>(findInBody('회원님의 사주팔자 ✨'));
+    final titleText = tester.widget<Text>(findInBody('내 사주결과'));
     expect(titleText.style!.fontSize, 15.5, reason: '헤더 타이틀 fontSize');
     expect(titleText.style!.fontWeight, FontWeight.w800, reason: '헤더 타이틀 fontWeight');
 
@@ -405,22 +408,22 @@ void main() {
     );
   });
 
-  testWidgets('우세 오행(dominant) 선정과 그에 맞는 콜아웃·카테고리 풀이가 실제로 정확하다',
+  testWidgets('우세 오행(dominant) 선정과 그에 맞는 콜아웃이 실제로 정확하다',
       (WidgetTester tester) async {
-    // 결과 화면에서 어떤 오행이 "우세하다"고 뽑혀서 콜아웃 문구·카테고리 풀이(연애·재물·
-    // 건강·성격) 4장을 결정하는지는 사용자가 실제로 읽는 핵심 콘텐츠인데, 이 선택 로직
-    // (result_screen.dart의 `ohaengCount.entries.reduce((a,b) => a.value >= b.value ? a : b)`)
-    // 자체는 지금까지 어디서도 실제 값으로 검증된 적이 없었다(share_text/share_card
-    // 테스트는 dominant를 '목'으로 그냥 하드코딩해서 넘겼을 뿐, 이 reduce 로직을 거치지
-    // 않았음). 1998-08-15 14시의 분포 {목:2,화:0,토:2,금:3,수:1}는 금이 유일한 최댓값이라
-    // (목·토는 동률 2로 서로 안 밀리는 것까지 포함해) 최종적으로 금이 선택돼야 한다.
+    // 결과 화면에서 어떤 오행이 "우세하다"고 뽑혀서 콜아웃 문구를 결정하는지는 사용자가
+    // 실제로 읽는 핵심 콘텐츠인데, 이 선택 로직(result_screen.dart의
+    // `ohaengCount.entries.reduce((a,b) => a.value >= b.value ? a : b)`) 자체는 지금까지
+    // 어디서도 실제 값으로 검증된 적이 없었다(share_text/share_card 테스트는 dominant를
+    // '목'으로 그냥 하드코딩해서 넘겼을 뿐, 이 reduce 로직을 거치지 않았음). 1998-08-15
+    // 14시의 분포 {목:2,화:0,토:2,금:3,수:1}는 금이 유일한 최댓값이라(목·토는 동률 2로
+    // 서로 안 밀리는 것까지 포함해) 최종적으로 금이 선택돼야 한다.
     // **2026-07-13 변경**: 우세 오행(금) 단독이 아니라 2순위 오행(목, 개수 2)까지 반영한
-    // 콤보 콜아웃·카테고리 접미사(dominantComboCallout/categoryReadingsForCombo, 금극목
-    // 관계)로 문구가 바뀌었다. 접미사가 늘어난 만큼(밸런스 서술 문단도 새로 추가됨) 카테고리
-    // 카드가 기본 뷰포트(800x600) 아래로 밀려 ListView가 지연 빌드해버려 못 찾는 걸
-    // 실측으로 확인했다 — 뷰포트를 세로로 키운다.
-    await useTallViewport(tester);
-
+    // 콤보 콜아웃(dominantComboCallout, 금극목 관계)으로 문구가 바뀌었다.
+    // **2026-07-19 W4 리팩터**: 카테고리 카드 4개(연애·재물·건강·성격) 그리드가 이 화면에서
+    // 빠지면서 categoryReadingsForCombo 검증은 더 이상 이 화면 테스트의 관심사가 아니다
+    // (그 함수 자체는 ohaeng_readings_test.dart가 계속 값으로 고정해둔다) — 이 테스트는
+    // 콜아웃 문구·색상 검증만 남긴다.
+    // **2026-07-19 W5 문구 확장**으로 콜아웃 문구 자체도 한두 문장씩 더 상세해졌다.
     await tester.pumpWidget(
       MaterialApp(
         onGenerateRoute: (settings) => MaterialPageRoute(
@@ -434,32 +437,9 @@ void main() {
     );
 
     const calloutText = '금(金) 기운이 강한 타입이에요 ✨\n'
-        '금 기운이 목 기운을 정리해줘서 벌여둔 일을 야무지게 마무리 짓는 힘이 있어요';
+        '가지치기로 정원을 정리하듯, 금 기운이 목 기운을 다듬어줘서 여기저기 벌여둔 일을 끝까지 야무지게 마무리 짓는 '
+        '힘이 있는 편이에요. 시작하는 추진력에 마무리하는 뒷심까지 더해지니, 일 잘한다는 소리를 자주 듣는 타입이에요';
     expect(findInBody(calloutText), findsOneWidget);
-    expect(
-      findInBody(
-        '눈이 높은 편이라 확실한 상대를 알아보는 시기예요. 목 기운을 잘 다스리는 편이라 중심을 잃지 않아요',
-      ),
-      findsOneWidget,
-    ); // 금 연애운 + 금극목 접미사
-    expect(
-      findInBody(
-        '계획적으로 관리하면 돈이 잘 모이는 편이에요. 목 기운을 잘 다스리는 편이라 중심을 잃지 않아요',
-      ),
-      findsOneWidget,
-    ); // 금 재물운 + 접미사
-    expect(
-      findInBody(
-        '호흡기·피부 컨디션을 신경 쓰면 좋아요. 목 기운을 잘 다스리는 편이라 중심을 잃지 않아요',
-      ),
-      findsOneWidget,
-    ); // 금 건강운 + 접미사
-    expect(
-      findInBody(
-        '원칙적이고 맺고 끊음이 확실한 타입이에요. 목 기운을 잘 다스리는 편이라 중심을 잃지 않아요',
-      ),
-      findsOneWidget,
-    ); // 금 성격 + 접미사
 
     // 2026-07-06에 콜아웃 박스가 우세 오행 색(ohaengSoftColors[dominant])으로 물들도록
     // 고쳤는데, 그 뒤로도 실제 배경색 값 자체를 확인한 테스트는 없었다 — 텍스트 내용만
@@ -493,8 +473,10 @@ void main() {
     );
 
     // 1998-08-15 14시 → 우세 오행 '금'(2순위 '목', 금극목 관계) 콜아웃 문구.
+    // 2026-07-19 W5 문구 확장(02b9441)으로 실제 값이 늘어났다.
     const calloutText = '금(金) 기운이 강한 타입이에요 ✨\n'
-        '금 기운이 목 기운을 정리해줘서 벌여둔 일을 야무지게 마무리 짓는 힘이 있어요';
+        '가지치기로 정원을 정리하듯, 금 기운이 목 기운을 다듬어줘서 여기저기 벌여둔 일을 끝까지 야무지게 마무리 짓는 '
+        '힘이 있는 편이에요. 시작하는 추진력에 마무리하는 뒷심까지 더해지니, 일 잘한다는 소리를 자주 듣는 타입이에요';
 
     final calloutContainer = tester.widget<Container>(
       find.ancestor(
@@ -509,36 +491,6 @@ void main() {
     expect(calloutTextStyle.height, 1.55);
   });
 
-  testWidgets('카테고리 카드(연애·재물·건강·성격) 아이콘·제목 글자 크기가 목업 값(15px/11px)과 일치한다',
-      (WidgetTester tester) async {
-    // 2026-07-15 목업(.cat-card) 정밀 대조 수정: 아이콘 fontSize 20→15, 제목에 fontSize
-    // 11 신규 명시 — 카드 시맨틱스(제목+설명 병합 문구)는 이미 검증돼 있었지만 정작
-    // 시각적 글자 크기 자체는 한 번도 값으로 확인된 적이 없었다.
-    // 접미사·밸런스 서술 문단이 늘어난 만큼 카드가 기본 뷰포트(800x600) 아래로 밀려
-    // ListView가 지연 빌드해버리는 걸 다른 카테고리 카드 테스트에서와 같은 이유로
-    // 뷰포트를 세로로 키운다.
-    await useTallViewport(tester);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        onGenerateRoute: (settings) => MaterialPageRoute(
-          builder: (_) => const ResultScreen(),
-          settings: RouteSettings(
-            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
-          ),
-        ),
-        initialRoute: '/',
-      ),
-    );
-
-    // 1998-08-15 14시 → 우세 오행 '금'의 연애운 카드는 아이콘 '💘', 제목 '연애운'.
-    final iconText = tester.widget<Text>(findInBody('💘'));
-    expect(iconText.style!.fontSize, 15);
-
-    final titleText = tester.widget<Text>(findInBody('연애운'));
-    expect(titleText.style!.fontSize, 11);
-  });
-
   testWidgets('우세 오행 콜아웃 문구가 나머지 4개 오행(목·화·토·수)에서도 실제 값과 정확히 일치한다',
       (WidgetTester tester) async {
     // 위 테스트는 '금'(+2순위 목)만 확인했다 — 콤보 콜아웃(`dominantComboCallout`)은
@@ -550,31 +502,40 @@ void main() {
     // 오행끼리 문구가 뒤바뀌어도 자동으로 잡힌다. 실제 우세/2순위 오행 조합이 되는
     // 생년월일을 미리 찾아(core/saju/four_pillars_test.dart 분포 계산과 같은 방식)
     // 각각 pumpWidget한다.
+    // 2026-07-19 W5 문구 확장(02b9441)으로 콤보 콜아웃 설명 자체가 한두 문장씩 더
+    // 상세해졌다 — 기대값도 ohaeng_readings.dart의 실제 문구 그대로 갱신한다.
     const fixtures = {
       // (생년월일, dominant 한자, 이모지, 콤보 콜아웃 설명) — 2순위 오행·관계는 주석 참고.
       '목': (
         '1980-02-18',
         '木',
         '🌿',
-        '금 기운이 앞서가려는 마음에 살짝 브레이크를 걸어줘요. 그 덕에 무모한 결정은 줄어드는 편이에요',
+        '가지치기하는 손길처럼, 금 기운이 앞서가려는 마음에 살짝 브레이크를 걸어줘요. 덕분에 다듬어지지 않은 채 '
+            '무모하게 밀어붙이는 결정은 줄어들고, 뻗어나가는 힘은 그대로 유지하면서도 방향은 훨씬 정교해지는 편이에요',
       ), // dominant=목, sub=금(3, 금극목)
       '화': (
         '1980-01-15',
         '火',
         '🔥',
-        '화 기운이 토 기운을 데워줘서 열정이 안정적인 결과로 차곡차곡 쌓여가요',
+        '햇볕이 땅을 따뜻하게 데워 씨앗을 틔우듯, 화 기운이 토 기운을 데워줘서 넘치는 열정이 그때그때 사라지지 않고 '
+            '안정적인 결과로 차곡차곡 쌓여가는 편이에요. 뜨겁게 타오르면서도 발은 땅에 딱 붙이고 있는, 실속 있는 '
+            '열정파예요',
       ), // dominant=화, sub=토(4, 화생토)
       '토': (
         '1980-01-01',
         '土',
         '🪵',
-        '목 기운이 토 기운을 흔들어서 안정만 좇던 마음에 새로운 자극이 생겨요. 변화가 나쁘지만은 않아요',
+        '단단한 땅을 뚫고 새순이 돋아나듯, 목 기운이 안정만 좇던 토 기운을 흔들어서 마음에 새로운 자극과 호기심이 '
+            '생기는 편이에요. 변화가 낯설게 느껴질 수 있지만, 막상 겪어보면 그 변화가 오히려 더 단단한 안정으로 '
+            '이어지는 계기가 되곤 해요',
       ), // dominant=토, sub=목(1, 목극토)
       '수': (
         '1980-06-01',
         '水',
         '💧',
-        '금 기운이 원천이 되어줘서 유연함 속에 단단한 원칙까지 갖추게 돼요',
+        '바위틈에서 맑은 샘물이 솟아나듯, 금 기운이 원천이 되어줘서 유연하게 흘러가는 성격 속에 단단한 원칙까지 '
+            '함께 갖추게 되는 편이에요. 눈치 빠르게 상황에 맞춰가면서도 지킬 건 확실히 지키는, 균형 잡힌 '
+            '지략가 타입이에요',
       ), // dominant=수, sub=금(2, 금생수)
     };
 
@@ -987,17 +948,16 @@ void main() {
   });
 
   testWidgets(
-      '"오행 밸런스"/"오늘 궁금한 것부터" 소제목이 목업 eyebrow 라벨 톤(fontSize 11/inkSoft/letterSpacing 0.22)으로 렌더링된다',
+      '"오행 밸런스" 소제목이 목업 eyebrow 라벨 톤(fontSize 11/inkSoft/letterSpacing 0.22)으로 렌더링된다',
       (WidgetTester tester) async {
-    // 2026-07-15 목업(.bars h3/.cards h3) 정밀 대조 수정: 두 소제목이 본문 헤드라인만큼
-    // 진한 fontSize 15/AppColors.ink였던 걸 목업 스펙인 fontSize 11/AppColors.inkSoft로
-    // 바꿨다 — 이 값 자체를 확인하는 테스트가 지금까지 없었다. "오늘 궁금한 것부터"는
-    // 화면 아래쪽이라 기본 뷰포트로는 지연 빌드돼 못 찾으므로 뷰포트를 세로로 키운다.
-    // 2026-07-16 오버나이트 대조 추가 수정: 목업(`.bars h3`/`.cards h3`)의
-    // letter-spacing:.02em(≈0.22px)이 빠져 있던 것도 새로 확인한다 — fontSize/color만
-    // 확인하던 기존 테스트로는 letterSpacing 누락(또는 회귀)을 잡을 수 없었다.
-    await useTallViewport(tester);
-
+    // 2026-07-15 목업(.bars h3) 정밀 대조 수정: 소제목이 본문 헤드라인만큼 진한
+    // fontSize 15/AppColors.ink였던 걸 목업 스펙인 fontSize 11/AppColors.inkSoft로
+    // 바꿨다 — 이 값 자체를 확인하는 테스트가 지금까지 없었다.
+    // 2026-07-16 오버나이트 대조 추가 수정: 목업(`.bars h3`)의 letter-spacing:.02em
+    // (≈0.22px)이 빠져 있던 것도 새로 확인한다 — fontSize/color만 확인하던 기존
+    // 테스트로는 letterSpacing 누락(또는 회귀)을 잡을 수 없었다.
+    // **2026-07-19 W4 리팩터**로 "오늘 궁금한 것부터" 소제목(카테고리 카드 그리드와 함께)이
+    // 이 화면에서 완전히 제거돼, 이 테스트도 "오행 밸런스" 소제목만 남겨 갱신했다.
     await tester.pumpWidget(
       MaterialApp(
         onGenerateRoute: (settings) => MaterialPageRoute(
@@ -1014,11 +974,6 @@ void main() {
     expect(balanceTitle.style!.fontSize, 11, reason: '오행 밸런스 소제목 fontSize');
     expect(balanceTitle.style!.color, AppColors.inkSoft, reason: '오행 밸런스 소제목 color');
     expect(balanceTitle.style!.letterSpacing, 0.22, reason: '오행 밸런스 소제목 letterSpacing');
-
-    final cardsTitle = tester.widget<Text>(findInBody('오늘 궁금한 것부터'));
-    expect(cardsTitle.style!.fontSize, 11, reason: '오늘 궁금한 것부터 소제목 fontSize');
-    expect(cardsTitle.style!.color, AppColors.inkSoft, reason: '오늘 궁금한 것부터 소제목 color');
-    expect(cardsTitle.style!.letterSpacing, 0.22, reason: '오늘 궁금한 것부터 소제목 letterSpacing');
   });
 
   testWidgets('화면 밖 공유용 카드는 위젯 트리에는 남아있지만 스크린 리더 시맨틱스에서는 제외된다',
@@ -1049,42 +1004,12 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('카테고리 카드(연애·재물·건강·성격)도 스크린 리더에 "제목. 설명"으로 병합된 시맨틱스를 제공한다',
-      (WidgetTester tester) async {
-    // _CategoryCard는 _PillarCard와 같은 파일에 있지만 지금까지 병합 시맨틱스가
-    // 없었다(2026-07-07 발견) — 아이콘·제목·설명이 각각 별도 Text라 스크린 리더가
-    // 세 번 나눠 읽었고, 장식용 이모지까지 유니코드 이름으로 읽어 혼란스러웠다.
-    // 1998-08-15/14시 생일의 우세 오행은 '금'(2순위 '목', 금극목 관계)이라
-    // categoryReadingsForCombo('금', '목', subCount: 2)의 첫 항목("연애운. 눈이 높은...
-    // + 접미사")으로 병합됐는지 확인한다.
-    // 접미사·밸런스 서술 문단이 늘어난 만큼 카드가 기본 뷰포트(800x600) 아래로 밀려
-    // ListView가 지연 빌드해버리는 걸 실측으로 확인했다 — 뷰포트를 세로로 키운다.
-    await useTallViewport(tester);
-
-    final semantics = tester.ensureSemantics();
-
-    await tester.pumpWidget(
-      MaterialApp(
-        onGenerateRoute: (settings) => MaterialPageRoute(
-          builder: (_) => const ResultScreen(),
-          settings: RouteSettings(
-            arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
-          ),
-        ),
-        initialRoute: '/',
-      ),
-    );
-
-    expect(
-      tester.getSemantics(findInBody('연애운')),
-      matchesSemantics(
-        label: '연애운. 눈이 높은 편이라 확실한 상대를 알아보는 시기예요. '
-            '목 기운을 잘 다스리는 편이라 중심을 잃지 않아요',
-      ),
-    );
-
-    semantics.dispose();
-  });
+  // "카테고리 카드(연애·재물·건강·성격)도 스크린 리더에 '제목. 설명'으로 병합된 시맨틱스를
+  // 제공한다" 테스트는 목업 STEP 4 리팩터(2026-07-19)로 _CategoryCard 위젯 자체가 이
+  // 화면에서 완전히 제거되면서 함께 삭제했다 — 더 이상 존재하지 않는 위젯의 시맨틱스를
+  // 검증할 수 없다(categoryReadingsForCombo 함수 자체의 병합 로직은
+  // ohaeng_readings_test.dart가 계속 값으로 검증한다). 카드 자체가 화면에 없다는 것은
+  // 아래 "카테고리 카드(연애·재물·건강·성격)가 화면에서 완전히 빠졌다" 테스트가 확인한다.
 
   testWidgets('시주를 모르면 4기둥 카드 시맨틱스도 "시주 모름"으로 병합된다', (WidgetTester tester) async {
     final semantics = tester.ensureSemantics();
@@ -1256,7 +1181,15 @@ void main() {
     expect(findInBodyContaining('태어난 시간을 알면 더 정확한 결과를 볼 수 있어요'), findsNothing);
   });
 
-  testWidgets('이름이 있으면 헤더에 실제 이름이 표시된다', (WidgetTester tester) async {
+  testWidgets('이름이 있든 없든 공백뿐이든 페이지 제목은 항상 고정 문구 "내 사주결과"로 표시된다',
+      (WidgetTester tester) async {
+    // **2026-07-19 W4 리팩터로 동작이 바뀜**: 예전에는 이름이 있으면 헤더가 "$name의
+    // 사주팔자 ✨"로, 없거나 공백뿐이면 "회원님의 사주팔자 ✨"로 바뀌었다 — 그런데 목업
+    // STEP 4 리팩터로 페이지 제목이 개인화 문구 대신 고정 문자열 "내 사주결과"가 되면서,
+    // 이름 유무는 더 이상 이 화면의 눈에 보이는 헤더에 아무 영향을 주지 않는다(displayName은
+    // share_card.dart 등 화면 밖 공유용 카드에서는 여전히 쓰인다 — share_card_test.dart가
+    // 그쪽을 검증). 이름이 있을 때/없을 때/공백뿐일 때 셋 다 제목이 똑같이 고정돼 있는지,
+    // 그리고 예전 개인화 문구가 더 이상 나타나지 않는지 확인한다.
     await tester.pumpWidget(
       MaterialApp(
         onGenerateRoute: (settings) => MaterialPageRoute(
@@ -1269,23 +1202,14 @@ void main() {
         initialRoute: '/',
       ),
     );
+    expect(findInBody('내 사주결과'), findsOneWidget);
+    expect(findInBody('민지의 사주팔자 ✨'), findsNothing);
 
-    expect(findInBody('민지의 사주팔자 ✨'), findsOneWidget);
-    expect(findInBody('회원님의 사주팔자 ✨'), findsNothing);
-  });
-
-  testWidgets('이름이 없거나 공백뿐이면 헤더에 "회원님"으로 표시된다', (WidgetTester tester) async {
-    // report_screen.dart/deep_dive_result_screen.dart도 이 화면과 똑같은 이름 폴백을
-    // 쓰는데(2026-07-14 `meta_line.dart`의 공용 함수 `displayNameFor()`로 통합됨 —
-    // 예전엔 세 화면이 `name?.trim().isNotEmpty == true ? ... : '회원님'` 삼항식을
-    // 각자 복제해 갖고 있었다), 그쪽 테스트들은 이미 null/공백뿐인 이름 둘 다 값으로
-    // 검증돼 있었다(그중 deep_dive_result_screen_test.dart의 주석은 심지어
-    // "result_screen_test.dart는 이미 검증해뒀다"고 적어뒀을 정도) — 그런데 정작 이
-    // 로직이 처음 만들어진 원본 화면인 이 파일에는 "이름이 있는" 경우만 테스트돼
-    // 있었을 뿐, null/공백뿐인 경우를 값으로 확인하는 전용 테스트가 없었던 실제
-    // 공백이었다. 지금은 세 화면 모두 `displayNameFor()`를 호출하므로 이 테스트가
-    // 사실상 공용 함수를 검증하는 셈이지만, 화면 헤더에 실제로 반영되는지는 위젯
-    // 테스트로 별도 확인할 가치가 있어 남겨둔다.
+    // 같은 구조의 MaterialApp을 그대로 다시 pumpWidget하면 Flutter가 기존 엘리먼트를
+    // 재사용해버려(같은 위젯 트리 형태) 새 라우트 arguments가 실제로 반영되지 않는
+    // 것을 실측으로 확인했다(deep_dive_input_screen_test.dart에서 겪은 것과 같은
+    // 종류의 함정) — 완전히 언마운트한 뒤 다시 pumpWidget해야 한다.
+    await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(
       MaterialApp(
         onGenerateRoute: (settings) => MaterialPageRoute(
@@ -1297,12 +1221,9 @@ void main() {
         initialRoute: '/',
       ),
     );
-    expect(findInBody('회원님의 사주팔자 ✨'), findsOneWidget);
+    expect(findInBody('내 사주결과'), findsOneWidget);
+    expect(findInBody('회원님의 사주팔자 ✨'), findsNothing);
 
-    // 같은 구조의 MaterialApp을 그대로 다시 pumpWidget하면 Flutter가 기존 엘리먼트를
-    // 재사용해버려(같은 위젯 트리 형태) 새 라우트 arguments가 실제로 반영되지 않는
-    // 것을 실측으로 확인했다(deep_dive_input_screen_test.dart에서 겪은 것과 같은
-    // 종류의 함정) — 완전히 언마운트한 뒤 다시 pumpWidget해야 한다.
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpWidget(
       MaterialApp(
@@ -1315,7 +1236,7 @@ void main() {
         initialRoute: '/',
       ),
     );
-    expect(findInBody('회원님의 사주팔자 ✨'), findsOneWidget);
+    expect(findInBody('내 사주결과'), findsOneWidget);
     expect(findInBody('   의 사주팔자 ✨'), findsNothing);
   });
 
@@ -1371,7 +1292,8 @@ void main() {
       ),
     );
 
-    expect(findInBody('민지의 사주팔자 ✨'), findsOneWidget);
+    // 목업 STEP 4 리팩터(2026-07-19)로 페이지 제목이 고정 문구 "내 사주결과"가 됐다.
+    expect(findInBody('내 사주결과'), findsOneWidget);
   });
 
   testWidgets(
@@ -1387,7 +1309,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: ResultScreen()));
 
     // 리다이렉트가 일어나는 프레임 사이에는 결과 콘텐츠 대신 로딩 스피너만 보인다.
-    expect(find.text('회원님의 사주팔자 ✨'), findsNothing);
+    expect(find.text('내 사주결과'), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     await tester.pumpAndSettle();
@@ -1395,7 +1317,7 @@ void main() {
     // 리다이렉트 후에는 입력 화면이 보이고, 결과 콘텐츠는 트리에 남아있지 않아야 한다.
     expect(find.byType(BirthInputScreen), findsOneWidget);
     expect(find.text('생년월일시를 알려주세요'), findsOneWidget);
-    expect(find.text('회원님의 사주팔자 ✨'), findsNothing);
+    expect(find.text('내 사주결과'), findsNothing);
 
     // pushAndRemoveUntil((route) => false)로 스택을 완전히 비웠으므로 뒤로 가기로
     // 결과 화면(ResultScreen)으로 돌아갈 수 없어야 한다.
@@ -1544,7 +1466,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // 여전히 결과 화면에 남아있고, 저장된 값도 그대로다.
-    expect(findInBody('회원님의 사주팔자 ✨'), findsOneWidget);
+    expect(findInBody('내 사주결과'), findsOneWidget);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getInt('birth_info.date_millis'), isNotNull);
   });
@@ -1586,20 +1508,22 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('다시 입력할까요?'), findsNothing);
-    expect(findInBody('회원님의 사주팔자 ✨'), findsOneWidget);
+    expect(findInBody('내 사주결과'), findsOneWidget);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getInt('birth_info.date_millis'), isNotNull);
   });
 
-  testWidgets('시스템 글자 크기를 크게(2배) 키워도 카테고리 카드에서 RenderFlex overflow가 나지 않는다',
+  testWidgets('시스템 글자 크기를 크게(2배) 키워도 RenderFlex overflow가 나지 않는다',
       (WidgetTester tester) async {
-    // "오늘 궁금한 것부터" 2x2 카드가 원래 GridView.count(childAspectRatio: 1.3)로
+    // "오늘 궁금한 것부터" 2x2 카테고리 카드가 원래 GridView.count(childAspectRatio: 1.3)로
     // 셀 높이가 고정돼 있었는데, 시스템 글자 크기를 키우면(접근성 큰 텍스트 — 일부
     // 기기는 기본 제공 "큼" 설정만으로도 1.3배) 카드 안 텍스트가 그 고정 높이를
     // 넘겨 RenderFlex overflow가 실제로 재현되는 것을 확인했다 — 지금까지는 어떤
     // 테스트도 기본 배율(1.0) 외의 글자 크기로 이 화면을 렌더링해본 적이 없어서
     // 이 회귀를 못 잡고 있었다. Row-of-Expanded(_PillarCard와 같은 패턴)로 고친
     // 뒤 2배 배율에서도 예외 없이 렌더링되는지 확인한다.
+    // **2026-07-19 W4 리팩터**로 그 카드 자체는 이 화면에서 빠졌지만, 4기둥/오행 밸런스 등
+    // 남은 요소들도 큰 글자 배율에서 여전히 안전한지 계속 지키는 의미로 테스트는 남겨둔다.
     await useTallViewport(tester, height: 2400);
 
     await tester.pumpWidget(
@@ -1629,8 +1553,11 @@ void main() {
     // "오행 밸런스")가 중복 존재하므로, resultScrollView 안으로 범위를 좁힌
     // findInBody를 그대로 재사용한다(그렇지 않으면 find.text()가 두 위젯을 찾아
     // getSemantics 호출 자체가 실패한다).
+    // **2026-07-19 W4 리팩터**: 페이지 제목이 개인화 문구 대신 고정 문자열 "내 사주결과"로
+    // 바뀌었고, "오늘 궁금한 것부터" 소제목은 카테고리 카드 그리드와 함께 이 화면에서
+    // 완전히 제거됐다 — 그 소제목의 헤딩 테스트는 삭제하고 나머지 둘의 기대값만 갱신한다.
 
-    testWidgets('페이지 제목 "회원님의 사주팔자 ✨"가 헤딩(isHeader)으로 노출된다', (WidgetTester tester) async {
+    testWidgets('페이지 제목 "내 사주결과"가 헤딩(isHeader)으로 노출된다', (WidgetTester tester) async {
       final semantics = tester.ensureSemantics();
 
       await tester.pumpWidget(
@@ -1646,8 +1573,8 @@ void main() {
       );
 
       expect(
-        tester.getSemantics(findInBody('회원님의 사주팔자 ✨')),
-        matchesSemantics(label: '회원님의 사주팔자', isHeader: true),
+        tester.getSemantics(findInBody('내 사주결과')),
+        matchesSemantics(label: '내 사주결과', isHeader: true),
       );
 
       semantics.dispose();
@@ -1675,43 +1602,18 @@ void main() {
 
       semantics.dispose();
     });
-
-    testWidgets('소제목 "오늘 궁금한 것부터"가 헤딩(isHeader)으로 노출된다', (WidgetTester tester) async {
-      // 화면 아래쪽이라 기본 뷰포트로는 지연 빌드돼 못 찾으므로 뷰포트를 세로로 키운다
-      // (위 카테고리 카드 테스트들과 같은 이유).
-      await useTallViewport(tester);
-      final semantics = tester.ensureSemantics();
-
-      await tester.pumpWidget(
-        MaterialApp(
-          onGenerateRoute: (settings) => MaterialPageRoute(
-            builder: (_) => const ResultScreen(),
-            settings: RouteSettings(
-              arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
-            ),
-          ),
-          initialRoute: '/',
-        ),
-      );
-
-      expect(
-        tester.getSemantics(findInBody('오늘 궁금한 것부터')),
-        matchesSemantics(label: '오늘 궁금한 것부터', isHeader: true),
-      );
-
-      semantics.dispose();
-    });
   });
 
-  testWidgets('카테고리 카드(연애·재물·건강·성격) 아래 건강운 면책 문구가 항상 노출된다',
+  testWidgets('카테고리 카드(연애·재물·건강·성격)가 화면에서 완전히 빠져, 건강운 면책 문구도 더 이상 노출되지 않는다',
       (WidgetTester tester) async {
-    // 2026-07-17 오버나이트 리서치 반영: 오행별 건강운 문구가 "소화기 계통 컨디션을 특히
-    // 잘 챙기면 좋아요", "호흡기·피부 컨디션을 신경 쓰면 좋아요"처럼 특정 신체 부위를 콕
-    // 짚어 말하는데도 안내 문구가 전혀 없었다 — 카테고리 카드 4개는 조건 없이 항상
-    // 노출되므로 면책 문구도 상시 노출돼야 한다. 카드가 화면 아래쪽에 있어(기본 뷰포트로는
-    // 지연 빌드돼 못 찾음) 뷰포트를 세로로 키운다.
-    await useTallViewport(tester);
-
+    // **2026-07-19 W4 리팩터 이전**: 카테고리 카드 4개(연애·재물·건강·성격)가 조건 없이
+    // 항상 노출됐고, 그중 건강운 문구가 "소화기 계통 컨디션을 특히 잘 챙기면 좋아요",
+    // "호흡기·피부 컨디션을 신경 쓰면 좋아요"처럼 특정 신체 부위를 콕 짚어 말하는데도
+    // 면책 문구가 없어서(2026-07-17 오버나이트 리서치 반영 발견) 상시 노출로 추가했었다.
+    // **2026-07-19 W4 리팩터 이후**: 카테고리 카드 그리드 자체가 이 화면에서 완전히
+    // 빠지면서(관심사 선택 화면으로 옮길 예정, 함수 정의는 유지) 그 아래 있던 면책 문구도
+    // 함께 사라졌다 — 이 화면에는 더 이상 카드도, 그 문구도 없어야 한다는 걸 값으로
+    // 고정한다(카드 자체가 없으니 예전처럼 뷰포트를 세로로 키울 필요도 없다).
     await tester.pumpWidget(
       MaterialApp(
         onGenerateRoute: (settings) => MaterialPageRoute(
@@ -1724,7 +1626,61 @@ void main() {
       ),
     );
 
-    expect(findInBodyContaining('건강운 내용은 참고용이에요'), findsOneWidget);
+    // 카테고리 카드 4개의 제목 문구가 전부 화면에서 사라졌는지 확인한다(아이콘·설명
+    // 문구까지 다 없어졌다는 걸 대표하는 유일한 라벨들이라 제목만으로도 충분하다).
+    for (final categoryTitle in const ['연애운', '재물운', '건강운', '성격']) {
+      expect(
+        findInBody(categoryTitle),
+        findsNothing,
+        reason: '카테고리 카드 제목 "$categoryTitle"이 결과 화면에 더 이상 없어야 한다',
+      );
+    }
+    // 카드 그리드와 함께 쓰이던 소제목("오늘 궁금한 것부터")도 사라졌는지 확인한다.
+    expect(findInBody('오늘 궁금한 것부터'), findsNothing);
+    // 카드가 사라지며 그 아래 상시 노출되던 건강운 면책 문구도 함께 사라졌는지 확인한다.
+    expect(findInBodyContaining('건강운 내용은 참고용이에요'), findsNothing);
+  });
+
+  testWidgets('"🎬 광고 보고 상세 리포트 이어보기" CTA가 목업 STEP4 리팩터 문구·시맨틱스로 노출되고 상세 리포트로 이동한다',
+      (WidgetTester tester) async {
+    // **2026-07-19 W4 리팩터**로 결과 화면 CTA가 "상세 리포트 보기 (무료)"에서
+    // "🎬 광고 보고 상세 리포트 이어보기"로 바뀌었다 — 목적지 라우트(AppRoutes.report)는
+    // 그대로라 실제로 눌렀을 때 상세 리포트 화면으로 이동하는지도 함께 확인한다.
+    // 장식용 이모지(🎬)는 다른 화면들과 같은 이유로 semanticsLabel에서 제외돼야 한다.
+    final semantics = tester.ensureSemantics();
+    await useTallViewport(tester);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        onGenerateRoute: (settings) {
+          if (settings.name == AppRoutes.report) {
+            return MaterialPageRoute(
+              builder: (_) => ReportScreen(birthInfo: settings.arguments as BirthInfo?),
+            );
+          }
+          return MaterialPageRoute(
+            builder: (_) => const ResultScreen(),
+            settings: RouteSettings(
+              arguments: BirthInfo(date: DateTime(1998, 8, 15), hour: 14, isLunar: false),
+            ),
+          );
+        },
+        initialRoute: '/',
+      ),
+    );
+
+    // 예전 CTA 문구는 더 이상 없어야 한다.
+    expect(find.text('상세 리포트 보기 (무료)'), findsNothing);
+
+    final ctaFinder = find.text('🎬 광고 보고 상세 리포트 이어보기');
+    expect(ctaFinder, findsOneWidget);
+    expect(tester.getSemantics(ctaFinder).label, '광고 보고 상세 리포트 이어보기');
+    semantics.dispose();
+
+    await tester.tap(ctaFinder);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ReportScreen), findsOneWidget);
   });
 }
 

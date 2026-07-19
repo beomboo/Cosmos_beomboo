@@ -110,8 +110,10 @@ void main() {
     );
 
     expect(find.text('시작하기 →'), findsNothing);
+    // 목업 STEP 4 리팩터(2026-07-19)로 페이지 제목이 개인화 문구 대신 고정 문자열
+    // "내 사주결과"로 바뀌었다.
     expect(
-      findInScrollView('resultScrollView', '회원님의 사주팔자 ✨'),
+      findInScrollView('resultScrollView', '내 사주결과'),
       findsOneWidget,
     );
   });
@@ -160,10 +162,10 @@ void main() {
 
       // 입력했던 생년월일시가 실제 계산·표시까지 그대로 이어졌는지 확인한다.
       Finder findInResult(String text) => findInScrollView('resultScrollView', text);
-      // 2026-07-19: 이름이 필수값이 되면서 pickDefaultBirthDateAndTime이 이름("민지")도
-      // 채운다 — result_screen.dart는 이름이 있으면 "회원님" 대신 그 이름을 헤더에
-      // 쓰므로("$displayName의 사주팔자 ✨") 기대값도 그에 맞춰 바뀐다.
-      expect(findInResult('민지의 사주팔자 ✨'), findsOneWidget);
+      // **2026-07-19 W4 리팩터**로 페이지 제목이 개인화 문구 대신 고정 문자열
+      // "내 사주결과"가 됐다 — 이름("민지")은 여전히 제출은 되지만 이 화면 헤더에는
+      // 더 이상 반영되지 않는다.
+      expect(findInResult('내 사주결과'), findsOneWidget);
       // birth_input에서 이번에 "여성"을 명시적으로 골랐고 timePicker 기본값은 오후 2시
       // 30분이라(둘 다 실제로 제출되는 값), 메타 라인에도 분까지 그대로 반영된다.
       expect(findInResult('2000.01.01 · 오후 2시 30분生 · 양력 · 여성'), findsOneWidget);
@@ -172,7 +174,9 @@ void main() {
 
       // 마지막 구간(결과 → 상세 리포트)까지 실제 라우트로 이어간다. ReportScreen에는
       // 반복 애니메이션이 없어 여기서부터는 다시 pumpAndSettle()을 써도 안전하다.
-      await tester.tap(find.text('상세 리포트 보기 (무료)'));
+      // **2026-07-19 W4 리팩터**로 CTA 문구가 "상세 리포트 보기 (무료)"에서
+      // "🎬 광고 보고 상세 리포트 이어보기"로 바뀌었다(목적지 라우트는 그대로).
+      await tester.tap(find.text('🎬 광고 보고 상세 리포트 이어보기'));
       await tester.pumpAndSettle();
 
       // 상세 리포트 헤더도 결과 화면과 같은 이유("$displayName의 상세 리포트")로
@@ -249,7 +253,9 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('상세 리포트 보기 (무료)'));
+      // **2026-07-19 W4 리팩터**로 CTA 문구가 "🎬 광고 보고 상세 리포트 이어보기"로
+      // 바뀌었다(목적지 라우트는 그대로).
+      await tester.tap(find.text('🎬 광고 보고 상세 리포트 이어보기'));
       await tester.pumpAndSettle();
       expect(find.text('회원님의 상세 리포트'), findsOneWidget);
 
@@ -320,7 +326,9 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       await tester.pump(const Duration(milliseconds: 300));
 
-      await tester.tap(find.text('상세 리포트 보기 (무료)'));
+      // **2026-07-19 W4 리팩터**로 CTA 문구가 "🎬 광고 보고 상세 리포트 이어보기"로
+      // 바뀌었다(목적지 라우트는 그대로).
+      await tester.tap(find.text('🎬 광고 보고 상세 리포트 이어보기'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('MBTI·관심사로 심층 분석 받기 →'));

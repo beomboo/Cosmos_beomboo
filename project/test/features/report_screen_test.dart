@@ -779,7 +779,9 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('상세 리포트 보기 (무료)'));
+    // **2026-07-19 W4 리팩터**로 결과 화면 CTA 문구가 "상세 리포트 보기 (무료)"에서
+    // "🎬 광고 보고 상세 리포트 이어보기"로 바뀌었다(목적지 라우트는 그대로 AppRoutes.report).
+    await tester.tap(find.text('🎬 광고 보고 상세 리포트 이어보기'));
     await tester.pumpAndSettle();
 
     expect(find.text('상세 리포트'), findsOneWidget);
