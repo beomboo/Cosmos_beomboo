@@ -8,7 +8,6 @@ import '../../core/storage/birth_info_store.dart';
 import '../../core/storage/deep_dive_info_store.dart';
 import '../../shared/share/share_capture.dart';
 import '../../shared/widgets/gradient_share_button.dart';
-import '../../shared/widgets/health_disclaimer_text.dart';
 import '../../shared/widgets/offscreen_share_capture.dart';
 import '../../shared/widgets/pastel_card.dart';
 import '../birth_input/birth_info.dart';
@@ -117,7 +116,9 @@ class _ResultScreenState extends State<ResultScreen> {
     // "2순위 오행이 사실상 없음"으로 보고 콤보 함수들이 단일-오행 문구로 폴백한다.
     final subCount = ohaengCount[sub] ?? 0;
     final callout = dominantComboCallout(dominant, sub, subCount: subCount);
-    final categories = categoryReadingsForCombo(dominant, sub, subCount: subCount);
+    // 카테고리 카드 4개(연애·재물·건강·성격) 그리드가 이 화면에서 빠지면서
+    // categoryReadingsForCombo 호출부도 함께 정리했다 — 함수 정의 자체는
+    // ohaeng_readings.dart에 그대로 남아있다(추후 관심사 선택 화면에서 재사용 예정).
     final balanceNarrative = buildOhaengBalanceNarrative(
       dominant: dominant,
       sub: sub,
@@ -154,12 +155,14 @@ class _ResultScreenState extends State<ResultScreen> {
                 // 섹션 제목에 header 플래그가 필요하다 — 지금까지는 앱 전체에 이 플래그가
                 // 한 곳도 없었다(2026-07-16 접근성 감사 발견). 자식 Text가 만드는 자동
                 // 라벨을 그대로 병합해 쓰므로 별도 label은 지정하지 않는다.
+                // 목업(`.result-head h2`) 리팩터로 개인화된 "$displayName의 사주팔자"
+                // 대신 고정 문구 "내 사주결과"를 쓰게 됐다(2026-07-19) — displayName은
+                // 여전히 메타 라인·공유 카드 등 다른 곳에서 쓰이므로 그대로 남겨둔다.
                 Semantics(
                   header: true,
-                  child: Text(
-                    '$displayName의 사주팔자 ✨',
-                    semanticsLabel: '$displayName의 사주팔자',
-                    style: const TextStyle(
+                  child: const Text(
+                    '내 사주결과',
+                    style: TextStyle(
                       fontSize: 15.5,
                       fontWeight: FontWeight.w800,
                       color: AppColors.ink,
@@ -277,60 +280,14 @@ class _ResultScreenState extends State<ResultScreen> {
                 // 목업(`.bars`)은 margin-bottom:14px인데 지금까지는 28px이었다
                 // (2026-07-07 대조 발견).
                 const SizedBox(height: 14),
-                // 헤딩 단위 탐색 지원(2026-07-16 접근성 감사 발견, 위 페이지 제목과 같은 이유).
-                // 위 "오행 밸런스"와 같은 이유로 _SubsectionHeading을 재사용한다
-                // (2026-07-17 오버나이트 코드 정리).
-                const _SubsectionHeading('오늘 궁금한 것부터'),
-                // 목업(`.cards h3`)은 margin:0 0 8px인데 지금까지는 12px이었다
-                // (2026-07-07 대조 발견).
-                const SizedBox(height: 8),
-                // 이전엔 GridView.count(childAspectRatio: 1.3)로 셀 높이를 고정했는데,
-                // 시스템 글자 크기를 키우면(접근성 큰 텍스트, 일부 기기는 기본 "큼"
-                // 설정만으로도 1.3배) 카드 안 텍스트가 고정 높이를 넘겨 RenderFlex
-                // overflow가 실제로 재현됐다 — _PillarCard와 같은 Row-of-Expanded
-                // 패턴(높이가 내용에 맞춰 늘어남)으로 바꿔 어떤 글자 크기에서도 안 잘리게 한다.
-                Column(
-                  children: [
-                    // IntrinsicHeight로 Row 자체에 유한한 높이를 부여해야
-                    // crossAxisAlignment.stretch로 두 카드 높이를 맞출 수 있다
-                    // (Row가 ListView 안에서처럼 세로로 무한한 공간에 있으면
-                    // stretch만 단독으로 쓸 때 "BoxConstraints forces an infinite
-                    // height" 예외가 실제로 발생함).
-                    IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(child: _CategoryCard(category: categories[0])),
-                          // 목업(`.cat-grid`)은 gap:8px인데 지금까지는 12px이었다
-                          // (2026-07-07 대조 발견) — 가로/세로 간격 모두 수정.
-                          const SizedBox(width: 8),
-                          Expanded(child: _CategoryCard(category: categories[1])),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(child: _CategoryCard(category: categories[2])),
-                          const SizedBox(width: 8),
-                          Expanded(child: _CategoryCard(category: categories[3])),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                // 목업(`.cat-grid`)은 margin-bottom:14px인데 지금까지는 28px이었다
-                // (2026-07-07 대조 발견).
-                const SizedBox(height: 14),
-                // 카테고리 카드 4개(연애·재물·건강·성격)는 항상 함께 노출되고 그중 건강운은
-                // 특정 신체 부위를 짚어 말하는데 면책 문구가 없었다(2026-07-17 오버나이트
-                // 리서치 반영 대조 발견). 카드가 조건 없이 상시 노출되므로 문구도 상시 노출.
-                // 위젯 자체는 리포트·심층 분석 화면과 공용(`HealthDisclaimerText`, 2026-07-17
-                // 오버나이트 코드 정리로 3중 중복 통합).
-                const HealthDisclaimerText(),
-                const SizedBox(height: 12),
+                // 목업 STEP 4 리팩터(2026-07-19)로 카테고리 카드 4개(연애·재물·건강·성격)
+                // 그리드와 "오늘 궁금한 것부터" 소제목이 이 화면에서 완전히 빠졌다 — 명식 +
+                // 오행 밸런스만 남기고, 카테고리별 풀이는 관심사 선택 화면(추후 W6)에서
+                // 다시 쓸 예정이라 `ohaeng_readings.dart`의 `categoryReadingsForCombo` 등
+                // 관련 함수 정의 자체는 그대로 남겨뒀다. 카드가 사라지며 그 아래 있던 건강운
+                // 면책 문구(`HealthDisclaimerText`) 상시 노출도 이 화면에서는 의미가 없어져
+                // 함께 제거했다(관심사 선택 후 건강 콘텐츠가 실제로 보일 때 노출하는 건
+                // 추후 W7에서 처리).
                 // 목업(docs/mockups/01-pastel-cute.html)의 "공유하기" 버튼(`.share-btn`)은
                 // 다른 CTA 버튼과 달리 단색이 아니라 accent→metal 그라데이션을 쓴다 —
                 // 심층 분석 결과 화면과 완전히 동일한 구조라 공용 위젯(GradientShareButton)으로
@@ -356,8 +313,15 @@ class _ResultScreenState extends State<ResultScreen> {
                       AppRoutes.report,
                       arguments: birthInfo,
                     ),
+                    // 목업 STEP 4 리팩터(2026-07-19)로 "상세 리포트 보기 (무료)"에서
+                    // "🎬 광고 보고 상세 리포트 이어보기"로 카피가 바뀌었다 — 목적지 라우트는
+                    // 아직 관심사 선택/광고 게이트 화면(추후 W6~W8)이 없어 기존 상세
+                    // 리포트 화면(AppRoutes.report)으로 그대로 연결해둔다.
                     child: const Text(
-                      '상세 리포트 보기 (무료)',
+                      '🎬 광고 보고 상세 리포트 이어보기',
+                      // 다른 화면들과 같은 이유로 장식용 이모지가 스크린 리더에 읽히지
+                      // 않도록 semanticsLabel을 지정한다.
+                      semanticsLabel: '광고 보고 상세 리포트 이어보기',
                       // 목업(`.report-link`)은 이 문구를 밑줄 있는 링크로 보여주는데,
                       // 지금까지는 밑줄 없는 일반 버튼 텍스트였다(2026-07-06 대조 발견) —
                       // 밑줄을 추가하고 목업 값(11px/700)에 맞춰 크기·굵기도 조정.
@@ -657,51 +621,7 @@ class _SubsectionHeading extends StatelessWidget {
   }
 }
 
-class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({required this.category});
-
-  final (String, String, String) category;
-
-  @override
-  Widget build(BuildContext context) {
-    final (icon, title, desc) = category;
-    // 같은 파일의 _PillarCard와 같은 이유(2026-07-07 목업 대조 수정 때 남긴 이유 참고) —
-    // 지금까지는 아이콘·제목·설명이 각각 별도 Text라 스크린 리더가 세 번 나눠 읽었다
-    // (장식용 이모지까지 유니코드 이름으로 읽어 더 헷갈림). "제목. 설명"으로 병합하고
-    // 카드 4개가 Row 안에 나란히 있어 container:true로 경계를 명시한다.
-    return Semantics(
-      label: '$title. $desc',
-      excludeSemantics: true,
-      container: true,
-      child: PastelCard(
-        // 목업(`.cat-card`)은 padding:10px 11px인데 지금까지는 PastelCard의 기본값인
-        // 14px 균일 패딩을 그대로 썼다(2026-07-07 대조 발견).
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 15)),
-            const SizedBox(height: 5),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.ink),
-            ),
-            const SizedBox(height: 2),
-            // 목업(`.cat-card .d`)은 10.5px/font-weight 600인데 지금까지는 12px에
-            // 기본 굵기였다(2026-07-07 대조 발견).
-            Text(
-              desc,
-              style: const TextStyle(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w600,
-                color: AppColors.inkSoft,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// _CategoryCard(연애·재물·건강·성격 4개 그리드용 위젯)는 목업 STEP 4 리팩터(2026-07-19)로
+// 이 화면에서 카드 그리드 자체가 빠지면서 함께 제거했다. 해당 카드가 쓰던 데이터
+// (`categoryReadingsForCombo` 등)는 `ohaeng_readings.dart`에 그대로 남아있어, 추후 관심사
+// 선택 화면에서 이 위젯을 다시 만들어 재사용할 수 있다.
