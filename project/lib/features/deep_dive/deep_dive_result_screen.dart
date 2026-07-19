@@ -45,8 +45,9 @@ class _DeepDiveResultScreenState extends State<DeepDiveResultScreen> {
     final metaLine = buildMetaLine(birthInfo);
     final mbtiComment = mbtiCommentFor(deepDiveInfo.mbti?.code);
     final mbtiNickname = mbtiNicknameFor(deepDiveInfo.mbti?.code);
-    // Interest.values 선언 순서(연애·재물·직장·건강)를 고정해 화면 카드 순서와
-    // 공유 카드/텍스트 순서가 항상 일치하도록 한다 — deepDiveInfo.interests는
+    // Interest.values 선언 순서(연애·직장·재물·건강·성격, 2026-07-19 목업 STEP 5
+    // 순서에 맞춰 갱신 — 성격도 다른 관심사와 동등하게 선택 대상이 됨)를 고정해
+    // 화면 카드 순서와 공유 카드/텍스트 순서가 항상 일치하도록 한다 — deepDiveInfo.interests는
     // Set이라 삽입 순서를 보장하지 않는다.
     final selectedItems = [
       for (final interest in Interest.values)
